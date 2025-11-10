@@ -9,8 +9,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { formatTime } from '@/lib/utils';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
 
 type ReportModalProps = {
   isOpen: boolean;
@@ -110,15 +108,6 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
               Reporte Oficial de Partido
             </DialogTitle>
           </DialogHeader>
-
-          <Alert className="bg-yellow-100 border-yellow-500 text-yellow-800 mb-4 no-print">
-            <Terminal className="h-4 w-4" />
-            <AlertTitle>Instrucción para Guardar como PDF</AlertTitle>
-            <AlertDescription>
-              Al presionar el botón de abajo, en el diálogo de impresión de tu navegador,{' '}
-              <b>debes seleccionar la opción "Guardar como PDF"</b> en lugar de elegir una impresora.
-            </AlertDescription>
-          </Alert>
 
           <div className="space-y-6 text-gray-800">
             <div className="text-center mb-6 border-b-2 border-gray-300 pb-4 report-title-section">
