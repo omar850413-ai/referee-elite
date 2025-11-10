@@ -8,12 +8,14 @@ import TimerControl from '@/components/referee/TimerControl';
 import Scoreboard from '@/components/referee/Scoreboard';
 import ActionControls from '@/components/referee/ActionControls';
 import CardControls from '@/components/referee/CardControls';
+import SubstitutionControls from '@/components/referee/SubstitutionControls';
 import EventHistory from '@/components/referee/EventHistory';
 import ReportControls from '@/components/referee/ReportControls';
 
 import GoalModal from '@/components/referee/modals/GoalModal';
 import CardModal from '@/components/referee/modals/CardModal';
 import NoteModal from '@/components/referee/modals/NoteModal';
+import SubstitutionModal from '@/components/referee/modals/SubstitutionModal';
 import ResetTimerModal from '@/components/referee/modals/ResetTimerModal';
 import ResetMatchModal from '@/components/referee/modals/ResetMatchModal';
 import ReportModal from '@/components/referee/modals/ReportModal';
@@ -43,6 +45,8 @@ export default function RefereeApp() {
 
       <CardControls dispatch={dispatch as React.Dispatch<MatchAction>} teamNames={teamNames} />
 
+      <SubstitutionControls dispatch={dispatch as React.Dispatch<MatchAction>} teamNames={teamNames} />
+
       <EventHistory events={events} teamNames={teamNames} />
 
       <ReportControls dispatch={dispatch as React.Dispatch<MatchAction>} />
@@ -70,6 +74,13 @@ export default function RefereeApp() {
         isOpen={activeModal === 'note'}
         dispatch={dispatch}
         timerIsRunning={timer.isRunning}
+      />
+       <SubstitutionModal
+        isOpen={activeModal === 'substitution'}
+        dispatch={dispatch}
+        modalData={modalData}
+        timerIsRunning={timer.isRunning}
+        teamNames={teamNames}
       />
       <ResetTimerModal
         isOpen={activeModal === 'reset-timer'}

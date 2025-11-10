@@ -146,6 +146,18 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
       };
     }
 
+    case 'ADD_SUBSTITUTION': {
+      if (!state.timer.isRunning) {
+        toast({ variant: 'destructive', title: 'Error', description: 'El cronómetro debe estar corriendo para registrar una sustitución.' });
+        return state;
+      }
+      const { team, playerIn, playerOut } = action.payload;
+      return {
+        ...state,
+        events: [...state.events, { type: 'substitution', team, time: currentTime, playerIn, playerOut }],
+      };
+    }
+
     case 'RESET_TIMER':
       return {
         ...state,

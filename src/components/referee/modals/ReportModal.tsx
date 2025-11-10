@@ -42,9 +42,11 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
   const homeYellows = filterAndSort('home', 'yellow');
   const homeReds = filterAndSort('home', 'red');
   const homeGoals = filterAndSort('home', 'goal');
+  const homeSubs = filterAndSort('home', 'substitution');
   const awayYellows = filterAndSort('away', 'yellow');
   const awayReds = filterAndSort('away', 'red');
   const awayGoals = filterAndSort('away', 'goal');
+  const awaySubs = filterAndSort('away', 'substitution');
 
   const judgeIncidents = events
     .filter((e) => e.type === 'note' || e.type === 'goal_removed')
@@ -57,29 +59,43 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
       return `#${jersey}`;
   };
 
-  const generateIncidentTable = (incidents: GameEvent[]) => {
+  const generateIncidentTable = (incidents: GameEvent[], type: 'cards' | 'goals' | 'subs') => {
     if (incidents.length === 0) {
       return '<p class="text-sm text-gray-500 italic">No hay incidencias registradas.</p>';
     }
+    
+    let headers = '';
+    let rows = '';
+
+    switch(type) {
+      case 'goals':
+        headers = '<thead><tr><th>Tiempo</th><th># Camiseta</th><th>Detalle</th></tr></thead>';
+        rows = incidents.map(e => {
+          if(e.type !== 'goal') return '';
+          return `<tr><td>${formatTime(e.time)}</td><td>#${e.jersey}</td><td>Gol Anotado</td></tr>`;
+        }).join('');
+        break;
+      case 'cards':
+        headers = '<thead><tr><th>Tiempo</th><th>Identificación</th><th>Causa</th></tr></thead>';
+        rows = incidents.map(e => {
+          if(e.type !== 'yellow' && e.type !== 'red') return '';
+          return `<tr><td>${formatTime(e.time)}</td><td>${formatJerseyForReport(e.jersey)}</td><td>${e.reason}</td></tr>`;
+        }).join('');
+        break;
+      case 'subs':
+        headers = '<thead><tr><th>Tiempo</th><th>Sale #</th><th>Entra #</th></tr></thead>';
+        rows = incidents.map(e => {
+          if(e.type !== 'substitution') return '';
+          return `<tr><td>${formatTime(e.time)}</td><td>${e.playerOut}</td><td>${e.playerIn}</td></tr>`;
+        }).join('');
+        break;
+    }
+
     return `
       <table class="report-table min-w-full">
-        <thead><tr><th>Tiempo</th><th>Identificación</th><th>Detalle</th></tr></thead>
+        ${headers}
         <tbody>
-          ${incidents
-            .map((e) => {
-              if (e.type !== 'goal' && e.type !== 'yellow' && e.type !== 'red') return '';
-              let detail = '';
-              let identification = '';
-              if (e.type === 'goal') {
-                detail = 'Gol Anotado';
-                identification = `#${e.jersey}`;
-              } else { // yellow or red card
-                detail = `Causa: ${e.reason}`;
-                identification = formatJerseyForReport(e.jersey);
-              }
-              return `<tr><td>${formatTime(e.time)}</td><td>${identification}</td><td>${detail}</td></tr>`;
-            })
-            .join('')}
+          ${rows}
         </tbody>
       </table>
     `;
@@ -125,9 +141,10 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
                   <h4 className="text-xl font-extrabold text-primary-dark border-b-2 border-primary-dark pb-1">
                     {teamNames[team as Team]} ({team === 'home' ? 'LOCAL' : 'VISITANTE'})
                   </h4>
-                  <div dangerouslySetInnerHTML={{ __html: `<h5>⚽ Goles Anotados (${team === 'home' ? scores.home : scores.away})</h5>${generateIncidentTable(team === 'home' ? homeGoals : awayGoals)}` }} />
-                  <div dangerouslySetInnerHTML={{ __html: `<h5>🟨 Amonestaciones (${team === 'home' ? homeYellows.length : awayYellows.length})</h5>${generateIncidentTable(team === 'home' ? homeYellows : awayYellows)}` }} />
-                  <div dangerouslySetInnerHTML={{ __html: `<h5>🟥 Expulsiones (${team === 'home' ? homeReds.length : awayReds.length})</h5>${generateIncidentTable(team === 'home' ? homeReds : awayReds)}` }} />
+                  <div dangerouslySetInnerHTML={{ __html: `<h5>⚽ Goles Anotados (${team === 'home' ? scores.home : scores.away})</h5>${generateIncidentTable(team === 'home' ? homeGoals : awayGoals, 'goals')}` }} />
+                  <div dangerouslySetInnerHTML={{ __html: `<h5>🔄 Sustituciones (${team === 'home' ? homeSubs.length : awaySubs.length})</h5>${generateIncidentTable(team === 'home' ? homeSubs : awaySubs, 'subs')}` }} />
+                  <div dangerouslySetInnerHTML={{ __html: `<h5>🟨 Amonestaciones (${team === 'home' ? homeYellows.length : awayYellows.length})</h5>${generateIncidentTable(team === 'home' ? homeYellows : awayYellows, 'cards')}` }} />
+                  <div dangerouslySetInnerHTML={{ __html: `<h5>🟥 Expulsiones (${team === 'home' ? homeReds.length : awayReds.length})</h5>${generateIncidentTable(team === 'home' ? homeReds : awayReds, 'cards')}` }} />
                 </div>
               ))}
             </div>

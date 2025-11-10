@@ -71,6 +71,11 @@ const EventHistory = ({ events, teamNames }: EventHistoryProps) => {
         content = `ANOTACIÓN: <em>${event.text}</em>`;
         styleClass = 'bg-orange-500/10 border-l-4 border-orange-500';
         break;
+      case 'substitution':
+        icon = '🔄';
+        content = `<span class="${teamClass}">${teamName}</span>: Sale <strong>#${event.playerOut}</strong>, entra <strong>#${event.playerIn}</strong>`;
+        styleClass = 'bg-blue-500/10 border-l-4 border-blue-500';
+        break;
     }
 
     if (event.type === 'period_start' || event.type === 'period_end') {
