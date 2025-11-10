@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 export const metadata: Metadata = {
   title: "Referee's Edge",
   description: 'Soccer match control application for referees.',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -22,6 +23,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap"
           rel="stylesheet"
         />
+        <meta name="theme-color" content="#0C4A6E" />
       </head>
       <body className="font-body bg-background text-foreground antialiased">
         {children}
