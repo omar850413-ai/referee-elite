@@ -152,6 +152,10 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
                   <div dangerouslySetInnerHTML={{ __html: `<h5>🔄 Sustituciones (${team === 'home' ? homeSubs.length : awaySubs.length})</h5>${generateIncidentTable(team === 'home' ? homeSubs : awaySubs, 'subs')}` }} />
                   <div dangerouslySetInnerHTML={{ __html: `<h5>🟨 Amonestaciones (${team === 'home' ? homeYellows.length : awayYellows.length})</h5>${generateIncidentTable(team === 'home' ? homeYellows : awayYellows, 'cards')}` }} />
                   <div dangerouslySetInnerHTML={{ __html: `<h5>🟥 Expulsiones (${team === 'home' ? homeReds.length : awayReds.length})</h5>${generateIncidentTable(team === 'home' ? homeReds : awayReds, 'cards')}` }} />
+                  <div>
+                    <h5>🚨 Faltas Cometidas</h5>
+                    <p className="text-lg font-bold">{fouls[team as Team]}</p>
+                  </div>
                 </div>
               ))}
             </div>
