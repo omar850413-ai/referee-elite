@@ -74,7 +74,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-4xl w-[95%]">
         <div id="report-modal-content" className="p-4">
-          <DialogHeader>
+          <DialogHeader className="report-title-section">
             <DialogTitle className="text-3xl font-extrabold mb-4 text-center text-primary-dark">
               Reporte Oficial de Partido
             </DialogTitle>
@@ -90,7 +90,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
           </Alert>
 
           <div className="space-y-6 text-gray-800">
-            <div className="text-center mb-6 border-b-2 border-gray-300 pb-4">
+            <div className="text-center mb-6 border-b-2 border-gray-300 pb-4 report-title-section">
               <p className="text-sm text-gray-500 mb-1">
                 Generado: {currentDate} {currentTime} hrs
               </p>
@@ -106,7 +106,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
 
             <div id="incidents-detail-grid" className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {['home', 'away'].map((team) => (
-                <div key={team} className="bg-primary/5 p-4 rounded-xl border border-primary/20 space-y-4">
+                <div key={team} className="bg-primary/5 p-4 rounded-xl border border-primary/20 space-y-4 incident-section">
                   <h4 className="text-xl font-extrabold text-primary-dark border-b-2 border-primary-dark pb-1">
                     {teamNames[team as Team]} ({team === 'home' ? 'LOCAL' : 'VISITANTE'})
                   </h4>
@@ -117,7 +117,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
               ))}
             </div>
 
-            <div>
+            <div className='incident-section'>
               <h3 className="text-2xl font-bold text-gray-700 mb-4 border-b pb-2">Anotaciones del Juez y Correcciones</h3>
               {judgeIncidents.length > 0 ? (
                  <ul className="space-y-2 text-sm">
