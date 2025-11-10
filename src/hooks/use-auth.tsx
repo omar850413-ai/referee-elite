@@ -40,41 +40,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const userDoc = await getDoc(userDocRef);
         
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          if (userData.approved) {
+        if (userDoc.exists() && userDoc.data().approved) {
+            const userData = userDoc.data();
             const userProfile: UserProfile = {
               ...firebaseUser,
               approved: userData.approved,
               isAdmin: ADMIN_EMAILS.includes(firebaseUser.email!),
             };
             setUser(userProfile);
-          } else {
-            // User exists but is not approved. Sign them out.
+        } else {
+            // User is not approved or doc doesn't exist, sign them out.
             await firebaseSignOut(auth);
             setUser(null);
-            // We throw an error that can be caught in the sign-in process
-            throw new Error('Tu cuenta está pendiente de aprobación por un administrador.');
-          }
-        } else {
-          // First time login after sign-up, create the user document.
-          const isAutoApproved = ADMIN_EMAILS.includes(firebaseUser.email!);
-          const userProfileData = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            approved: isAutoApproved,
-            createdAt: Timestamp.fromDate(new Date()),
-          };
-          await setDoc(userDocRef, userProfileData);
-
-          if (isAutoApproved) {
-             setUser({ ...firebaseUser, ...userProfileData });
-          } else {
-            // Not auto-approved, so sign them out and force approval flow.
-             await firebaseSignOut(auth);
-             setUser(null);
-             throw new Error('Tu cuenta ha sido creada y está pendiente de aprobación.');
-          }
         }
       } else {
         setUser(null);
@@ -87,34 +64,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (email: string, pass: string) => {
     try {
-      // onAuthStateChanged will handle the rest of the logic.
-      // We wrap this in a try/catch to handle specific auth errors.
       const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-      
-      // We still need to check for approval status here to reject the promise.
       const userDocRef = doc(db, 'users', userCredential.user.uid);
       const userDoc = await getDoc(userDocRef);
 
-      if (userDoc.exists() && !userDoc.data().approved) {
-        await firebaseSignOut(auth); // Ensure they are logged out
+      if (!userDoc.exists() || !userDoc.data().approved) {
+        await firebaseSignOut(auth);
         throw new Error('Tu cuenta está pendiente de aprobación por un administrador.');
       }
       
       return userCredential;
     } catch (error: any) {
+        if (error.message.includes('pendiente de aprobación')) {
+            throw error;
+        }
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
             throw new Error('Credenciales incorrectas. Verifica tu correo y contraseña.');
         }
-        // Rethrow custom errors or other Firebase errors
-        throw error;
+        throw new Error('Ocurrió un error inesperado al iniciar sesión.');
     }
   };
 
   const signUp = async (email: string, pass: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    // Immediately sign out to force the user to log in and trigger the approval flow.
-    // The user document will be created on their first login attempt.
+    const newUser = userCredential.user;
+
+    const isAutoApproved = ADMIN_EMAILS.includes(newUser.email!);
+    const userProfileData = {
+        uid: newUser.uid,
+        email: newUser.email,
+        approved: isAutoApproved,
+        createdAt: Timestamp.fromDate(new Date()),
+    };
+
+    const userDocRef = doc(db, 'users', newUser.uid);
+    await setDoc(userDocRef, userProfileData);
+
+    // After successfully creating the profile, sign the user out to enforce the approval flow.
     await firebaseSignOut(auth);
+
     return userCredential;
   };
 

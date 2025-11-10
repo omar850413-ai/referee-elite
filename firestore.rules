@@ -9,11 +9,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // The isAdmin logic is handled in the app via the ADMIN_EMAILS config.
-      // This rule just needs to check if the user is authenticated and their
-      // own user document in firestore has the isAdmin flag set to true (which is set by the app).
-      // This check is a bit circular but ensures only designated admins can perform admin actions.
-      // A more robust way would involve custom claims, but this is simpler for now.
+      // Admin check relies on the user's document in Firestore.
       return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
     
@@ -23,13 +19,13 @@ service cloud.firestore {
       allow create: if isOwner(userId);
 
       // A user can read their own profile. Admins can read any profile.
-      allow get: if isOwner(userId);
-      allow list: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow get: if isOwner(userId) || isAdmin();
+      
+      // Admins can list all users for the management panel.
+      allow list: if isAdmin();
 
       // Only an admin can update the 'approved' status of any user.
-      // We check that the person making the request is an admin (via their own user doc)
-      // and that they are ONLY trying to change the 'approved' field.
-      allow update: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true && request.resource.data.keys().hasOnly(['approved']);
+      allow update: if isAdmin() && request.resource.data.keys().hasOnly(['approved']);
       
       // Nobody can delete user profiles for now.
       allow delete: if false;
