@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { MatchAction, Team, CardType, TeamNames, ModalData } from '@/lib/types';
 import {
   Dialog,
@@ -41,10 +41,30 @@ const yellowCardReasons = [
   'Causal 8 : Repetir de manera insistente el gesto de la revisión del VAR.',
 ];
 
+const unsportingBehaviorReasons = [
+  'Por realizar una entrada temeraria',
+  'Por dar un golpe temerario',
+  'Por realizar una zancadilla temeraria',
+  'Por dar una patada temeraria',
+  'Por provocar a un adversario',
+  'Por quitarse la camiseta en la celebración de un gol',
+  'Por realizar una carga temeraria',
+  'Simulación',
+];
+
 const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: CardModalProps) => {
   const [jersey, setJersey] = useState('');
   const [reason, setReason] = useState('');
+  const [subReason, setSubReason] = useState('');
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (isOpen) {
+      setJersey('');
+      setReason('');
+      setSubReason('');
+    }
+  }, [isOpen]);
 
   if (!modalData || modalData.type !== 'card') return null;
 
@@ -53,9 +73,9 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
   const title = cardType === 'yellow' ? `Amonestación (🟨) - ${teamName}` : `Expulsión (🟥) - ${teamName}`;
   const titleColor = cardType === 'yellow' ? 'text-yellow-500' : 'text-red-500';
 
+  const showSubReason = reason === 'Causal 6 : Conducta antideportiva';
+
   const handleClose = () => {
-    setJersey('');
-    setReason('');
     dispatch({ type: 'CLOSE_MODAL' });
   };
 
@@ -77,9 +97,20 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
       toast({ variant: 'destructive', title: 'Error', description: 'La causa es obligatoria.' });
       return;
     }
+    if (showSubReason && !subReason.trim()) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Debe seleccionar un criterio de conducta antideportiva.' });
+      return;
+    }
 
-    dispatch({ type: 'ADD_CARD', payload: { team, cardType, jersey: jerseyNum, reason: reason.trim() } });
+    const finalReason = showSubReason ? `${reason} - ${subReason}` : reason;
+
+    dispatch({ type: 'ADD_CARD', payload: { team, cardType, jersey: jerseyNum, reason: finalReason.trim() } });
     handleClose();
+  };
+  
+  const handleReasonChange = (value: string) => {
+    setReason(value);
+    setSubReason('');
   };
 
   return (
@@ -110,7 +141,7 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
           <div className="space-y-2">
             <Label htmlFor="card-reason">Causa de la Tarjeta:</Label>
             {cardType === 'yellow' ? (
-              <Select onValueChange={setReason} value={reason}>
+              <Select onValueChange={handleReasonChange} value={reason}>
                 <SelectTrigger id="card-reason">
                   <SelectValue placeholder="Seleccione una causal" />
                 </SelectTrigger>
@@ -131,6 +162,26 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
               />
             )}
           </div>
+          {cardType === 'yellow' && showSubReason && (
+            <div className="space-y-2 pl-4 border-l-2 border-primary ml-1 pt-2">
+              <Label htmlFor="card-sub-reason">Criterio de Conducta Antideportiva:</Label>
+              <Select onValueChange={setSubReason} value={subReason}>
+                <SelectTrigger id="card-sub-reason">
+                  <SelectValue placeholder="Seleccione un criterio" />
+                </SelectTrigger>
+                <SelectContent>
+                  {unsportingBehaviorReasons.map((subReason, index) => (
+                    <SelectItem key={index} value={subReason}>
+                      {subReason}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+               <p className="text-xs text-muted-foreground pt-1">
+                Si es otra causa, anótela usando la opción "Anotación Juez".
+              </p>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
