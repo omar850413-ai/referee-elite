@@ -67,17 +67,18 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
 
     switch(type) {
       case 'goals':
-        headers = '<thead><tr><th>Tiempo</th><th># Camiseta</th><th>Detalle</th></tr></thead>';
+        headers = '<thead><tr><th>Tiempo</th><th># Camiseta</th></tr></thead>';
         rows = incidents.map(e => {
           if(e.type !== 'goal') return '';
-          return `<tr><td>${formatTime(e.time)}</td><td>#${e.jersey}</td><td>Gol Anotado</td></tr>`;
+          return `<tr><td>${formatTime(e.time)}</td><td>#${e.jersey}</td></tr>`;
         }).join('');
         break;
       case 'cards':
         headers = '<thead><tr><th>Tiempo</th><th>Identificación</th><th>Causa</th></tr></thead>';
         rows = incidents.map(e => {
           if(e.type !== 'yellow' && e.type !== 'red') return '';
-          return `<tr><td>${formatTime(e.time)}</td><td>${formatJerseyForReport(e.jersey)}</td><td>${e.reason}</td></tr>`;
+          const cardIcon = e.type === 'yellow' ? '🟨' : '🟥';
+          return `<tr><td>${formatTime(e.time)}</td><td>${cardIcon} ${formatJerseyForReport(e.jersey)}</td><td>${e.reason}</td></tr>`;
         }).join('');
         break;
       case 'subs':
@@ -90,7 +91,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
     }
 
     return `
-      <table class="report-table min-w-full">
+      <table class="report-table">
         ${headers}
         <tbody>
           ${rows}
@@ -102,14 +103,14 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-4xl w-[95%]">
-        <div id="report-modal-content" className="p-4">
-          <DialogHeader className="report-title-section">
-            <DialogTitle className="text-3xl font-extrabold mb-4 text-center text-primary-dark">
+        <div id="report-modal-content">
+          <DialogHeader className="report-title-section p-4">
+            <DialogTitle className="text-3xl font-extrabold mb-2 text-center text-primary-dark">
               Reporte Oficial de Partido
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6 text-gray-800">
+          <div className="space-y-6 text-gray-800 p-4">
             <div className="text-center mb-6 border-b-2 border-gray-300 pb-4 report-title-section">
               <p className="text-sm text-gray-500 mb-1">
                 Generado: {currentDate} {currentTime} hrs
@@ -126,7 +127,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
 
             <div id="incidents-detail-grid" className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {['home', 'away'].map((team) => (
-                <div key={team} className="bg-primary/5 p-4 rounded-xl border border-primary/20 space-y-4 incident-section">
+                <div key={team} className="p-4 rounded-xl space-y-4 incident-section">
                   <h4 className="text-xl font-extrabold text-primary-dark border-b-2 border-primary-dark pb-1">
                     {teamNames[team as Team]} ({team === 'home' ? 'LOCAL' : 'VISITANTE'})
                   </h4>
@@ -138,7 +139,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
               ))}
             </div>
 
-            <div className='incident-section'>
+            <div className='incident-section p-4 rounded-xl'>
               <h3 className="text-2xl font-bold text-gray-700 mb-4 border-b pb-2">Anotaciones del Asesor y Correcciones</h3>
               {judgeIncidents.length > 0 ? (
                  <ul className="space-y-2 text-sm">
