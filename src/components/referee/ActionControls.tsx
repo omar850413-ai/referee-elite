@@ -36,10 +36,10 @@ const ActionControls = ({ dispatch, teamNames, fouls }: ActionControlsProps) => 
         </Button>
         <Button
           onClick={() => handleFoul('home')}
-          className="bg-foul-button hover:bg-foul-button-hover text-gray-800 font-bold py-6 text-sm sm:text-base flex justify-center items-center space-x-2"
+          className="bg-foul-button hover:bg-foul-button-hover text-gray-800 font-bold py-6 text-sm sm:text-base flex justify-center items-center space-x-3"
         >
           <span>Falta {teamNames.home.toUpperCase()}</span>
-          <span className="inline-block w-6 text-center font-black bg-black/20 rounded-full">
+          <span className="inline-flex items-center justify-center w-8 h-8 text-center text-lg font-black bg-black/20 rounded-full">
             {fouls.home}
           </span>
         </Button>
@@ -61,10 +61,10 @@ const ActionControls = ({ dispatch, teamNames, fouls }: ActionControlsProps) => 
         </Button>
         <Button
           onClick={() => handleFoul('away')}
-          className="bg-foul-button hover:bg-foul-button-hover text-gray-800 font-bold py-6 text-sm sm:text-base flex justify-center items-center space-x-2"
+          className="bg-foul-button hover:bg-foul-button-hover text-gray-800 font-bold py-6 text-sm sm:text-base flex justify-center items-center space-x-3"
         >
           <span>Falta {teamNames.away.toUpperCase()}</span>
-          <span className="inline-block w-6 text-center font-black bg-black/20 rounded-full">
+          <span className="inline-flex items-center justify-center w-8 h-8 text-center text-lg font-black bg-black/20 rounded-full">
             {fouls.away}
           </span>
         </Button>
