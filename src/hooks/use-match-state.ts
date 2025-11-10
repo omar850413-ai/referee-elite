@@ -57,7 +57,7 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
         timer: { isRunning: true, totalPausedSeconds: p2startTime, startTime: Date.now(), period: 'P2' },
         events: [
           ...state.events,
-          { type: 'period_start', text: 'Inicio Segundo Tiempo (45:00 Forzado)', time: p2startTime },
+          { type: 'period_start', text: 'Inicio Segundo Tiempo (45:00)', time: p2startTime },
         ],
       };
 
