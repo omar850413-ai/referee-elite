@@ -70,6 +70,8 @@ export default {
         'card-yellow': 'hsl(var(--card-yellow))',
         'expel-red': 'hsl(var(--expel-red))',
         'dark-card': 'hsl(var(--dark-card))',
+        'foul-button': 'hsl(var(--foul-button))',
+        'foul-button-hover': 'hsl(var(--foul-button-hover))',
         'add-goal': 'hsl(var(--add-goal))',
         'add-goal-dark': 'hsl(var(--add-goal-dark))',
         'remove-goal': 'hsl(var(--remove-goal))',

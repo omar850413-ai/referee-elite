@@ -64,7 +64,7 @@ const TimerControl = ({ timer, dispatch }: TimerControlProps) => {
   return (
     <>
       <div className="w-full flex justify-center items-center space-x-2">
-        <div className="text-5xl sm:text-7xl font-mono font-black text-gray-800 bg-gray-100 px-6 py-3 rounded-xl shadow-inner min-w-[240px] text-center">
+        <div className="text-5xl sm:text-7xl font-mono font-black text-foreground bg-card px-6 py-3 rounded-xl shadow-inner min-w-[240px] text-center">
           {displayTime}
         </div>
         {(period === 'P1' || period === 'P2') && (
@@ -80,7 +80,7 @@ const TimerControl = ({ timer, dispatch }: TimerControlProps) => {
         )}
       </div>
 
-      <p className="text-lg font-bold text-gray-600">Periodo: {getPeriodStatusText()}</p>
+      <p className="text-lg font-bold text-muted-foreground">Periodo: {getPeriodStatusText()}</p>
 
       <div className="flex flex-wrap justify-center gap-3 w-full">
         {period === 'PRE_MATCH' && <Button onClick={() => dispatch({ type: 'START_P1' })} className="bg-green-600 hover:bg-green-700">▶️ Inicio 1er Tiempo</Button>}

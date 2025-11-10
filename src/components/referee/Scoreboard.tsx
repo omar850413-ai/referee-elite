@@ -38,7 +38,7 @@ const Scoreboard = ({ teamNames, scores, dispatch }: ScoreboardProps) => {
       </div>
 
       {/* Separator */}
-      <span className="text-5xl sm:text-6xl font-black text-gray-300 mx-2 mt-8">-</span>
+      <span className="text-5xl sm:text-6xl font-black text-gray-500 mx-2 mt-8">-</span>
 
       {/* Away Team */}
       <div className="flex flex-col items-center space-y-2 flex-1 max-w-[45%]">
