@@ -88,10 +88,9 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
 
     case 'UPDATE_TEAM_NAME':
       const { team, name } = action.payload;
-      const validatedName = name.trim() || (team === 'home' ? 'LOCAL' : 'VISITANTE');
       return {
         ...state,
-        teamNames: { ...state.teamNames, [team]: validatedName.toUpperCase() },
+        teamNames: { ...state.teamNames, [team]: name.toUpperCase() },
       };
 
     case 'ADD_GOAL': {
