@@ -52,6 +52,25 @@ const unsportingBehaviorReasons = [
   'Simulación',
 ];
 
+const redCardReasons = [
+  'Causal 1: Evitar un gol o una ocasión manifiesta de gol con mano voluntaria',
+  'Causal 2: Evitar un gol o una ocasión manifiesta de gol con mano involuntaria (fuera del área)',
+  'Causal 3: Evitar una ocasión manifiesta de gol con una infracción sancionable con tiro libre',
+  'Causal 4: Juego brusco y grave',
+  'Causal 5: Escupir o morder a alguien',
+  'Causal 6: Conducta violenta',
+  'Causal 7: Emplear lenguaje o actuar de modo ofensivo, insultante o humillante',
+  'Causal 8: Recibir una segunda amonestación en el mismo partido',
+  'Causal 9: Entrar en la sala de vídeo',
+  'Causal (Técnico): Retrasar la reanudación del juego del adversario',
+  'Causal (Técnico): Abandonar el área técnica para protestar o provocar',
+  'Causal (Técnico): Entrar al área técnica adversaria con ánimo de confrontación',
+  'Causal (Técnico): Lanzar un objeto al terreno de juego',
+  'Causal (Técnico): Entrar al terreno de juego para enfrentarse a árbitros/jugadores',
+  'Causal (Técnico): Comportarse de manera agresiva o con intimidación física',
+];
+
+
 const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: CardModalProps) => {
   const [jersey, setJersey] = useState('');
   const [reason, setReason] = useState('');
@@ -140,27 +159,18 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
           </div>
           <div className="space-y-2">
             <Label htmlFor="card-reason">Causa de la Tarjeta:</Label>
-            {cardType === 'yellow' ? (
-              <Select onValueChange={handleReasonChange} value={reason}>
-                <SelectTrigger id="card-reason">
-                  <SelectValue placeholder="Seleccione una causal" />
-                </SelectTrigger>
-                <SelectContent>
-                  {yellowCardReasons.map((reason, index) => (
-                    <SelectItem key={index} value={reason}>
-                      {reason}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input
-                id="card-reason"
-                type="text"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-              />
-            )}
+            <Select onValueChange={handleReasonChange} value={reason}>
+              <SelectTrigger id="card-reason">
+                <SelectValue placeholder="Seleccione una causal" />
+              </SelectTrigger>
+              <SelectContent>
+                {(cardType === 'yellow' ? yellowCardReasons : redCardReasons).map((r, index) => (
+                  <SelectItem key={index} value={r}>
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           {cardType === 'yellow' && showSubReason && (
             <div className="space-y-2 pl-4 border-l-2 border-primary ml-1 pt-2">
@@ -168,7 +178,7 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
               <Select onValueChange={setSubReason} value={subReason}>
                 <SelectTrigger id="card-sub-reason">
                   <SelectValue placeholder="Seleccione un criterio" />
-                </SelectTrigger>
+                </Trigger>
                 <SelectContent>
                   {unsportingBehaviorReasons.map((subReason, index) => (
                     <SelectItem key={index} value={subReason}>
