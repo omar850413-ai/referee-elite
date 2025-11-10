@@ -98,6 +98,11 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
     dispatch({ type: 'CLOSE_MODAL' });
   };
 
+  const handleReasonChange = (value: string) => {
+    setReason(value);
+    setSubReason('');
+  };
+
   const handleSubmit = () => {
     if (!timerIsRunning) {
       toast({
@@ -127,14 +132,10 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
     handleClose();
   };
   
-  const handleReasonChange = (value: string) => {
-    setReason(value);
-    setSubReason('');
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className={`text-2xl font-bold text-center ${titleColor}`}>{title}</DialogTitle>
         </DialogHeader>

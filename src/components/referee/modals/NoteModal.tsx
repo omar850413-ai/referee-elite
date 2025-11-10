@@ -50,7 +50,7 @@ const NoteModal = ({ isOpen, dispatch, timerIsRunning }: NoteModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-accent text-center">
             Anotar Incidente en Tiempo Real

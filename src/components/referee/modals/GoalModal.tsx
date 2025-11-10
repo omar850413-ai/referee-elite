@@ -72,7 +72,7 @@ const GoalModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: G
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle
             className={`text-2xl font-bold text-center ${
