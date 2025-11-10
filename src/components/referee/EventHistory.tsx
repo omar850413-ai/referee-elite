@@ -17,7 +17,7 @@ const EventHistory = ({ events, teamNames }: EventHistoryProps) => {
   const getEventContent = (event: GameEvent) => {
     const timeFormatted = formatTime(event.time);
     const teamName = event.team ? teamNames[event.team] : '';
-    const teamClass = event.team === 'home' ? 'text-primary' : 'text-primary-dark';
+    const teamClass = event.team === 'home' ? 'text-primary' : 'text-secondary';
     let icon = '';
     let content = '';
     let baseClass = 'p-3 rounded-lg flex justify-between items-center text-sm font-semibold transition duration-150 ease-in-out';
@@ -34,12 +34,12 @@ const EventHistory = ({ events, teamNames }: EventHistoryProps) => {
       case 'period_start':
         icon = '▶️';
         content = `<span class="font-bold">${event.text.toUpperCase()}</span>`;
-        styleClass = 'bg-green-100 border-l-4 border-green-500 text-green-700';
+        styleClass = 'bg-green-500/10 border-l-4 border-green-500 text-green-300';
         break;
       case 'period_end':
         icon = '🏁';
         content = `<span class="font-bold">${event.text.toUpperCase()}</span>`;
-        styleClass = 'bg-red-100 border-l-4 border-red-500 text-red-700';
+        styleClass = 'bg-red-500/10 border-l-4 border-red-500 text-red-300';
         break;
       case 'goal':
         icon = '⚽';
@@ -53,8 +53,8 @@ const EventHistory = ({ events, teamNames }: EventHistoryProps) => {
         break;
       case 'foul':
         icon = '🚨';
-        content = `<span class="text-gray-600">${teamName}</span>: Falta cometida.`;
-        styleClass = 'bg-gray-200 border-l-4 border-gray-500';
+        content = `<span class="text-muted-foreground">${teamName}</span>: Falta cometida.`;
+        styleClass = 'bg-muted/30 border-l-4 border-muted-foreground';
         break;
       case 'yellow':
         icon = '🟨';
@@ -69,12 +69,12 @@ const EventHistory = ({ events, teamNames }: EventHistoryProps) => {
       case 'note':
         icon = '📝';
         content = `ANOTACIÓN: <em>${event.text}</em>`;
-        styleClass = 'bg-orange-500/10 border-l-4 border-orange-500';
+        styleClass = 'bg-accent/10 border-l-4 border-accent';
         break;
       case 'substitution':
         icon = '🔄';
         content = `<span class="${teamClass}">${teamName}</span>: Sale <strong>#${event.playerOut}</strong>, entra <strong>#${event.playerIn}</strong>`;
-        styleClass = 'bg-blue-500/10 border-l-4 border-blue-500';
+        styleClass = 'bg-primary/10 border-l-4 border-primary';
         break;
     }
 
@@ -100,7 +100,7 @@ const EventHistory = ({ events, teamNames }: EventHistoryProps) => {
   return (
     <Card className="shadow-lg">
       <CardHeader>
-        <CardTitle className="text-xl font-bold text-gray-700 border-b pb-2">
+        <CardTitle className="text-xl font-bold text-foreground/80 border-b pb-2">
           Historial de Incidencias
         </CardTitle>
       </CardHeader>

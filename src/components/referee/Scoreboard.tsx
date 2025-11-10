@@ -32,13 +32,13 @@ const Scoreboard = ({ teamNames, scores, dispatch }: ScoreboardProps) => {
           placeholder="Nombre Local"
           className="text-xl font-extrabold text-center border-0 border-b-2 border-primary focus:border-primary-dark focus-visible:ring-0 rounded-none p-1 w-full truncate bg-transparent"
         />
-        <span id="home-score" className="text-6xl sm:text-8xl font-black text-primary-dark">
+        <span id="home-score" className="text-6xl sm:text-8xl font-black text-foreground">
           {scores.home}
         </span>
       </div>
 
       {/* Separator */}
-      <span className="text-5xl sm:text-6xl font-black text-gray-500 mx-2 mt-8">-</span>
+      <span className="text-5xl sm:text-6xl font-black text-muted-foreground mx-2 mt-8">-</span>
 
       {/* Away Team */}
       <div className="flex flex-col items-center space-y-2 flex-1 max-w-[45%]">
@@ -50,7 +50,7 @@ const Scoreboard = ({ teamNames, scores, dispatch }: ScoreboardProps) => {
           placeholder="Nombre Visitante"
           className="text-xl font-extrabold text-center border-0 border-b-2 border-primary focus:border-primary-dark focus-visible:ring-0 rounded-none p-1 w-full truncate bg-transparent"
         />
-        <span id="away-score" className="text-6xl sm:text-8xl font-black text-primary-dark">
+        <span id="away-score" className="text-6xl sm:text-8xl font-black text-foreground">
           {scores.away}
         </span>
       </div>
