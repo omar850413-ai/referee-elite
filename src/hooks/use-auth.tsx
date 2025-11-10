@@ -4,19 +4,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
-import { initializeApp, getApps } from 'firebase/app';
-import firebaseConfig from '@/firebase/config';
 import { ADMIN_EMAILS } from '@/config/admin';
 import type { UserProfile } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-
-// Initialize Firebase
-if (!getApps().length) {
-  initializeApp(firebaseConfig);
-}
-
-const auth = getAuth();
-const db = getFirestore();
+import { useAuthContext, useFirestore } from '@/firebase/provider';
 
 interface AuthContextType {
   user: User | null;
@@ -32,6 +23,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const auth = useAuthContext();
+  const db = useFirestore();
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [auth]);
 
   useEffect(() => {
     if (user) {
@@ -56,6 +49,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (docSnap.exists()) {
           const profileData = docSnap.data() as UserProfile;
           setUserProfile(profileData);
+        } else {
+            // This case can happen briefly after signup before the doc is created
+            setUserProfile(null);
         }
         setLoading(false);
       });
@@ -64,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUserProfile(null);
       setLoading(false);
     }
-  }, [user]);
+  }, [user, db]);
 
   const signUp = async (email: string, pass: string, displayName: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
@@ -80,7 +76,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: isAdmin ? 'admin' : 'user',
     };
 
-    await setDoc(doc(db, 'users', newUser.uid), newUserProfile);
+    try {
+        await setDoc(doc(db, 'users', newUser.uid), newUserProfile);
+    } catch (error) {
+        console.error("Error creating user profile:", error);
+        // Optionally, delete the user if profile creation fails
+        // await newUser.delete();
+        throw new Error("Failed to create user profile.");
+    }
+    
     // Sign out immediately to force them through the approval flow on login
     await firebaseSignOut(auth);
   };
