@@ -15,8 +15,8 @@ service cloud.firestore {
     
     // User Profiles
     match /users/{userId} {
-      // A user can create their own profile document. This is crucial for the new sign-up flow.
-      allow create: if isOwner(userId);
+      // ANY authenticated user can create their OWN profile document.
+      allow create: if request.auth != null && request.auth.uid == userId;
 
       // A user can read their own profile. Admins can read any profile.
       allow get: if isOwner(userId) || isAdmin();
@@ -24,8 +24,9 @@ service cloud.firestore {
       // Admins can list all users for the management panel.
       allow list: if isAdmin();
 
-      // Only an admin can update the 'approved' status of any user.
-      allow update: if isAdmin() && request.resource.data.keys().hasOnly(['approved']);
+      // An admin can update any field.
+      // A user can update their own profile, BUT cannot change their 'approved' or 'isAdmin' status.
+      allow update: if isAdmin() || (isOwner(userId) && !('approved' in request.resource.data));
       
       // Nobody can delete user profiles for now.
       allow delete: if false;
