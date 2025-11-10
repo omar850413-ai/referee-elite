@@ -1,3 +1,4 @@
+
 'use client';
 import type { MatchAction, MatchState, GameEvent, Team } from '@/lib/types';
 import {
@@ -11,19 +12,26 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatTime } from '@/lib/utils';
 import { toJpeg } from 'html-to-image';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { Sparkles, Bot } from 'lucide-react';
+import { analyzeMatch, AnalyzeMatchInput } from '@/ai/flows/analyze-match-flow';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type ReportModalProps = {
   isOpen: boolean;
   dispatch: React.Dispatch<MatchAction>;
   matchState: MatchState;
+  isPremium: boolean;
 };
 
-const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
+const ReportModal = ({ isOpen, dispatch, matchState, isPremium }: ReportModalProps) => {
   const reportContentRef = useRef<HTMLDivElement>(null);
+  const [analysis, setAnalysis] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
   const handleClose = () => {
     dispatch({ type: 'CLOSE_MODAL' });
+    setAnalysis('');
   };
 
   const handleDownloadImage = () => {
@@ -41,6 +49,19 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
       .catch((err) => {
         console.error('oops, something went wrong!', err);
       });
+  };
+
+  const handleAnalyzeMatch = async () => {
+    setIsLoading(true);
+    setAnalysis('');
+    try {
+      const analysisResult = await analyzeMatch(matchState as AnalyzeMatchInput);
+      setAnalysis(analysisResult.analysis);
+    } catch (error) {
+      console.error('Error analyzing match:', error);
+      setAnalysis('Hubo un error al generar el análisis. Por favor, inténtalo de nuevo.');
+    }
+    setIsLoading(false);
   };
 
   const { scores, fouls, teamNames, events, timer } = matchState;
@@ -103,7 +124,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
         headers = '<thead><tr><th>Tiempo</th><th>Sale #</th><th>Entra #</th></tr></thead>';
         rows = incidents.map(e => {
           if(e.type !== 'substitution') return '';
-          return `<tr><td>${e.playerOut}</td><td>${e.playerIn}</td></tr>`;
+          return `<tr><td>${formatTime(e.time)}</td><td>${e.playerOut}</td><td>${e.playerIn}</td></tr>`;
         }).join('');
         break;
     }
@@ -174,15 +195,45 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
                    </ul>
                 ) : <p className="text-gray-500 italic">No hay anotaciones.</p>}
               </div>
+
+              {(isPremium || analysis) && (
+                <div className="incident-section p-4 rounded-xl no-print">
+                  <h3 className="text-2xl font-bold text-gray-700 mb-4 border-b pb-2 flex items-center">
+                    <Bot className="mr-2 text-accent" /> Análisis del Partido por IA
+                  </h3>
+                  {isLoading ? (
+                    <div className="space-y-2">
+                       <Skeleton className="h-4 w-full" />
+                       <Skeleton className="h-4 w-full" />
+                       <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  ) : analysis ? (
+                    <p className="text-gray-700 whitespace-pre-wrap">{analysis}</p>
+                  ) : (
+                    <p className="text-gray-500 italic">
+                      Obtén un análisis detallado del partido, incluyendo momentos clave, patrones de comportamiento y sugerencias para mejorar tu gestión del encuentro.
+                    </p>
+                  )}
+                </div>
+              )}
+
             </div>
           </div>
         </ScrollArea>
 
-        <DialogFooter className="mt-4 no-print border-t pt-4">
-          <Button variant="outline" onClick={handleClose}>
+        <DialogFooter className="mt-4 no-print border-t pt-4 flex-wrap justify-end">
+          <Button variant="outline" onClick={handleClose} className="mb-2 sm:mb-0">
             Cerrar
           </Button>
-          <Button onClick={handleDownloadImage} className="bg-indigo-600 hover:bg-indigo-700">
+          <Button
+            onClick={handleAnalyzeMatch}
+            disabled={!isPremium || isLoading}
+            className="bg-accent hover:bg-orange-700 text-black font-bold mb-2 sm:mb-0"
+          >
+            <Sparkles className="mr-2 h-5 w-5" />
+            {isLoading ? 'Analizando...' : 'Obtener Análisis con IA (Premium)'}
+          </Button>
+          <Button onClick={handleDownloadImage} className="bg-indigo-600 hover:bg-indigo-700 mb-2 sm:mb-0">
             Descargar Informe como Imagen
           </Button>
         </DialogFooter>
