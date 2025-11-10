@@ -23,7 +23,8 @@ export type PeriodEndEvent = BaseEvent & { type: 'period_end'; text: string };
 export type GoalEvent = BaseEvent & { type: 'goal'; team: Team; jersey: number };
 export type GoalRemovedEvent = BaseEvent & { type: 'goal_removed'; team: Team; jersey: number; reason: string };
 export type FoulEvent = BaseEvent & { type: 'foul'; team: Team };
-export type CardEvent = BaseEvent & { type: 'yellow' | 'red'; team: Team; jersey: number; reason: string };
+// jersey can be a number (player) or a string (staff role)
+export type CardEvent = BaseEvent & { type: 'yellow' | 'red'; team: Team; jersey: number | string; reason: string };
 export type NoteEvent = BaseEvent & { type: 'note'; text: string };
 
 export type GameEvent =
@@ -60,7 +61,7 @@ export type MatchAction =
   | { type: 'ADD_GOAL'; payload: { team: Team; jersey: number } }
   | { type: 'REMOVE_GOAL'; payload: { team: Team; jersey: number } }
   | { type: 'ADD_FOUL'; payload: { team: Team } }
-  | { type: 'ADD_CARD'; payload: { team: Team; cardType: CardType; jersey: number; reason: string } }
+  | { type: 'ADD_CARD'; payload: { team: Team; cardType: CardType; jersey: number | string; reason: string } }
   | { type: 'ADD_NOTE'; payload: { text: string } }
   | { type: 'RESET_TIMER' }
   | { type: 'RESET_MATCH' }

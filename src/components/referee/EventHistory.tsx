@@ -23,6 +23,13 @@ const EventHistory = ({ events, teamNames }: EventHistoryProps) => {
     let baseClass = 'p-3 rounded-lg flex justify-between items-center text-sm font-semibold transition duration-150 ease-in-out';
     let styleClass = '';
 
+    const formatJersey = (jersey: number | string) => {
+      if (typeof jersey === 'string') {
+        return `<strong>${jersey}</strong>`;
+      }
+      return `Camiseta <strong>#${jersey}</strong>`;
+    };
+
     switch (event.type) {
       case 'period_start':
         icon = '▶️';
@@ -51,12 +58,12 @@ const EventHistory = ({ events, teamNames }: EventHistoryProps) => {
         break;
       case 'yellow':
         icon = '🟨';
-        content = `<span class="${teamClass}">${teamName}</span>: Amonestación a <strong>#${event.jersey}</strong> por: <em>${event.reason}</em>`;
+        content = `<span class="${teamClass}">${teamName}</span>: Amonestación a ${formatJersey(event.jersey)} por: <em>${event.reason}</em>`;
         styleClass = 'bg-yellow-400/30 border-l-4 border-yellow-500';
         break;
       case 'red':
         icon = '🟥';
-        content = `<span class="${teamClass}">${teamName}</span>: Expulsión a <strong>#${event.jersey}</strong>. Causa: <em>${event.reason}</em>`;
+        content = `<span class="${teamClass}">${teamName}</span>: Expulsión a ${formatJersey(event.jersey)}. Causa: <em>${event.reason}</em>`;
         styleClass = 'bg-red-500/30 border-l-4 border-red-500';
         break;
       case 'note':

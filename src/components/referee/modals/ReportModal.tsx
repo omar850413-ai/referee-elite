@@ -49,6 +49,13 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
   const judgeIncidents = events
     .filter((e) => e.type === 'note' || e.type === 'goal_removed')
     .sort((a, b) => a.time - b.time);
+    
+  const formatJerseyForReport = (jersey: number | string) => {
+      if (typeof jersey === 'string') {
+        return jersey;
+      }
+      return `#${jersey}`;
+  };
 
   const generateIncidentTable = (incidents: GameEvent[]) => {
     if (incidents.length === 0) {
@@ -56,13 +63,21 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
     }
     return `
       <table class="report-table min-w-full">
-        <thead><tr><th>Tiempo</th><th>Camiseta</th><th>Detalle</th></tr></thead>
+        <thead><tr><th>Tiempo</th><th>Identificación</th><th>Detalle</th></tr></thead>
         <tbody>
           ${incidents
             .map((e) => {
               if (e.type !== 'goal' && e.type !== 'yellow' && e.type !== 'red') return '';
-              const detail = e.type === 'goal' ? 'Gol Anotado' : `Causa: ${e.reason}`;
-              return `<tr><td>${formatTime(e.time)}</td><td>#${e.jersey}</td><td>${detail}</td></tr>`;
+              let detail = '';
+              let identification = '';
+              if (e.type === 'goal') {
+                detail = 'Gol Anotado';
+                identification = `#${e.jersey}`;
+              } else { // yellow or red card
+                detail = `Causa: ${e.reason}`;
+                identification = formatJerseyForReport(e.jersey);
+              }
+              return `<tr><td>${formatTime(e.time)}</td><td>${identification}</td><td>${detail}</td></tr>`;
             })
             .join('')}
         </tbody>

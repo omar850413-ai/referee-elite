@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
@@ -70,16 +71,25 @@ const redCardReasons = [
   'Causal (Técnico): Comportarse de manera agresiva o con intimidación física',
 ];
 
+const staffRoles = [
+  'Director Tecnico',
+  'Auxiliar Tecnico',
+  'Otro miembro del Cuerpo Tecnico',
+];
 
 const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: CardModalProps) => {
+  const [recipientType, setRecipientType] = useState<'player' | 'staff'>('player');
   const [jersey, setJersey] = useState('');
+  const [staffRole, setStaffRole] = useState('');
   const [reason, setReason] = useState('');
   const [subReason, setSubReason] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
+      setRecipientType('player');
       setJersey('');
+      setStaffRole('');
       setReason('');
       setSubReason('');
     }
@@ -112,11 +122,24 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
       });
       return;
     }
-    const jerseyNum = parseInt(jersey);
-    if (!jerseyNum || jerseyNum < 1 || jerseyNum > 999) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Número de camiseta inválido.' });
-      return;
+
+    let targetIdentifier: string;
+
+    if (recipientType === 'player') {
+      const jerseyNum = parseInt(jersey);
+      if (!jerseyNum || jerseyNum < 1 || jerseyNum > 999) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Número de camiseta inválido.' });
+        return;
+      }
+      targetIdentifier = `#${jerseyNum}`;
+    } else { // staff
+      if (!staffRole) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Debe seleccionar un rol del cuerpo técnico.' });
+        return;
+      }
+      targetIdentifier = staffRole;
     }
+    
     if (!reason.trim()) {
       toast({ variant: 'destructive', title: 'Error', description: 'La causa es obligatoria.' });
       return;
@@ -128,7 +151,8 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
 
     const finalReason = showSubReason ? `${reason} - ${subReason}` : reason;
 
-    dispatch({ type: 'ADD_CARD', payload: { team, cardType, jersey: jerseyNum, reason: finalReason.trim() } });
+    // The jersey parameter is now a string to accommodate both jersey numbers and staff roles
+    dispatch({ type: 'ADD_CARD', payload: { team, cardType, jersey: targetIdentifier, reason: finalReason.trim() } });
     handleClose();
   };
   
@@ -147,17 +171,57 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
           </Alert>
         )}
         <div className="space-y-4 py-4">
+          
           <div className="space-y-2">
-            <Label htmlFor="card-player-number">Número de Camiseta (1-999):</Label>
-            <Input
-              id="card-player-number"
-              type="number"
-              min="1"
-              max="999"
-              value={jersey}
-              onChange={(e) => setJersey(e.target.value)}
-            />
+            <Label>Destinatario de la tarjeta:</Label>
+            <RadioGroup
+              value={recipientType}
+              onValueChange={(value: 'player' | 'staff') => setRecipientType(value)}
+              className="flex space-x-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="player" id="r_player" />
+                <Label htmlFor="r_player">Jugador</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="staff" id="r_staff" />
+                <Label htmlFor="r_staff">Miembro del Cuerpo Técnico</Label>
+              </div>
+            </RadioGroup>
           </div>
+
+          {recipientType === 'player' && (
+            <div className="space-y-2">
+              <Label htmlFor="card-player-number">Número de Camiseta (1-999):</Label>
+              <Input
+                id="card-player-number"
+                type="number"
+                min="1"
+                max="999"
+                value={jersey}
+                onChange={(e) => setJersey(e.target.value)}
+              />
+            </div>
+          )}
+
+          {recipientType === 'staff' && (
+             <div className="space-y-2">
+              <Label htmlFor="staff-role">Cargo del Cuerpo Técnico:</Label>
+              <Select onValueChange={setStaffRole} value={staffRole}>
+                <SelectTrigger id="staff-role">
+                  <SelectValue placeholder="Seleccione un cargo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {staffRoles.map((role, index) => (
+                    <SelectItem key={index} value={role}>
+                      {role}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="card-reason">Causa de la Tarjeta:</Label>
             <Select onValueChange={handleReasonChange} value={reason}>
