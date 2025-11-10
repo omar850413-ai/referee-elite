@@ -38,6 +38,7 @@ body {
     --add-goal-dark: 146 68% 29%;
     --remove-goal: 0 84% 60%;
     --remove-goal-dark: 0 72% 51%;
+    --timer-background: 39 100% 90%;
   }
 
   .dark {
@@ -71,6 +72,7 @@ body {
     --add-goal-dark: 146 68% 29%;
     --remove-goal: 0 84% 60%;
     --remove-goal-dark: 0 72% 51%;
+    --timer-background: 30 80% 20%;
   }
 }
 
@@ -105,6 +107,13 @@ body {
 
   body > *:not([data-radix-portal]) {
     display: none !important;
+  }
+
+  body > [data-radix-portal] {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: 100% !important;
   }
 
   body > [data-radix-portal] * {

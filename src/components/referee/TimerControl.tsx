@@ -64,7 +64,7 @@ const TimerControl = ({ timer, dispatch }: TimerControlProps) => {
   return (
     <>
       <div className="w-full flex justify-center items-center space-x-2">
-        <div className="text-5xl sm:text-7xl font-mono font-black text-foreground bg-card px-6 py-3 rounded-xl shadow-inner min-w-[240px] text-center">
+        <div className="text-5xl sm:text-7xl font-mono font-black text-foreground bg-timer-background px-6 py-3 rounded-xl shadow-inner min-w-[240px] text-center">
           {displayTime}
         </div>
         {(period === 'P1' || period === 'P2') && (

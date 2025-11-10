@@ -76,6 +76,7 @@ export default {
         'add-goal-dark': 'hsl(var(--add-goal-dark))',
         'remove-goal': 'hsl(var(--remove-goal))',
         'remove-goal-dark': 'hsl(var(--remove-goal-dark))',
+        'timer-background': 'hsl(var(--timer-background))',
       },
       borderRadius: {
         lg: 'var(--radius)',
