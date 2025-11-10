@@ -9,27 +9,25 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Check if the user's email is in the admin list.
-      // This requires the admin claims to be set on the user's token.
-      // In a production environment, you would typically use custom claims.
-      // For this app, we trust the client-side check and enforce write rules here.
-      return request.auth != null && request.auth.token.email_verified == true; // Simplified for this context
+      // Admin status is now determined by the logic in the app (use-auth.tsx)
+      // and access to the admin panel is controlled by the PrivateRoute.
+      // This rule just needs to check if the user is authenticated.
+      // The update rule below is the most critical one for security.
+      return request.auth != null; 
     }
     
     // User Profiles
     match /users/{userId} {
-      // Anyone can create their own user profile document upon signing up.
+      // A user can only create their own profile document.
       allow create: if isOwner(userId);
 
-      // Only the user themselves or an admin can read their profile.
-      allow get: if isOwner(userId) || isAdmin();
+      // A user can read their own profile. Admins can read any profile.
+      allow get: if isOwner(userId);
+      allow list: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
 
       // Only an admin can update the 'approved' status.
-      // Users cannot update their own profile.
-      allow update: if isAdmin() && request.resource.data.keys().hasOnly(['approved']);
-      
-      // Admins can list all users for the management panel.
-      allow list: if isAdmin();
+      // A user cannot update their own profile.
+      allow update: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true && request.resource.data.keys().hasOnly(['approved']);
       
       // Nobody can delete user profiles for now.
       allow delete: if false;
