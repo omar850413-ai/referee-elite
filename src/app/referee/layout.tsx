@@ -30,7 +30,7 @@ export default function RefereeLayout({
     );
   }
 
-  if (!approved) {
+  if (user && !approved) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center p-4">
         <Shield className="h-16 w-16 text-yellow-500" />
@@ -45,9 +45,14 @@ export default function RefereeLayout({
     );
   }
   
-  if (user) {
+  if (user && approved) {
      return <>{children}</>;
   }
 
-  return null;
+  return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+        <Loader className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4 text-lg text-muted-foreground">Cargando...</p>
+      </div>
+    );
 }
