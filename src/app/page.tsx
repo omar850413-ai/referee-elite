@@ -48,11 +48,11 @@ export default function LandingPage() {
                 </div>
               </div>
               <Image
-                src="https://picsum.photos/seed/referee-app/600/400"
+                src="https://picsum.photos/seed/soccer-referee/600/400"
                 width="600"
                 height="400"
                 alt="Hero"
-                data-ai-hint="soccer referee technology"
+                data-ai-hint="soccer referee"
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square shadow-xl"
               />
             </div>
