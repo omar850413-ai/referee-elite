@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         let userProfileData: { approved: boolean, isAdmin: boolean };
 
         if (!userDoc.exists()) {
-          // New user, create their profile document
+          // This case is a failsafe. The primary profile creation now happens in signUp.
           const isAutoApproved = ADMIN_EMAILS.includes(user.email!);
           await setDoc(userDocRef, {
             uid: user.uid,
@@ -103,9 +103,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, pass: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    // The onAuthStateChanged listener will handle creating the user document.
-    // We sign out immediately to enforce the approval flow.
+    const newUser = userCredential.user;
+
+    // Create user profile document in Firestore immediately after user creation
+    const userDocRef = doc(db, 'users', newUser.uid);
+    const isAutoApproved = ADMIN_EMAILS.includes(newUser.email!);
+
+    await setDoc(userDocRef, {
+      uid: newUser.uid,
+      email: newUser.email,
+      approved: isAutoApproved,
+      createdAt: Timestamp.fromDate(new Date()),
+    });
+    
+    // Now that the profile is created, sign the user out to enforce approval flow.
     await firebaseSignOut(auth);
+    
     return userCredential;
   };
 
