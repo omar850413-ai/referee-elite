@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/hooks/use-auth';
 
 export const metadata: Metadata = {
   title: "Referee's Edge",
@@ -27,10 +26,8 @@ export default function RootLayout({
         <meta name="theme-color" content="#0C4A6E" />
       </head>
       <body className="font-body bg-background text-foreground antialiased">
-        <AuthProvider>
-          {children}
-          <Toaster />
-        </AuthProvider>
+        {children}
+        <Toaster />
       </body>
     </html>
   );

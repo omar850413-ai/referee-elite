@@ -20,15 +20,10 @@ import SubstitutionModal from '@/components/referee/modals/SubstitutionModal';
 import ResetTimerModal from '@/components/referee/modals/ResetTimerModal';
 import ResetMatchModal from '@/components/referee/modals/ResetMatchModal';
 import ReportModal from '@/components/referee/modals/ReportModal';
-import { useAuth } from '@/hooks/use-auth';
-import { Button } from '@/components/ui/button';
-import { LogOut, Shield } from 'lucide-react';
-import Link from 'next/link';
 
 export default function RefereeApp() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { teamNames, scores, fouls, timer, events, activeModal, modalData } = state;
-  const { user, signOut } = useAuth();
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-4 sm:p-6 md:p-8">
@@ -36,22 +31,6 @@ export default function RefereeApp() {
         <h1 className="text-2xl sm:text-4xl font-black tracking-tighter text-primary-dark [text-shadow:1px_1px_0px_hsl(var(--muted-foreground)),2px_2px_0px_hsl(var(--secondary))]">
           ⚽ Soy Asesor FMF ⚽
         </h1>
-        <div className="flex items-center gap-2">
-          {user?.isAdmin && (
-              <Button asChild variant="secondary" size="sm">
-                <Link href="/admin">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Admin
-                </Link>
-              </Button>
-          )}
-          {user && (
-            <Button onClick={signOut} variant="ghost" size="sm">
-              <LogOut className="mr-2 h-4 w-4" />
-              Cerrar Sesión
-            </Button>
-          )}
-        </div>
       </header>
 
       <Card className="p-4 rounded-xl shadow-lg border border-gray-100 dark:border-border">
@@ -76,7 +55,7 @@ export default function RefereeApp() {
       <ReportControls dispatch={dispatch as React.Dispatch<MatchAction>} />
 
       <p className="text-xs text-center text-muted-foreground pt-4">
-        ID de Usuario: <span className="font-mono">{user?.email || 'demo-user'}</span> | App ID: <span className="font-mono">referee-edge-v8</span>
+        App ID: <span className="font-mono">referee-edge-v8-public</span>
       </p>
 
       {/* Modals */}

@@ -3,33 +3,9 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    function isAdmin() {
-      // Admin check relies on the user's document in Firestore.
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-    
-    // User Profiles
-    match /users/{userId} {
-      // ANY authenticated user can create their OWN profile document.
-      allow create: if request.auth != null && request.auth.uid == userId;
-
-      // A user can read their own profile. Admins can read any profile.
-      allow get: if isOwner(userId) || isAdmin();
-      
-      // Admins can list all users for the management panel.
-      allow list: if isAdmin();
-
-      // An admin can update any field.
-      // A user can update their own profile, BUT cannot change their 'approved' or 'isAdmin' status.
-      allow update: if isAdmin() || (isOwner(userId) && !('approved' in request.resource.data));
-      
-      // Nobody can delete user profiles for now.
-      allow delete: if false;
+    // By default, deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
