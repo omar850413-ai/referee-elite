@@ -39,21 +39,5 @@ service cloud.firestore {
       allow write: if isAdmin();
       allow read: if isAdmin();
     }
-    
-    // Legacy rules from previous version. These may or may not be needed.
-    match /artifacts/{appId}/users/{userId}/match_control/current {
-      allow create: if isOwner(userId);
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
-    }
-     match /roles_admin/{uid} {
-      allow create: if isSignedIn() && request.auth.uid == uid;
-      allow get: if true;
-      allow list: if false; 
-      allow update: if false;
-      allow delete: if false;
-    }
   }
 }
