@@ -1,6 +1,4 @@
 
-import type { User as FirebaseUser } from 'firebase/auth';
-
 export type Team = 'home' | 'away';
 export type CardType = 'yellow' | 'red';
 export type Period = 'PRE_MATCH' | 'P1' | 'HALF_TIME' | 'P2' | 'FULL_TIME';
@@ -73,15 +71,3 @@ export type MatchAction =
   | { type: 'OPEN_MODAL'; payload: ModalData }
   | { type: 'CLOSE_MODAL' };
 
-// Auth & User Types
-export interface UserProfile {
-  uid: string;
-  email: string;
-  displayName: string;
-  approved: boolean;
-  role: 'user' | 'admin';
-}
-
-export interface AppUser extends FirebaseUser {
-  profile: UserProfile | null;
-}
