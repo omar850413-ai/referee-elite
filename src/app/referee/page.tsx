@@ -20,16 +20,28 @@ import SubstitutionModal from '@/components/referee/modals/SubstitutionModal';
 import ResetTimerModal from '@/components/referee/modals/ResetTimerModal';
 import ResetMatchModal from '@/components/referee/modals/ResetMatchModal';
 import ReportModal from '@/components/referee/modals/ReportModal';
+import { useAuth } from '@/hooks/use-auth';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
 
 export default function RefereeApp() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { teamNames, scores, fouls, timer, events, activeModal, modalData } = state;
+  const { user, signOut } = useAuth();
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-4 sm:p-6 md:p-8">
-      <h1 className="text-4xl sm:text-5xl font-extrabold text-center text-primary-dark border-b-4 border-primary-dark pb-2 drop-shadow-lg">
-        ⚽ Soy Asesor FMF ⚽
-      </h1>
+       <header className="flex justify-between items-center border-b-4 border-primary-dark pb-2 drop-shadow-lg">
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-center text-primary-dark">
+          ⚽ Soy Asesor FMF ⚽
+        </h1>
+        {user && (
+          <Button onClick={signOut} variant="ghost" size="sm">
+            <LogOut className="mr-2 h-4 w-4" />
+            Cerrar Sesión
+          </Button>
+        )}
+      </header>
 
       <Card className="p-4 rounded-xl shadow-lg border border-gray-100">
         <div className="flex flex-col items-center space-y-4">
@@ -53,7 +65,7 @@ export default function RefereeApp() {
       <ReportControls dispatch={dispatch as React.Dispatch<MatchAction>} />
 
       <p className="text-xs text-center text-muted-foreground pt-4">
-        ID de Usuario: <span className="font-mono">demo-user</span> | App ID: <span className="font-mono">referee-edge-v8</span>
+        ID de Usuario: <span className="font-mono">{user?.email || 'demo-user'}</span> | App ID: <span className="font-mono">referee-edge-v8</span>
       </p>
 
       {/* Modals */}
