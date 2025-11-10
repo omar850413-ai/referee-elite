@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { doc, getDoc, Firestore } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface UserProfile {
   approved: boolean;
