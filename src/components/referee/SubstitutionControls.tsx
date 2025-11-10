@@ -18,14 +18,14 @@ const SubstitutionControls = ({ dispatch, teamNames }: SubstitutionControlsProps
     <div className="grid grid-cols-2 gap-3">
       <Button
         onClick={() => openSubstitutionModal('home')}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-6 text-sm sm:text-base"
+        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-6 text-xs sm:text-sm"
       >
         <RefreshCcw className="mr-2 h-5 w-5" />
         Sustitución {teamNames.home.toUpperCase()}
       </Button>
       <Button
         onClick={() => openSubstitutionModal('away')}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-6 text-sm sm:text-base"
+        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-6 text-xs sm:text-sm"
       >
         <RefreshCcw className="mr-2 h-5 w-5" />
         Sustitución {teamNames.away.toUpperCase()}

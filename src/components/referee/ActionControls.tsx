@@ -24,22 +24,22 @@ const ActionControls = ({ dispatch, teamNames, fouls }: ActionControlsProps) => 
       <div className="flex flex-col space-y-3">
         <Button
           onClick={() => openGoalModal('home', false)}
-          className="bg-add-goal hover:bg-add-goal-dark text-white font-bold py-6 text-sm sm:text-base"
+          className="bg-add-goal hover:bg-add-goal-dark text-white font-bold py-6 text-xs sm:text-sm"
         >
           ⚽ Gol {teamNames.home.toUpperCase()} (+)
         </Button>
         <Button
           onClick={() => openGoalModal('home', true)}
-          className="bg-remove-goal hover:bg-remove-goal-dark text-white font-bold py-6 text-sm sm:text-base"
+          className="bg-remove-goal hover:bg-remove-goal-dark text-white font-bold py-6 text-xs sm:text-sm"
         >
           ➖ Quitar Gol {teamNames.home.toUpperCase()}
         </Button>
         <Button
           onClick={() => handleFoul('home')}
-          className="bg-foul-button hover:bg-foul-button-hover text-gray-800 font-bold py-6 text-sm sm:text-base flex justify-center items-center space-x-3"
+          className="bg-foul-button hover:bg-foul-button-hover text-gray-800 font-bold py-6 text-xs sm:text-sm flex justify-center items-center space-x-2 sm:space-x-3"
         >
           <span>Falta {teamNames.home.toUpperCase()}</span>
-          <span className="inline-flex items-center justify-center w-8 h-8 text-center text-lg font-black bg-black/20 rounded-full">
+          <span className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 text-center text-xl sm:text-2xl font-black bg-black/20 rounded-full">
             {fouls.home}
           </span>
         </Button>
@@ -49,22 +49,22 @@ const ActionControls = ({ dispatch, teamNames, fouls }: ActionControlsProps) => 
       <div className="flex flex-col space-y-3">
         <Button
           onClick={() => openGoalModal('away', false)}
-          className="bg-add-goal hover:bg-add-goal-dark text-white font-bold py-6 text-sm sm:text-base"
+          className="bg-add-goal hover:bg-add-goal-dark text-white font-bold py-6 text-xs sm:text-sm"
         >
           ⚽ Gol {teamNames.away.toUpperCase()} (+)
         </Button>
         <Button
           onClick={() => openGoalModal('away', true)}
-          className="bg-remove-goal hover:bg-remove-goal-dark text-white font-bold py-6 text-sm sm:text-base"
+          className="bg-remove-goal hover:bg-remove-goal-dark text-white font-bold py-6 text-xs sm:text-sm"
         >
           ➖ Quitar Gol {teamNames.away.toUpperCase()}
         </Button>
         <Button
           onClick={() => handleFoul('away')}
-          className="bg-foul-button hover:bg-foul-button-hover text-gray-800 font-bold py-6 text-sm sm:text-base flex justify-center items-center space-x-3"
+          className="bg-foul-button hover:bg-foul-button-hover text-gray-800 font-bold py-6 text-xs sm:text-sm flex justify-center items-center space-x-2 sm:space-x-3"
         >
           <span>Falta {teamNames.away.toUpperCase()}</span>
-          <span className="inline-flex items-center justify-center w-8 h-8 text-center text-lg font-black bg-black/20 rounded-full">
+          <span className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 text-center text-xl sm:text-2xl font-black bg-black/20 rounded-full">
             {fouls.away}
           </span>
         </Button>

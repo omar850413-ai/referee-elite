@@ -33,7 +33,7 @@ const ResetMatchModal = ({ isOpen, dispatch }: ResetMatchModalProps) => {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="text-red-600">
-            🚨 Confirmar Reinicio de Partido COMPLETO
+            🚨 Confirmar Reinicio de Partido
           </AlertDialogTitle>
           <AlertDialogDescription>
             ESTO BORRARÁ TODO: Marcador, Faltas, Cronómetro, Historial de Eventos y Nombres de

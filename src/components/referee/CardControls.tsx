@@ -23,15 +23,15 @@ const CardControls = ({ dispatch, teamNames }: CardControlsProps) => {
       <div className="flex flex-col space-y-3">
         <Button
           onClick={() => openCardModal('yellow', 'home')}
-          className="bg-card-yellow text-gray-800 font-bold py-3 px-2 rounded-xl transition duration-200 shadow-lg flex flex-col items-center justify-center text-xs sm:text-sm w-full h-full hover:bg-yellow-400"
+          className="bg-card-yellow text-gray-800 font-bold py-3 px-1 sm:px-2 rounded-xl transition duration-200 shadow-lg flex flex-col items-center justify-center text-[10px] sm:text-sm w-full h-full hover:bg-yellow-400"
         >
-          <span className="text-xl">🟨 {teamNames.home.toUpperCase()}</span> Amonestación
+          <span className="text-lg sm:text-xl">🟨 {teamNames.home.toUpperCase()}</span> Amonestación
         </Button>
         <Button
           onClick={() => openCardModal('red', 'home')}
-          className="bg-expel-red text-white font-bold py-3 px-2 rounded-xl transition duration-200 shadow-lg flex flex-col items-center justify-center text-xs sm:text-sm w-full h-full hover:bg-red-600"
+          className="bg-expel-red text-white font-bold py-3 px-1 sm:px-2 rounded-xl transition duration-200 shadow-lg flex flex-col items-center justify-center text-[10px] sm:text-sm w-full h-full hover:bg-red-600"
         >
-          <span className="text-xl">🟥 {teamNames.home.toUpperCase()}</span> Expulsión
+          <span className="text-lg sm:text-xl">🟥 {teamNames.home.toUpperCase()}</span> Expulsión
         </Button>
       </div>
 
@@ -40,9 +40,9 @@ const CardControls = ({ dispatch, teamNames }: CardControlsProps) => {
         <Button
           onClick={openNoteModal}
           variant="secondary"
-          className="font-bold py-6 px-2 rounded-xl shadow-lg flex flex-col items-center justify-center text-sm sm:text-base h-full"
+          className="font-bold py-6 px-1 sm:px-2 rounded-xl shadow-lg flex flex-col items-center justify-center text-xs sm:text-sm h-full"
         >
-          <span className="text-xl">📝</span> Anotacion Asesor
+          <span className="text-lg sm:text-xl">📝</span> Anotacion Asesor
         </Button>
       </div>
 
@@ -50,15 +50,15 @@ const CardControls = ({ dispatch, teamNames }: CardControlsProps) => {
       <div className="flex flex-col space-y-3">
         <Button
           onClick={() => openCardModal('yellow', 'away')}
-          className="bg-card-yellow text-gray-800 font-bold py-3 px-2 rounded-xl transition duration-200 shadow-lg flex flex-col items-center justify-center text-xs sm:text-sm w-full h-full hover:bg-yellow-400"
+          className="bg-card-yellow text-gray-800 font-bold py-3 px-1 sm:px-2 rounded-xl transition duration-200 shadow-lg flex flex-col items-center justify-center text-[10px] sm:text-sm w-full h-full hover:bg-yellow-400"
         >
-          <span className="text-xl">🟨 {teamNames.away.toUpperCase()}</span> Amonestación
+          <span className="text-lg sm:text-xl">🟨 {teamNames.away.toUpperCase()}</span> Amonestación
         </Button>
         <Button
           onClick={() => openCardModal('red', 'away')}
-          className="bg-expel-red text-white font-bold py-3 px-2 rounded-xl transition duration-200 shadow-lg flex flex-col items-center justify-center text-xs sm:text-sm w-full h-full hover:bg-red-600"
+          className="bg-expel-red text-white font-bold py-3 px-1 sm:px-2 rounded-xl transition duration-200 shadow-lg flex flex-col items-center justify-center text-[10px] sm:text-sm w-full h-full hover:bg-red-600"
         >
-          <span className="text-xl">🟥 {teamNames.away.toUpperCase()}</span> Expulsión
+          <span className="text-lg sm:text-xl">🟥 {teamNames.away.toUpperCase()}</span> Expulsión
         </Button>
       </div>
     </div>
