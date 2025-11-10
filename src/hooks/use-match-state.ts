@@ -51,13 +51,13 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
       };
 
     case 'START_P2':
-      const p2startTime = 46 * 60; // 2760 seconds
+      const p2startTime = 45 * 60; // 2700 seconds for a clean 45:00 start for P2
       return {
         ...state,
         timer: { isRunning: true, totalPausedSeconds: p2startTime, startTime: Date.now(), period: 'P2' },
         events: [
           ...state.events,
-          { type: 'period_start', text: 'Inicio Segundo Tiempo (46:00)', time: p2startTime },
+          { type: 'period_start', text: 'Inicio Segundo Tiempo (45:00)', time: p2startTime },
         ],
       };
 
@@ -152,8 +152,8 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
         return state;
       }
       const { team, playerIn, playerOut } = action.payload;
-      // For halftime substitutions, the time should be the end of P1.
-      const substitutionTime = state.timer.period === 'HALF_TIME' ? state.events.find(e => e.type === 'period_end' && e.text.includes('Primer Tiempo'))?.time || currentTime : currentTime;
+      // If substitution is during halftime, force the time to 45:00.
+      const substitutionTime = state.timer.period === 'HALF_TIME' ? 45 * 60 : currentTime;
       return {
         ...state,
         events: [...state.events, { type: 'substitution', team, time: substitutionTime, playerIn, playerOut }],
