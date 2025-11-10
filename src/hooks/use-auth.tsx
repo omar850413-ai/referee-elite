@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useContext, createContext, ReactNode } from 'react';
 import { User, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/firebase/client';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { ADMIN_EMAILS } from '@/config/admin';
 
@@ -60,8 +60,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           };
           setUser(userProfile);
         } else {
-          // This case might happen if the user doc creation failed after sign up.
-          // For now, we treat them as a regular user without special properties.
            const userProfile: UserProfile = {
             ...user,
             uid: user.uid,
@@ -107,16 +105,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     const user = userCredential.user;
     
-    // Create a document in Firestore for the new user
     const userDocRef = doc(db, 'users', user.uid);
     await setDoc(userDocRef, {
       uid: user.uid,
       email: user.email,
       approved: ADMIN_EMAILS.includes(user.email!), // Admin users are auto-approved
-      createdAt: new Date(),
+      createdAt: Timestamp.fromDate(new Date()),
     });
     
-    // Sign the user out immediately after registration
     await firebaseSignOut(auth);
 
     return userCredential;
