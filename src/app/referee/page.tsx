@@ -32,7 +32,7 @@ export default function RefereeApp() {
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-4 sm:p-6 md:p-8">
        <header className="flex justify-between items-center border-b-4 border-primary-dark pb-2 drop-shadow-lg">
-        <h1 className="text-4xl sm:text-5xl font-extrabold text-center text-primary-dark">
+        <h1 className="text-2xl sm:text-4xl font-black tracking-tighter text-primary-dark [text-shadow:1px_1px_0px_hsl(var(--muted-foreground)),2px_2px_0px_hsl(var(--secondary))]">
           ⚽ Soy Asesor FMF ⚽
         </h1>
         {user && (
@@ -43,7 +43,7 @@ export default function RefereeApp() {
         )}
       </header>
 
-      <Card className="p-4 rounded-xl shadow-lg border border-gray-100">
+      <Card className="p-4 rounded-xl shadow-lg border border-gray-100 dark:border-border">
         <div className="flex flex-col items-center space-y-4">
           <TimerControl timer={timer} dispatch={dispatch as React.Dispatch<MatchAction>} />
           <Scoreboard
