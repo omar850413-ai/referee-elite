@@ -1,100 +1,60 @@
-'use client';
 
-import { useReducer } from 'react';
-import { reducer, initialState } from '@/hooks/use-match-state';
-import type { MatchState, MatchAction } from '@/lib/types';
-import { Card } from '@/components/ui/card';
-import TimerControl from '@/components/referee/TimerControl';
-import Scoreboard from '@/components/referee/Scoreboard';
-import ActionControls from '@/components/referee/ActionControls';
-import CardControls from '@/components/referee/CardControls';
-import SubstitutionControls from '@/components/referee/SubstitutionControls';
-import EventHistory from '@/components/referee/EventHistory';
-import ReportControls from '@/components/referee/ReportControls';
+import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 
-import GoalModal from '@/components/referee/modals/GoalModal';
-import CardModal from '@/components/referee/modals/CardModal';
-import NoteModal from '@/components/referee/modals/NoteModal';
-import SubstitutionModal from '@/components/referee/modals/SubstitutionModal';
-import ResetTimerModal from '@/components/referee/modals/ResetTimerModal';
-import ResetMatchModal from '@/components/referee/modals/ResetMatchModal';
-import ReportModal from '@/components/referee/modals/ReportModal';
-
-export default function RefereeApp() {
-  const [state, dispatch] = useReducer(reducer, initialState);
-  const { teamNames, scores, fouls, timer, events, activeModal, modalData } = state;
-
+export default function LandingPage() {
   return (
-    <div className="max-w-4xl mx-auto space-y-6 p-4 sm:p-6 md:p-8">
-      <h1 className="text-4xl sm:text-5xl font-extrabold text-center text-primary-dark border-b-4 border-primary-dark pb-2 drop-shadow-lg">
-        ⚽ Soy Asesor FMF ⚽
-      </h1>
-
-      <Card className="p-4 rounded-xl shadow-lg border border-gray-100">
-        <div className="flex flex-col items-center space-y-4">
-          <TimerControl timer={timer} dispatch={dispatch as React.Dispatch<MatchAction>} />
-          <Scoreboard
-            teamNames={teamNames}
-            scores={scores}
-            dispatch={dispatch as React.Dispatch<MatchAction>}
-          />
-        </div>
-      </Card>
-
-      <ActionControls dispatch={dispatch as React.Dispatch<MatchAction>} teamNames={teamNames} fouls={fouls} />
-
-      <CardControls dispatch={dispatch as React.Dispatch<MatchAction>} teamNames={teamNames} />
-
-      <SubstitutionControls dispatch={dispatch as React.Dispatch<MatchAction>} teamNames={teamNames} />
-
-      <EventHistory events={events} teamNames={teamNames} />
-
-      <ReportControls dispatch={dispatch as React.Dispatch<MatchAction>} />
-
-      <p className="text-xs text-center text-muted-foreground pt-4">
-        ID de Usuario: <span className="font-mono">demo-user</span> | App ID: <span className="font-mono">referee-edge-v8</span>
-      </p>
-
-      {/* Modals */}
-      <GoalModal
-        isOpen={activeModal === 'goal'}
-        dispatch={dispatch}
-        modalData={modalData}
-        timerIsRunning={timer.isRunning}
-        teamNames={teamNames}
-      />
-      <CardModal
-        isOpen={activeModal === 'card'}
-        dispatch={dispatch}
-        modalData={modalData}
-        timerIsRunning={timer.isRunning}
-        teamNames={teamNames}
-      />
-      <NoteModal
-        isOpen={activeModal === 'note'}
-        dispatch={dispatch}
-        timerIsRunning={timer.isRunning}
-      />
-       <SubstitutionModal
-        isOpen={activeModal === 'substitution'}
-        dispatch={dispatch}
-        modalData={modalData}
-        timerIsRunning={timer.isRunning}
-        teamNames={teamNames}
-      />
-      <ResetTimerModal
-        isOpen={activeModal === 'reset-timer'}
-        dispatch={dispatch}
-      />
-      <ResetMatchModal
-        isOpen={activeModal === 'reset-match'}
-        dispatch={dispatch}
-      />
-      <ReportModal
-        isOpen={activeModal === 'report'}
-        dispatch={dispatch}
-        matchState={state as MatchState}
-      />
+    <div className="flex flex-col min-h-screen">
+      <header className="px-4 lg:px-6 h-14 flex items-center bg-background shadow-sm">
+        <Link href="#" className="flex items-center justify-center" prefetch={false}>
+          <span className="text-xl font-bold">⚽ Soy Asesor FMF ⚽</span>
+        </Link>
+        <nav className="ml-auto flex gap-4 sm:gap-6">
+          <Link href="/referee" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
+            App
+          </Link>
+        </nav>
+      </header>
+      <main className="flex-1">
+        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-gradient-to-br from-blue-100 via-white to-blue-50">
+          <div className="container px-4 md:px-6">
+            <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
+              <div className="flex flex-col justify-center space-y-4">
+                <div className="space-y-2">
+                  <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none text-primary-dark">
+                    La Herramienta Definitiva para Asesores de Árbitros
+                  </h1>
+                  <p className="max-w-[600px] text-muted-foreground md:text-xl">
+                    Gestiona cada detalle del partido en tiempo real. Desde goles y tarjetas hasta sustituciones y faltas, todo en una interfaz intuitiva y fácil de usar.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 min-[400px]:flex-row">
+                  <Link
+                    href="/referee"
+                    className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                    prefetch={false}
+                  >
+                    Ir a la App <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+              <Image
+                src="https://picsum.photos/seed/referee-app/600/400"
+                width="600"
+                height="400"
+                alt="Hero"
+                data-ai-hint="soccer referee technology"
+                className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square shadow-xl"
+              />
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
+        <p className="text-xs text-muted-foreground">&copy; 2024 Soy Asesor FMF. Todos los derechos reservados.</p>
+      </footer>
     </div>
   );
 }
