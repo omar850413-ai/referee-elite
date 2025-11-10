@@ -1,4 +1,5 @@
 
+
 export type Team = 'home' | 'away';
 export type CardType = 'yellow' | 'red';
 export type Period = 'PRE_MATCH' | 'P1' | 'HALF_TIME' | 'P2' | 'FULL_TIME';
@@ -71,3 +72,9 @@ export type MatchAction =
   | { type: 'OPEN_MODAL'; payload: ModalData }
   | { type: 'CLOSE_MODAL' };
 
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  approved: boolean;
+}

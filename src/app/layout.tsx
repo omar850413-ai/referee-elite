@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
   title: "Referee's Edge",
@@ -27,7 +28,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#0C4A6E" />
       </head>
       <body className="font-body bg-background text-foreground antialiased">
-        {children}
+        <FirebaseClientProvider>{children}</FirebaseClientProvider>
         <Toaster />
       </body>
     </html>

@@ -1,91 +1,59 @@
-/**
- * @file Firestore Security Rules for Referee's Edge Application
- *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for match data, supplemented by an admin role system for managing user access.
- *
- * Data Structure:
- * - User-specific match data is nested under /artifacts/{appId}/users/{userId}/match_control/current.
- * - Admin users are managed via documents in the /roles_admin/{uid} collection. The existence of a document for a UID grants admin privileges.
- *
- * Key Security Decisions:
- * - Users can only access their own match data.
- * - Only authenticated users can access the app.
- * - Admin status is determined by the existence of a document in `/roles_admin/{uid}`.
- * - Listing of user match data is allowed only for the owner of the data.
- *
- * Denormalization for Authorization:
- * The design avoids complex `get()` calls by using path-based ownership and a dedicated `/roles_admin/{uid}` collection for admin roles.  If future features require subcollections, denormalize authorization-related data to avoid `get()` calls and maintain authorization independence.
- *
- * Structural Segregation:
- * There is no need for structural segregation in this model, as all user data is inherently private and stored under the user's specific path.
- */
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Checks if the request is made by an authenticated user.
-     * @return {boolean} True if the user is signed in, false otherwise.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * @description Checks if the authenticated user's UID matches the provided userId.
-     * @param {string} userId The user ID to compare against the authenticated user's UID.
-     * @return {boolean} True if the UIDs match, false otherwise.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * @description Checks if the requesting user is an admin.
-     * @return {boolean} True if the user is an admin, false otherwise.
-     */
     function isAdmin() {
-      return get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.exists == true;
+      return exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    /**
-     * @description Rules for documents storing admin users.
-     * @path /roles_admin/{uid}
-     * @allow (create) - An admin can create a document for themselves, granting themselves admin privileges.
-     * @deny (create) - A non-admin user attempts to create a document in the /roles_admin/ collection.
-     * @allow (get) - Anyone can get a document.
-     * @deny (update) - No updates allowed.
-     * @deny (delete) - No deletes allowed.
-     * @principle Enforces role-based access control; only admins can grant admin privileges.
-     */
-    match /roles_admin/{uid} {
-      allow create: if isSignedIn() && request.auth.uid == uid;
-      allow get: if true;
-      allow list: if false; //No listing of admins.
-      allow update: if false;
+    match /users/{userId} {
+      // Create: Any signed-in user can create their own profile during sign-up.
+      allow create: if isOwner(userId);
+      
+      // Read: Any signed-in user can read their own profile. Admins can read any profile.
+      allow get: if isOwner(userId) || isAdmin();
+      
+      // Update: Users can update their own profile. Admins can only update the 'approved' field.
+      allow update: if isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName'])
+                    || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['approved']));
+
+      // List: Only admins can list all users.
+      allow list: if isAdmin();
+      
+      // Delete: No one can delete user profiles for safety.
       allow delete: if false;
     }
 
-    /**
-     * @description Rules for user-specific match control data.
-     * @path /artifacts/{appId}/users/{userId}/match_control/current
-     * @allow (create) - A user can create their own match data (initial creation).
-     * @deny (create) - A user attempts to create match data for another user.
-     * @allow (get) - A user can get their own match data.
-     * @deny (get) - A user attempts to get another user's match data.
-     * @allow (update) - A user can update their own match data.
-     * @deny (update) - A user attempts to update another user's match data.
-     * @allow (delete) - A user can delete their own match data.
-     * @deny (delete) - A user attempts to delete another user's match data.
-     * @principle Enforces document ownership for writes and reads.
-     */
+    match /admins/{userId} {
+      // Only an existing admin can make another user an admin.
+      // For bootstrapping, the first admin must be created manually in the Firebase console.
+      allow write: if isAdmin();
+      allow read: if isAdmin();
+    }
+    
+    // Legacy rules from previous version. These may or may not be needed.
     match /artifacts/{appId}/users/{userId}/match_control/current {
       allow create: if isOwner(userId);
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
       allow update: if isOwner(userId);
       allow delete: if isOwner(userId);
+    }
+     match /roles_admin/{uid} {
+      allow create: if isSignedIn() && request.auth.uid == uid;
+      allow get: if true;
+      allow list: if false; 
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }

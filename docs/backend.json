@@ -98,53 +98,55 @@
         "timestamp",
         "team"
       ]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores public information about a user.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's public display name."
+        },
+        "approved": {
+          "type": "boolean",
+          "description": "Whether the user has been approved by an admin."
+        }
+      },
+      "required": [
+        "email",
+        "displayName",
+        "approved"
+      ]
     }
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/artifacts/{appId}/users/{userId}/match_control/current",
-        "definition": {
-          "entityName": "Match",
-          "schema": {
-            "$ref": "#/backend/entities/Match"
-          },
-          "description": "Stores the current match state for a user. Data includes scores, timer information, and game events.",
-          "params": [
-            {
-              "name": "appId",
-              "description": "The unique identifier of the application instance."
-            },
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
-          ]
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Stores user profile information."
+    },
+    "/admins/{userId}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "isAdmin": {
+            "type": "boolean"
+          }
         }
       },
-      {
-        "path": "/roles_admin/{uid}",
-        "definition": {
-          "entityName": "role",
-          "schema": {
-            "$ref": "#/backend/entities/role"
-          },
-          "description": "Collection to store admin users, identified by their unique user ID. The existence of a document signals admin role.",
-          "params": [
-            {
-              "name": "uid",
-              "description": "The unique identifier of the user."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "This design prioritizes security and scalability for the 'Referee's Edge' application, focusing on simple security rules and efficient data access. It addresses the need for admin control over user access, score tracking, timer management, incident logging, and PDF report generation.\n\n**Authorization Independence & DBAC:**\nAdmin user management is handled using the `/roles_admin/{uid}` collection. The existence of a document with the user's `uid` in this collection grants admin privileges. This approach avoids complex hierarchical `get()` calls in security rules.\n\n**Path-Based Ownership for User-Specific Data:**\nMatch control data is stored under `/artifacts/{appId}/users/{userId}/match_control/current`. This structure enforces clear ownership. Only the user with the corresponding `userId` can read and write match data.  The structure nests the match data which simplifies rules.\n\n**QAPs (Rules are not Filters):**\nList operations are secured by the path-based ownership model. Admins cannot list all matches, as they do not \"own\" the documents and would need to know or enumerate userIDs to read match documents.\n\n**Invariants:**\nThe design ensures that the match data can only be modified by the authenticated user (`request.auth.uid`). Timestamps and other data integrity checks can be enforced within security rules.\n\n**Admin User Management:**\nTo support the user's request for admin control over app access, the structure includes a `/roles_admin/{uid}` collection. This collection stores user IDs of admin-approved users. The existence of a document in this collection grants admin privileges.\n\nThe application utilizes anonymous authentication in conjunction with custom tokens or email/password login for administrative approval purposes.\n\n**Denormalization (Not strictly required based on current schema but good practice for future scalability):**\nCurrently, no parent data needs to be directly inherited for authorization. However, if future features require subcollections under `/artifacts/{appId}/users/{userId}/match_control/current`, consider denormalizing authorization-related data from the parent document into the subcollection documents to maintain authorization independence."
+      "description": "A collection to designate users as administrators. The existence of a document grants admin rights."
+    }
   }
 }
