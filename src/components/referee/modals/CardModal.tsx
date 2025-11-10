@@ -178,7 +178,7 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
               <Select onValueChange={setSubReason} value={subReason}>
                 <SelectTrigger id="card-sub-reason">
                   <SelectValue placeholder="Seleccione un criterio" />
-                </Trigger>
+                </SelectTrigger>
                 <SelectContent>
                   {unsportingBehaviorReasons.map((subReason, index) => (
                     <SelectItem key={index} value={subReason}>
