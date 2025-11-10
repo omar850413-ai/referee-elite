@@ -43,15 +43,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         let userProfileData: { approved: boolean, isAdmin: boolean };
 
         if (!userDoc.exists()) {
-          // This case is a failsafe. The primary profile creation now happens in signUp.
+          // This case handles profile creation on first login
           const isAutoApproved = ADMIN_EMAILS.includes(user.email!);
-          await setDoc(userDocRef, {
-            uid: user.uid,
-            email: user.email,
-            approved: isAutoApproved,
-            createdAt: Timestamp.fromDate(new Date()),
-          });
           userProfileData = { approved: isAutoApproved, isAdmin: isAutoApproved };
+          try {
+            await setDoc(userDocRef, {
+              uid: user.uid,
+              email: user.email,
+              approved: userProfileData.approved,
+              createdAt: Timestamp.fromDate(new Date()),
+            });
+          } catch (error) {
+            console.error("Error creating user profile:", error);
+            // Sign out if profile creation fails to prevent being in a broken state
+            await firebaseSignOut(auth);
+            setUser(null);
+            setLoading(false);
+            return;
+          }
         } else {
           // Existing user
           const userData = userDoc.data();
@@ -59,6 +68,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             approved: userData.approved,
             isAdmin: ADMIN_EMAILS.includes(user.email!),
           };
+        }
+        
+        // If user is not approved, sign them out and prevent setting the user object
+        if (!userProfileData.approved) {
+           await firebaseSignOut(auth);
+           setUser(null);
+           setLoading(false);
+           // We throw an error that can be caught in the signIn function
+           throw new Error('Tu cuenta está pendiente de aprobación por un administrador.');
         }
 
         const userProfile: UserProfile = {
@@ -89,34 +107,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, pass: string) => {
-    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-    const userDocRef = doc(db, 'users', userCredential.user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (userDoc.exists() && userDoc.data().approved) {
-      return userCredential;
-    } else {
-      await firebaseSignOut(auth);
-      throw new Error('Tu cuenta está pendiente de aprobación por un administrador.');
-    }
+    return signInWithEmailAndPassword(auth, email, pass);
   };
 
   const signUp = async (email: string, pass: string) => {
+    // Just create the user in Auth. Profile creation and approval flow is handled by onAuthStateChanged.
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    const newUser = userCredential.user;
-
-    // Create user profile document in Firestore immediately after user creation
-    const userDocRef = doc(db, 'users', newUser.uid);
-    const isAutoApproved = ADMIN_EMAILS.includes(newUser.email!);
-
-    await setDoc(userDocRef, {
-      uid: newUser.uid,
-      email: newUser.email,
-      approved: isAutoApproved,
-      createdAt: Timestamp.fromDate(new Date()),
-    });
     
-    // Now that the profile is created, sign the user out to enforce approval flow.
+    // Sign the user out immediately after creation. They must log in to trigger the profile creation.
     await firebaseSignOut(auth);
     
     return userCredential;
