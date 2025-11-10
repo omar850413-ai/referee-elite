@@ -253,7 +253,7 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
                 </SelectContent>
               </Select>
                <p className="text-xs text-muted-foreground pt-1">
-                Si es otra causa, anótela usando la opción "Anotación Juez".
+                Si es otra causa, anótela usando la opción "Anotacion Asesor".
               </p>
             </div>
           )}

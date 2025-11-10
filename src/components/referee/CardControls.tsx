@@ -42,7 +42,7 @@ const CardControls = ({ dispatch, teamNames }: CardControlsProps) => {
           variant="secondary"
           className="font-bold py-6 px-2 rounded-xl shadow-lg flex flex-col items-center justify-center text-sm sm:text-base h-full"
         >
-          <span className="text-xl">📝</span> Anotación Juez
+          <span className="text-xl">📝</span> Anotacion Asesor
         </Button>
       </div>
 

@@ -133,7 +133,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
             </div>
 
             <div className='incident-section'>
-              <h3 className="text-2xl font-bold text-gray-700 mb-4 border-b pb-2">Anotaciones del Juez y Correcciones</h3>
+              <h3 className="text-2xl font-bold text-gray-700 mb-4 border-b pb-2">Anotaciones del Asesor y Correcciones</h3>
               {judgeIncidents.length > 0 ? (
                  <ul className="space-y-2 text-sm">
                   {judgeIncidents.map((e, i) => (

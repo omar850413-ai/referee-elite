@@ -72,6 +72,9 @@ const NoteModal = ({ isOpen, dispatch, timerIsRunning }: NoteModalProps) => {
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
+           <p className="text-xs text-muted-foreground pt-1">
+                Si es otra causa, anótela usando la opción "Anotacion Asesor".
+              </p>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
