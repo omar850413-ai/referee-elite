@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useReducer, useState } from 'react';
+import { useReducer } from 'react';
 import { reducer, initialState } from '@/hooks/use-match-state';
 import type { MatchState, MatchAction } from '@/lib/types';
 import { Card } from '@/components/ui/card';
@@ -20,12 +20,9 @@ import SubstitutionModal from '@/components/referee/modals/SubstitutionModal';
 import ResetTimerModal from '@/components/referee/modals/ResetTimerModal';
 import ResetMatchModal from '@/components/referee/modals/ResetMatchModal';
 import ReportModal from '@/components/referee/modals/ReportModal';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 
 export default function RefereeApp() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const [isPremium, setIsPremium] = useState(false);
   const { teamNames, scores, fouls, timer, events, activeModal, modalData } = state;
 
   return (
@@ -54,11 +51,6 @@ export default function RefereeApp() {
       <EventHistory events={events} teamNames={teamNames} />
 
       <ReportControls dispatch={dispatch as React.Dispatch<MatchAction>} />
-
-      <div className="flex items-center justify-center space-x-2 pt-4">
-        <Switch id="premium-switch" checked={isPremium} onCheckedChange={setIsPremium} />
-        <Label htmlFor="premium-switch" className="font-bold text-lg text-accent">Activar Cuenta Premium ✨</Label>
-      </div>
 
       <p className="text-xs text-center text-muted-foreground pt-4">
         ID de Usuario: <span className="font-mono">demo-user</span> | App ID: <span className="font-mono">referee-edge-v8</span>
@@ -103,7 +95,6 @@ export default function RefereeApp() {
         isOpen={activeModal === 'report'}
         dispatch={dispatch}
         matchState={state as MatchState}
-        isPremium={isPremium}
       />
     </div>
   );
