@@ -83,6 +83,7 @@ export default function RefereeApp() {
         dispatch={dispatch}
         modalData={modalData}
         timerIsRunning={timer.isRunning}
+        period={timer.period}
         teamNames={teamNames}
       />
       <ResetTimerModal

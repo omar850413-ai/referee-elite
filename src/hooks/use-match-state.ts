@@ -147,14 +147,16 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
     }
 
     case 'ADD_SUBSTITUTION': {
-      if (!state.timer.isRunning) {
-        toast({ variant: 'destructive', title: 'Error', description: 'El cronómetro debe estar corriendo para registrar una sustitución.' });
+      if (!state.timer.isRunning && state.timer.period !== 'HALF_TIME') {
+        toast({ variant: 'destructive', title: 'Error', description: 'Las sustituciones solo se pueden registrar durante el juego o en el entretiempo.' });
         return state;
       }
       const { team, playerIn, playerOut } = action.payload;
+      // For halftime substitutions, the time should be the end of P1.
+      const substitutionTime = state.timer.period === 'HALF_TIME' ? state.events.find(e => e.type === 'period_end' && e.text.includes('Primer Tiempo'))?.time || currentTime : currentTime;
       return {
         ...state,
-        events: [...state.events, { type: 'substitution', team, time: currentTime, playerIn, playerOut }],
+        events: [...state.events, { type: 'substitution', team, time: substitutionTime, playerIn, playerOut }],
       };
     }
 

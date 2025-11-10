@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { MatchAction, Team, TeamNames, ModalData } from '@/lib/types';
+import type { MatchAction, Team, TeamNames, ModalData, Period } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -20,10 +20,11 @@ type SubstitutionModalProps = {
   dispatch: React.Dispatch<MatchAction>;
   modalData: ModalData;
   timerIsRunning: boolean;
+  period: Period;
   teamNames: TeamNames;
 };
 
-const SubstitutionModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: SubstitutionModalProps) => {
+const SubstitutionModal = ({ isOpen, dispatch, modalData, timerIsRunning, period, teamNames }: SubstitutionModalProps) => {
   const [playerIn, setPlayerIn] = useState('');
   const [playerOut, setPlayerOut] = useState('');
   const { toast } = useToast();
@@ -40,17 +41,18 @@ const SubstitutionModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNa
   const { team } = modalData.data as { team: Team };
   const teamName = teamNames[team];
   const title = `Sustitución - ${teamName}`;
+  const canSubstitute = timerIsRunning || period === 'HALF_TIME';
 
   const handleClose = () => {
     dispatch({ type: 'CLOSE_MODAL' });
   };
 
   const handleSubmit = () => {
-    if (!timerIsRunning) {
+    if (!canSubstitute) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'El cronómetro debe estar corriendo para registrar una sustitución.',
+        description: 'Las sustituciones solo se pueden registrar durante el juego o en el entretiempo.',
       });
       return;
     }
@@ -78,10 +80,10 @@ const SubstitutionModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNa
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center text-blue-600">{title}</DialogTitle>
         </DialogHeader>
-        {!timerIsRunning && (
+        {!canSubstitute && (
           <Alert variant="destructive">
             <AlertDescription>
-              El cronómetro debe estar corriendo para registrar una sustitución.
+              Las sustituciones solo se pueden registrar durante el juego o en el entretiempo.
             </AlertDescription>
           </Alert>
         )}
