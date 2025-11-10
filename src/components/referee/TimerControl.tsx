@@ -83,10 +83,10 @@ const TimerControl = ({ timer, dispatch }: TimerControlProps) => {
       <p className="text-lg font-bold text-muted-foreground">Periodo: {getPeriodStatusText()}</p>
 
       <div className="flex flex-wrap justify-center gap-3 w-full">
-        {period === 'PRE_MATCH' && <Button onClick={() => dispatch({ type: 'START_P1' })} className="bg-green-600 hover:bg-green-700">▶️ Inicio 1er Tiempo</Button>}
-        {period === 'P1' && <Button onClick={() => dispatch({ type: 'END_P1' })} className="bg-blue-600 hover:bg-blue-700">⏸️ Finalizar 1er Tiempo</Button>}
-        {period === 'HALF_TIME' && <Button onClick={() => dispatch({ type: 'START_P2' })} className="bg-green-600 hover:bg-green-700">▶️ Inicio 2do Tiempo</Button>}
-        {period === 'P2' && <Button onClick={() => dispatch({ type: 'END_P2' })} className="bg-red-700 hover:bg-red-800">🏁 Finalizar Partido</Button>}
+        {period === 'PRE_MATCH' && <Button onClick={() => dispatch({ type: 'START_P1' })} className="bg-green-600 hover:bg-green-700 text-white">▶️ Inicio 1er Tiempo</Button>}
+        {period === 'P1' && <Button onClick={() => dispatch({ type: 'END_P1' })} className="bg-blue-600 hover:bg-blue-700 text-white">⏸️ Finalizar 1er Tiempo</Button>}
+        {period === 'HALF_TIME' && <Button onClick={() => dispatch({ type: 'START_P2' })} className="bg-green-600 hover:bg-green-700 text-white">▶️ Inicio 2do Tiempo</Button>}
+        {period === 'P2' && <Button onClick={() => dispatch({ type: 'END_P2' })} className="bg-red-700 hover:bg-red-800 text-white">🏁 Finalizar Partido</Button>}
         <Button
           variant="outline"
           onClick={() => dispatch({ type: 'OPEN_MODAL', payload: { type: 'reset-timer' } })}
