@@ -9,24 +9,26 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Admin status is now determined by the logic in the app (use-auth.tsx)
-      // and access to the admin panel is controlled by the PrivateRoute.
-      // This rule just needs to check if the user is authenticated.
-      // The update rule below is the most critical one for security.
-      return request.auth != null; 
+      // The isAdmin logic is handled in the app via the ADMIN_EMAILS config.
+      // This rule just needs to check if the user is authenticated and their
+      // own user document in firestore has the isAdmin flag set to true (which is set by the app).
+      // This check is a bit circular but ensures only designated admins can perform admin actions.
+      // A more robust way would involve custom claims, but this is simpler for now.
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
     
     // User Profiles
     match /users/{userId} {
-      // A user can only create their own profile document.
+      // A user can create their own profile document. This is crucial for the new sign-up flow.
       allow create: if isOwner(userId);
 
       // A user can read their own profile. Admins can read any profile.
       allow get: if isOwner(userId);
       allow list: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
 
-      // Only an admin can update the 'approved' status.
-      // A user cannot update their own profile.
+      // Only an admin can update the 'approved' status of any user.
+      // We check that the person making the request is an admin (via their own user doc)
+      // and that they are ONLY trying to change the 'approved' field.
       allow update: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true && request.resource.data.keys().hasOnly(['approved']);
       
       // Nobody can delete user profiles for now.

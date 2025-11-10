@@ -26,14 +26,14 @@ export default function SignupPage() {
       await signUp(email, password);
       toast({
         title: '¡Registro exitoso!',
-        description: 'Tu cuenta ha sido creada y está pendiente de aprobación por un administrador.',
+        description: 'Tu cuenta ha sido creada. Ahora inicia sesión para completar el proceso.',
       });
       router.push('/login');
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Error en el registro',
-        description: error.message || 'No se pudo crear la cuenta.',
+        description: error.message || 'No se pudo crear la cuenta. La contraseña debe tener al menos 6 caracteres.',
       });
       setIsLoading(false);
     }
@@ -64,7 +64,7 @@ export default function SignupPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="password">Contraseña</Label>
+                <Label htmlFor="password">Contraseña (mínimo 6 caracteres)</Label>
                 <Input
                   id="password"
                   type="password"
