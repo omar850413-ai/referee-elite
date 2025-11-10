@@ -65,6 +65,15 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        // Custom App Colors
+        'primary-dark': 'hsl(var(--primary-dark))',
+        'card-yellow': 'hsl(var(--card-yellow))',
+        'expel-red': 'hsl(var(--expel-red))',
+        'dark-card': 'hsl(var(--dark-card))',
+        'add-goal': 'hsl(var(--add-goal))',
+        'add-goal-dark': 'hsl(var(--add-goal-dark))',
+        'remove-goal': 'hsl(var(--remove-goal))',
+        'remove-goal-dark': 'hsl(var(--remove-goal-dark))',
       },
       borderRadius: {
         lg: 'var(--radius)',
