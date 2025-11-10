@@ -144,7 +144,7 @@ body {
     max-width: 100% !important;
     height: auto !important;
     min-height: auto !important;
-    padding: 1rem !important;
+    padding: 0 !important;
     margin: 0 !important;
     border: none !important;
     box-shadow: none !important;
