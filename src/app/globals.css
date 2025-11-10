@@ -101,7 +101,7 @@ body {
 
 @page {
   size: letter;
-  margin: 0.5in;
+  margin: 0;
 }
 
 @media print {
@@ -109,6 +109,14 @@ body {
     font-size: 10pt;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    background-color: #ffffff;
+    color: #000000;
+  }
+  
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
   }
 
   body > *:not([data-radix-portal]) {
@@ -136,7 +144,7 @@ body {
     max-width: 100% !important;
     height: auto !important;
     min-height: auto !important;
-    padding: 0 !important;
+    padding: 1rem !important;
     margin: 0 !important;
     border: none !important;
     box-shadow: none !important;
@@ -144,6 +152,18 @@ body {
     color: black !important;
     display: block !important;
     border-radius: 0 !important;
+  }
+  
+  #report-modal-content {
+    display: block;
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0.5in !important;
+    box-shadow: none !important;
+    border: none !important;
   }
 
   .no-print {
@@ -168,6 +188,14 @@ body {
   .report-table td {
     background-color: #ffffff !important;
   }
+  
+  .text-primary-dark {
+     color: hsl(194 91% 37%) !important;
+  }
+  
+  .text-gray-700 {
+    color: #4a5568 !important;
+  }
 
   #incidents-detail-grid {
     display: grid !important;
@@ -184,11 +212,5 @@ body {
   .report-title-section {
     page-break-after: avoid;
     page-break-inside: avoid;
-  }
-  
-  #report-modal-content {
-    padding: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
   }
 }

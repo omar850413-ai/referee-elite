@@ -159,7 +159,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
             Cerrar
           </Button>
           <Button onClick={handlePrint} className="bg-indigo-600 hover:bg-indigo-700">
-            💾 Guardar/Imprimir Informe (PDF)
+            💾 Guardar o Imprimir y Descargar PDF
           </Button>
         </DialogFooter>
       </DialogContent>
