@@ -30,9 +30,9 @@ const Scoreboard = ({ teamNames, scores, dispatch }: ScoreboardProps) => {
           onChange={(e) => handleNameChange('home', e.target.value)}
           onBlur={(e) => handleBlur('home', e.target.value)}
           placeholder="Nombre Local"
-          className="text-xl font-extrabold text-center border-0 border-b-2 border-primary focus:border-primary-dark focus-visible:ring-0 rounded-none p-1 w-full truncate bg-transparent"
+          className="text-2xl sm:text-3xl font-extrabold text-center border-0 border-b-2 border-primary focus:border-primary-dark focus-visible:ring-0 rounded-none p-1 w-full truncate bg-transparent"
         />
-        <span id="home-score" className="text-6xl sm:text-8xl font-black text-foreground">
+        <span id="home-score" className="text-7xl sm:text-8xl font-black text-foreground">
           {scores.home}
         </span>
       </div>
@@ -48,9 +48,9 @@ const Scoreboard = ({ teamNames, scores, dispatch }: ScoreboardProps) => {
           onChange={(e) => handleNameChange('away', e.target.value)}
           onBlur={(e) => handleBlur('away', e.target.value)}
           placeholder="Nombre Visitante"
-          className="text-xl font-extrabold text-center border-0 border-b-2 border-primary focus:border-primary-dark focus-visible:ring-0 rounded-none p-1 w-full truncate bg-transparent"
+          className="text-2xl sm:text-3xl font-extrabold text-center border-0 border-b-2 border-primary focus:border-primary-dark focus-visible:ring-0 rounded-none p-1 w-full truncate bg-transparent"
         />
-        <span id="away-score" className="text-6xl sm:text-8xl font-black text-foreground">
+        <span id="away-score" className="text-7xl sm:text-8xl font-black text-foreground">
           {scores.away}
         </span>
       </div>
