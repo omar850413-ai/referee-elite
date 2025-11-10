@@ -9,6 +9,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { formatTime } from '@/lib/utils';
+import { toJpeg } from 'html-to-image';
+import { useRef } from 'react';
 
 type ReportModalProps = {
   isOpen: boolean;
@@ -17,12 +19,27 @@ type ReportModalProps = {
 };
 
 const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
+  const reportContentRef = useRef<HTMLDivElement>(null);
+  
   const handleClose = () => {
     dispatch({ type: 'CLOSE_MODAL' });
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleDownloadImage = () => {
+    if (reportContentRef.current === null) {
+      return;
+    }
+
+    toJpeg(reportContentRef.current, { cacheBust: true, backgroundColor: '#ffffff' })
+      .then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = 'informe-partido.jpg';
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.error('oops, something went wrong!', err);
+      });
   };
 
   const { scores, fouls, teamNames, events, timer } = matchState;
@@ -85,7 +102,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
         headers = '<thead><tr><th>Tiempo</th><th>Sale #</th><th>Entra #</th></tr></thead>';
         rows = incidents.map(e => {
           if(e.type !== 'substitution') return '';
-          return `<tr><td>${formatTime(e.time)}</td><td>${e.playerOut}</td><td>${e.playerIn}</td></tr>`;
+          return `<tr><td>${e.playerOut}</td><td>${e.playerIn}</td></tr>`;
         }).join('');
         break;
     }
@@ -103,7 +120,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-4xl w-[95%]">
-        <div id="report-modal-content">
+        <div id="report-modal-content" ref={reportContentRef} className="bg-white">
           <DialogHeader className="report-title-section p-4">
             <DialogTitle className="text-3xl font-extrabold mb-2 text-center text-primary-dark">
               Reporte Oficial de Partido
@@ -158,8 +175,8 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
           <Button variant="outline" onClick={handleClose}>
             Cerrar
           </Button>
-          <Button onClick={handlePrint} className="bg-indigo-600 hover:bg-indigo-700">
-            💾 Guardar o Imprimir y Descargar PDF
+          <Button onClick={handleDownloadImage} className="bg-indigo-600 hover:bg-indigo-700">
+            Descargar Informe como Imagen
           </Button>
         </DialogFooter>
       </DialogContent>

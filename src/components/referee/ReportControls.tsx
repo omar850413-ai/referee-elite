@@ -24,7 +24,7 @@ const ReportControls = ({ dispatch }: ReportControlsProps) => {
         className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-6 text-base"
       >
         <FileText className="mr-2 h-5 w-5" />
-        Generar Informe PDF
+        Generar Informe
       </Button>
       <Button
         onClick={openResetMatchModal}
