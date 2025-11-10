@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -106,10 +107,38 @@ export default function AdminPage() {
           )}
         </CardContent>
       </Card>
-      <div className="mt-6 p-4 border-l-4 border-yellow-500 bg-yellow-500/10 rounded-r-lg">
-          <h3 className="font-bold text-yellow-800 dark:text-yellow-300">🚨 Instrucción Manual Requerida</h3>
-          <p className="text-sm text-yellow-700 dark:text-yellow-200 mt-1">
-              Para acceder a este panel, tu cuenta debe ser designada como administrador. Esto debe hacerse manualmente en la base de datos de Firebase por razones de seguridad.
+      <div className="mt-8 p-6 border-l-4 border-yellow-500 bg-yellow-500/10 rounded-r-lg">
+          <h3 className="text-xl font-bold text-yellow-800 dark:text-yellow-300 mb-3">🚨 Cómo convertirte en Administrador (Acción Manual Requerida)</h3>
+          <p className="text-sm text-yellow-700 dark:text-yellow-200 mb-4">
+              Para poder usar este panel, tu cuenta necesita privilegios de administrador. Este es un paso de seguridad que debes hacer manualmente una sola vez.
+          </p>
+          <ol className="list-decimal list-inside space-y-3 text-sm text-yellow-800 dark:text-yellow-200">
+              <li>
+                  <strong>Regístrate en la App:</strong> Si aún no lo has hecho, crea una cuenta para ti en la página de registro.
+              </li>
+              <li>
+                  <strong>Obtén tu ID de Usuario (UID):</strong>
+                  <ul className="list-disc list-inside pl-5 mt-1 space-y-1">
+                      <li>Ve a la <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="font-bold underline hover:text-yellow-900 dark:hover:text-yellow-100">Consola de Firebase</a> y selecciona tu proyecto.</li>
+                      <li>En el menú de la izquierda, ve a <strong>Compilación &gt; Authentication</strong>.</li>
+                      <li>En la pestaña <strong>Users</strong>, busca tu correo y copia el valor de la columna <strong>User UID</strong>. Se ve algo como <code className="bg-yellow-200 dark:bg-yellow-800/50 px-1 py-0.5 rounded">aBcDeFgHiJkLmNoPqRsTuVwXyZ12</code>.</li>
+                  </ul>
+              </li>
+              <li>
+                  <strong>Crea el documento de administrador:</strong>
+                   <ul className="list-disc list-inside pl-5 mt-1 space-y-1">
+                      <li>En el menú de la izquierda, ve a <strong>Compilación &gt; Firestore Database</strong>.</li>
+                      <li>Haz clic en <strong>+ Iniciar colección</strong>.</li>
+                      <li>En <strong>ID de la colección</strong>, escribe <code className="bg-yellow-200 dark:bg-yellow-800/50 px-1 py-0.5 rounded">admins</code>.</li>
+                      <li>Haz clic en <strong>Siguiente</strong>.</li>
+                      <li>Para el <strong>ID del documento</strong>, **PEGA** el User UID que copiaste antes.</li>
+                      <li>En <strong>Campo</strong>, escribe <code className="bg-yellow-200 dark:bg-yellow-800/50 px-1 py-0.5 rounded">isAdmin</code>, selecciona el tipo <code className="bg-yellow-200 dark:bg-yellow-800/50 px-1 py-0.5 rounded">boolean</code>, y elige el valor <code className="bg-yellow-200 dark:bg-yellow-800/50 px-1 py-0.5 rounded">true</code>.</li>
+                      <li>Haz clic en <strong>Guardar</strong>.</li>
+                  </ul>
+              </li>
+          </ol>
+           <p className="text-sm text-yellow-700 dark:text-yellow-200 mt-4 font-semibold">
+              Una vez hecho esto, recarga esta página y tendrás acceso completo para administrar a los usuarios.
           </p>
       </div>
     </div>
