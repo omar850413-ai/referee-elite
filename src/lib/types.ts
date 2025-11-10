@@ -1,3 +1,6 @@
+
+import type { User as FirebaseUser } from 'firebase/auth';
+
 export type Team = 'home' | 'away';
 export type CardType = 'yellow' | 'red';
 export type Period = 'PRE_MATCH' | 'P1' | 'HALF_TIME' | 'P2' | 'FULL_TIME';
@@ -23,11 +26,9 @@ export type PeriodEndEvent = BaseEvent & { type: 'period_end'; text: string };
 export type GoalEvent = BaseEvent & { type: 'goal'; team: Team; jersey: number };
 export type GoalRemovedEvent = BaseEvent & { type: 'goal_removed'; team: Team; jersey: number; reason: string };
 export type FoulEvent = BaseEvent & { type: 'foul'; team: Team };
-// jersey can be a number (player) or a string (staff role)
 export type CardEvent = BaseEvent & { type: 'yellow' | 'red'; team: Team; jersey: number | string; reason: string };
 export type NoteEvent = BaseEvent & { type: 'note'; text: string };
 export type SubstitutionEvent = BaseEvent & { type: 'substitution'; team: Team; playerIn: number; playerOut: number };
-
 
 export type GameEvent =
   | PeriodStartEvent
@@ -71,3 +72,16 @@ export type MatchAction =
   | { type: 'RESET_MATCH' }
   | { type: 'OPEN_MODAL'; payload: ModalData }
   | { type: 'CLOSE_MODAL' };
+
+// Auth & User Types
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  approved: boolean;
+  role: 'user' | 'admin';
+}
+
+export interface AppUser extends FirebaseUser {
+  profile: UserProfile | null;
+}
