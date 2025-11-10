@@ -25,10 +25,10 @@ export default function SignupPage() {
     try {
       await signUp(email, password);
       toast({
-        title: '¡Cuenta creada!',
-        description: 'Serás redirigido a la aplicación.',
+        title: '¡Registro exitoso!',
+        description: 'Tu cuenta ha sido creada y está pendiente de aprobación por un administrador.',
       });
-      router.push('/referee');
+      router.push('/login');
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -45,7 +45,7 @@ export default function SignupPage() {
         <CardHeader>
           <CardTitle className="text-xl">Crear una cuenta</CardTitle>
           <CardDescription>
-            Ingresa tus datos para registrarte
+            Ingresa tus datos para registrarte. Tu cuenta requerirá aprobación.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -22,7 +22,8 @@ import ResetMatchModal from '@/components/referee/modals/ResetMatchModal';
 import ReportModal from '@/components/referee/modals/ReportModal';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { LogOut, Shield } from 'lucide-react';
+import Link from 'next/link';
 
 export default function RefereeApp() {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -35,12 +36,22 @@ export default function RefereeApp() {
         <h1 className="text-2xl sm:text-4xl font-black tracking-tighter text-primary-dark [text-shadow:1px_1px_0px_hsl(var(--muted-foreground)),2px_2px_0px_hsl(var(--secondary))]">
           ⚽ Soy Asesor FMF ⚽
         </h1>
-        {user && (
-          <Button onClick={signOut} variant="ghost" size="sm">
-            <LogOut className="mr-2 h-4 w-4" />
-            Cerrar Sesión
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {user?.isAdmin && (
+              <Button asChild variant="secondary" size="sm">
+                <Link href="/admin">
+                  <Shield className="mr-2 h-4 w-4" />
+                  Admin
+                </Link>
+              </Button>
+          )}
+          {user && (
+            <Button onClick={signOut} variant="ghost" size="sm">
+              <LogOut className="mr-2 h-4 w-4" />
+              Cerrar Sesión
+            </Button>
+          )}
+        </div>
       </header>
 
       <Card className="p-4 rounded-xl shadow-lg border border-gray-100 dark:border-border">
