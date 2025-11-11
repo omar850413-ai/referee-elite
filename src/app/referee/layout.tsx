@@ -23,7 +23,8 @@ export default function RefereeLayout({
   const router = useRouter();
   const firestore = useFirestore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -33,29 +34,36 @@ export default function RefereeLayout({
 
   useEffect(() => {
     if (user && firestore) {
-      setLoadingProfile(true);
+      setLoading(true);
       const userProfileRef = doc(firestore, 'users', user.uid);
-      getDoc(userProfileRef)
-        .then((docSnap) => {
-          if (docSnap.exists()) {
-            setProfile(docSnap.data() as UserProfile);
+      const adminDocRef = doc(firestore, 'admins', user.uid);
+
+      Promise.all([getDoc(userProfileRef), getDoc(adminDocRef)])
+        .then(([profileSnap, adminSnap]) => {
+          if (profileSnap.exists()) {
+            setProfile(profileSnap.data() as UserProfile);
           } else {
-            // This case might happen if the user doc creation failed after registration
             console.error('No user profile found!');
             setProfile(null);
           }
+          if (adminSnap.exists()) {
+            setIsAdmin(true);
+          } else {
+            setIsAdmin(false);
+          }
         })
         .catch((error) => {
-          console.error('Error fetching user profile:', error);
+          console.error('Error fetching user data:', error);
           setProfile(null);
+          setIsAdmin(false);
         })
         .finally(() => {
-          setLoadingProfile(false);
+          setLoading(false);
         });
     }
   }, [user, firestore]);
 
-  if (isUserLoading || loadingProfile) {
+  if (isUserLoading || loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -69,7 +77,8 @@ export default function RefereeLayout({
      return null;
   }
 
-  if (!profile.approved) {
+  // Allow access if the user is an admin OR their profile is approved.
+  if (!isAdmin && !profile.approved) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
         <h1 className="text-3xl font-bold text-primary-dark mb-4">
