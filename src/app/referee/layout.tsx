@@ -1,10 +1,10 @@
 
 'use client';
 import React, { useEffect, useState } from 'react';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { signOut } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -22,6 +22,7 @@ export default function RefereeLayout({
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
+  const auth = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -62,6 +63,17 @@ export default function RefereeLayout({
         });
     }
   }, [user, firestore]);
+  
+  const handleLogout = () => {
+    if (auth) {
+      signOut(auth).then(() => {
+        router.push('/login');
+      });
+    } else {
+      router.push('/login');
+    }
+  };
+
 
   if (isUserLoading || loading) {
     return (
@@ -87,7 +99,7 @@ export default function RefereeLayout({
         <p className="max-w-md text-muted-foreground mb-8">
           Tu cuenta ha sido registrada, pero necesitas que un administrador la apruebe para poder acceder a la aplicación. Por favor, contacta al administrador.
         </p>
-        <Button onClick={() => router.push('/login')}>
+        <Button onClick={handleLogout}>
           Volver a Inicio de Sesión
         </Button>
       </div>
