@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useUser, useFirestore, useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocFromCache } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,30 +27,31 @@ export default function RefereeLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Si el hook de usuario está cargando, nosotros también.
+    // If the user hook is loading, we are also loading.
     if (isUserLoading) {
       setLoading(true);
       return;
     }
 
-    // Si no hay usuario después de cargar, lo mandamos al login.
+    // If there's no user after loading, send them to login.
     if (!user) {
       router.push('/login');
       return;
     }
     
-    // Si tenemos usuario y firestore, buscamos sus datos.
+    // If we have a user and firestore, fetch their data.
     if (user && firestore) {
       const userProfileRef = doc(firestore, 'users', user.uid);
       const adminDocRef = doc(firestore, 'admins', user.uid);
 
-      // Usamos Promise.all para obtener ambos documentos a la vez.
-      Promise.all([getDoc(userProfileRef), getDoc(adminDocRef)])
+      // Use Promise.all to get both documents at once.
+      // CRITICAL FIX: Use { source: 'server' } to bypass the cache and get fresh data.
+      Promise.all([getDoc(userProfileRef, { source: 'server' }), getDoc(adminDocRef)])
         .then(([profileSnap, adminSnap]) => {
           if (profileSnap.exists()) {
             setProfile(profileSnap.data() as UserProfile);
           } else {
-            // Si el perfil no existe, es un estado anómalo, lo deslogueamos.
+            // If the profile doesn't exist, it's an anomalous state, log them out.
             console.error('No user profile found for logged-in user.');
             handleLogout();
             return;
@@ -60,11 +61,11 @@ export default function RefereeLayout({
         })
         .catch((error) => {
           console.error('Error fetching user data:', error);
-          setProfile(null);
-          setIsAdmin(false);
+          // On error (e.g. offline), it might be safer to log out.
+          handleLogout();
         })
         .finally(() => {
-          // Terminamos de cargar solo después de tener la respuesta de la DB.
+          // Finished loading only after getting the response from the DB.
           setLoading(false);
         });
     }
@@ -90,13 +91,18 @@ export default function RefereeLayout({
     );
   }
 
-  // Si después de cargar no hay perfil, lo sacamos.
+  // If after loading there's no profile, log them out.
   if (!profile) {
-     handleLogout();
-     return null;
+     // handleLogout is already called in the error/non-existent case,
+     // but as a fallback, we can show a loading/redirecting screen.
+     return (
+        <div className="flex h-screen w-full items-center justify-center bg-background">
+            <p className="text-lg">Redireccionando...</p>
+        </div>
+     );
   }
 
-  // Comprobación de acceso: Permite entrar si es Admin O si su perfil está aprobado.
+  // Access check: Allow entry if they are an Admin OR if their profile is approved.
   if (!isAdmin && !profile.approved) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
@@ -113,7 +119,7 @@ export default function RefereeLayout({
     );
   }
 
-  // Si pasa todas las validaciones, le pasamos la prop 'isAdmin' a los componentes hijos.
+  // If all validations pass, pass the 'isAdmin' prop to child components.
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
       return React.cloneElement(child, { isAdmin } as any);
