@@ -1,9 +1,9 @@
 
 'use client';
+import React, { useEffect, useState } from 'react';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { doc, getDoc, Firestore } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
