@@ -1,8 +1,8 @@
 'use client';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useUser, useFirestore, useAuth, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,8 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Step 3: Update admin context whenever admin status changes
   useEffect(() => {
+    // This hook reacts to `adminDoc` changes from our real-time listener.
+    // `adminDoc` will be `null` for non-admins (due to security rules), and an object for admins.
     setIsAdmin(!!adminDoc);
   }, [adminDoc, setIsAdmin]);
 
@@ -45,7 +47,7 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Centralized loading state
+  // Centralized loading state: wait for auth, profile, AND admin check to complete.
   const isLoading = isAuthLoading || isProfileLoading || isAdminLoading;
 
   if (isLoading) {
@@ -67,9 +69,11 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // User is authenticated, now check for approval
-  const isApproved = profile?.approved;
+  // User is authenticated, now check for approval.
+  // The `adminDoc` will be truthy if the user is an admin.
   const isAdmin = !!adminDoc;
+  // The `profile?.approved` check is safe because `isProfileLoading` is false here.
+  const isApproved = profile?.approved;
 
   if (!isAdmin && !isApproved) {
     return (
