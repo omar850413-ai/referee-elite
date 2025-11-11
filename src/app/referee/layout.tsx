@@ -1,80 +1,40 @@
 'use client';
-import React, { useEffect, useState } from 'react';
-import { useUser, useFirestore, useAuth } from '@/firebase';
+import React, { useEffect, useMemo } from 'react';
+import { useUser, useFirestore, useAuth, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminProvider, useAdmin } from '@/context/AdminContext';
+import { UserProfile } from '@/lib/types';
 
-interface UserProfile {
-  approved: boolean;
-  displayName: string;
-  email: string;
-}
 
 function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading: isAuthLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
   const auth = useAuth();
-  const { isAdmin, setIsAdmin } = useAdmin();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { setIsAdmin } = useAdmin();
 
+  // Step 1: Create memoized document references
+  const userProfileRef = useMemoFirebase(() => 
+    user && firestore ? doc(firestore, 'users', user.uid) : null,
+  [user, firestore]);
+
+  const adminDocRef = useMemoFirebase(() =>
+    user && firestore ? doc(firestore, 'admins', user.uid) : null,
+  [user, firestore]);
+
+  // Step 2: Use the real-time hooks
+  const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  const { data: adminDoc, isLoading: isAdminLoading } = useDoc(adminDocRef);
+
+  // Step 3: Update admin context whenever admin status changes
   useEffect(() => {
-    // If auth is still loading, do nothing yet.
-    if (isUserLoading) {
-      return;
-    }
+    setIsAdmin(!!adminDoc);
+  }, [adminDoc, setIsAdmin]);
 
-    // If auth is done and there's no user, redirect to login.
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-
-    // If there's a user but firestore is not ready, wait.
-    if (!firestore) {
-        return;
-    }
-
-    // Auth is done and we have a user. Now fetch their data.
-    const fetchData = async () => {
-      try {
-        const userProfileRef = doc(firestore, 'users', user.uid);
-        const adminDocRef = doc(firestore, 'admins', user.uid);
-
-        // Fetch both documents from the server to avoid cache issues.
-        const [profileSnap, adminSnap] = await Promise.all([
-          getDoc(userProfileRef, { source: 'server' }),
-          getDoc(adminDocRef, { source: 'server' })
-        ]);
-        
-        if (profileSnap.exists()) {
-          setProfile(profileSnap.data() as UserProfile);
-        } else {
-          setProfile(null);
-        }
-        
-        setIsAdmin(adminSnap.exists());
-        
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        // On error, default to non-admin and no profile to be safe.
-        setProfile(null);
-        setIsAdmin(false);
-      } finally {
-        // All data fetching is complete.
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-    
-  }, [user, isUserLoading, firestore, router, setIsAdmin]);
-  
   const handleLogout = () => {
     if (auth) {
       signOut(auth).then(() => {
@@ -85,26 +45,40 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // While auth is loading OR while we are fetching profile data, show the spinner.
-  if (isUserLoading || loading) {
+  // Centralized loading state
+  const isLoading = isAuthLoading || isProfileLoading || isAdminLoading;
+
+  if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-lg">Cargando...</p>
+        <p className="ml-4 text-lg">Verificando acceso...</p>
       </div>
     );
   }
+  
+  // After all loading is done, check auth status
+  if (!user) {
+    router.push('/login');
+    return ( // Return loader while redirecting
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  // User is authenticated, now check for approval
+  const isApproved = profile?.approved;
+  const isAdmin = !!adminDoc;
 
-  // After all loading is done, check for approval.
-  // A non-existent profile means they are not approved.
-  if (!isAdmin && (!profile || !profile.approved)) {
+  if (!isAdmin && !isApproved) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
         <h1 className="text-3xl font-bold text-primary-dark mb-4">
           Pendiente de Aprobación
         </h1>
         <p className="max-w-md text-muted-foreground mb-8">
-          Tu cuenta ha sido registrada, pero necesitas que un administrador la apruebe para poder acceder a la aplicación. Por favor, contacta al administrador.
+          Tu cuenta ha sido registrada, pero un administrador necesita aprobarla. Por favor, contacta al administrador y vuelve a iniciar sesión después de ser aprobado.
         </p>
         <Button onClick={handleLogout}>
           Volver a Inicio de Sesión

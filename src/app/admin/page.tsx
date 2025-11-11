@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useFirestore } from '@/firebase';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { useState, useMemo } from 'react';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -11,63 +11,37 @@ import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 export default function AdminPage() {
   const firestore = useFirestore();
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  // Memoize the query to prevent re-renders
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      if (!firestore) {
-        return;
-      }
-      try {
-        setLoading(true);
-        const usersCollection = collection(firestore, 'users');
-        const userSnapshot = await getDocs(usersCollection);
-        const userList = userSnapshot.docs.map(doc => ({
-          uid: doc.id,
-          ...doc.data(),
-        })) as UserProfile[];
-        setUsers(userList);
-        setError(null);
-      } catch (error: any) {
-        console.error("Error fetching users:", error);
-        const errorMessage = 'No se pudieron cargar los usuarios. Es posible que todavía no tengas los permisos de administrador correctos.';
-        setError(errorMessage);
-        toast({
-          variant: 'destructive',
-          title: 'Error de Permisos',
-          description: errorMessage,
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
-  }, [firestore, toast]);
+  // Use the real-time collection hook
+  const { data: users, isLoading: loading, error } = useCollection<UserProfile>(usersQuery);
 
   const handleApproval = (uid: string, shouldApprove: boolean) => {
     if (!firestore) return;
 
     const userDocRef = doc(firestore, 'users', uid);
     
-    // Use a non-blocking update for UI responsiveness
+    // Use a non-blocking update for UI responsiveness. 
+    // The UI will update automatically thanks to useCollection.
     updateDocumentNonBlocking(userDocRef, { approved: shouldApprove });
-
-    // Optimistically update the UI
-    setUsers(users.map(user => user.uid === uid ? { ...user, approved: shouldApprove } : user));
     
     toast({
       title: 'Éxito',
       description: `El usuario ha sido ${shouldApprove ? 'aprobado' : 'rechazado'}.`,
     });
   };
+
+  const errorMessage = error ? 'No se pudieron cargar los usuarios. Es posible que todavía no tengas los permisos de administrador correctos.' : null;
 
   return (
     <div className="container mx-auto p-4 sm:p-6 md:p-8">
@@ -83,24 +57,29 @@ export default function AdminPage() {
         <CardHeader>
           <CardTitle>Gestión de Usuarios Registrados</CardTitle>
           <CardDescription>
-            Aquí puedes ver todos los usuarios que han creado una cuenta. Usa los botones para aceptar o rechazar su acceso a la aplicación.
+            Aquí puedes ver todos los usuarios que han creado una cuenta. Usa los botones para aceptar o rechazar su acceso a la aplicación. La lista se actualiza en tiempo real.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading && <p>Cargando usuarios...</p>}
-          {!loading && error && (
+          {loading && (
+             <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="ml-4 text-muted-foreground">Cargando usuarios...</p>
+            </div>
+          )}
+          {!loading && errorMessage && (
              <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error al Cargar Usuarios</AlertTitle>
                 <AlertDescription>
-                    {error} Asegúrate de haber seguido las instrucciones de abajo correctamente.
+                    {errorMessage} Asegúrate de haber seguido las instrucciones de abajo correctamente.
                 </AlertDescription>
             </Alert>
           )}
-          {!loading && !error && users.length === 0 && (
-            <p className="text-muted-foreground italic">No hay usuarios registrados todavía.</p>
+          {!loading && !error && (!users || users.length === 0) && (
+            <p className="text-muted-foreground italic text-center p-4">No hay usuarios registrados todavía.</p>
           )}
-          {!loading && !error && users.length > 0 && (
+          {!loading && !error && users && users.length > 0 && (
             <div className="overflow-x-auto">
                 <Table>
                 <TableHeader>
@@ -125,16 +104,15 @@ export default function AdminPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {!user.approved ? (
+                             {!user.approved ? (
                                <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleApproval(user.uid, true)}>
                                  <CheckCircle className="mr-2 h-4 w-4" /> Aceptar
                                </Button>
-                            ) : null}
-                            {user.approved ? (
+                            ) : (
                               <Button size="sm" variant="destructive" onClick={() => handleApproval(user.uid, false)}>
                                 <XCircle className="mr-2 h-4 w-4" /> Rechazar
                               </Button>
-                            ) : null}
+                            )}
                           </div>
                         </TableCell>
                     </TableRow>
