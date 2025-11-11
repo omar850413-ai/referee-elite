@@ -21,54 +21,58 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
   const { isAdmin, setIsAdmin } = useAdmin();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // If auth is still loading, do nothing yet.
     if (isUserLoading) {
-      // Still waiting for Firebase Auth to determine the user.
       return;
     }
 
+    // If auth is done and there's no user, redirect to login.
     if (!user) {
-      // No user found, redirect to login.
       router.push('/login');
       return;
     }
 
+    // If there's a user but firestore is not ready, wait.
     if (!firestore) {
-        // Firestore is not ready, wait.
         return;
     }
 
-    // User is authenticated, now fetch their profile and admin status.
-    setIsProfileLoading(true);
-    const userProfileRef = doc(firestore, 'users', user.uid);
-    const adminDocRef = doc(firestore, 'admins', user.uid);
+    // Auth is done and we have a user. Now fetch their data.
+    const fetchData = async () => {
+      try {
+        const userProfileRef = doc(firestore, 'users', user.uid);
+        const adminDocRef = doc(firestore, 'admins', user.uid);
 
-    Promise.all([
-      getDoc(userProfileRef, { source: 'server' }), // Force server read
-      getDoc(adminDocRef, { source: 'server' })      // Force server read
-    ])
-    .then(([profileSnap, adminSnap]) => {
-      if (profileSnap.exists()) {
-        setProfile(profileSnap.data() as UserProfile);
-      } else {
-        // Profile doesn't exist in Firestore yet. Can happen with new sign-ups.
-        // We'll treat them as not approved for now, but we won't log them out.
-        setProfile(null); 
+        // Fetch both documents from the server to avoid cache issues.
+        const [profileSnap, adminSnap] = await Promise.all([
+          getDoc(userProfileRef, { source: 'server' }),
+          getDoc(adminDocRef, { source: 'server' })
+        ]);
+        
+        if (profileSnap.exists()) {
+          setProfile(profileSnap.data() as UserProfile);
+        } else {
+          setProfile(null);
+        }
+        
+        setIsAdmin(adminSnap.exists());
+        
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        // On error, default to non-admin and no profile to be safe.
+        setProfile(null);
+        setIsAdmin(false);
+      } finally {
+        // All data fetching is complete.
+        setLoading(false);
       }
-      setIsAdmin(adminSnap.exists());
-    })
-    .catch((error) => {
-      console.error('Error fetching user data:', error);
-      // On error, we also assume they are not approved/admin to be safe.
-      setProfile(null);
-      setIsAdmin(false);
-    })
-    .finally(() => {
-      setIsProfileLoading(false);
-    });
+    };
 
+    fetchData();
+    
   }, [user, isUserLoading, firestore, router, setIsAdmin]);
   
   const handleLogout = () => {
@@ -81,8 +85,8 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // While loading auth state OR profile data, show a spinner.
-  if (isUserLoading || isProfileLoading) {
+  // While auth is loading OR while we are fetching profile data, show the spinner.
+  if (isUserLoading || loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -91,8 +95,8 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // After loading, if the user is not an admin AND their profile is not approved, show the pending page.
-  // We check for profile existence as well. A non-existent profile is considered not approved.
+  // After all loading is done, check for approval.
+  // A non-existent profile means they are not approved.
   if (!isAdmin && (!profile || !profile.approved)) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
@@ -109,7 +113,7 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // If we've reached this point, the user is either an admin or has an approved profile.
+  // If we reach here, the user is either an admin or is an approved user.
   return <>{children}</>;
 }
 
