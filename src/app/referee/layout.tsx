@@ -94,5 +94,13 @@ export default function RefereeLayout({
     );
   }
 
-  return <>{children}</>;
+  // Pass isAdmin to children
+  const childrenWithProps = React.Children.map(children, child => {
+    if (React.isValidElement(child)) {
+      return React.cloneElement(child, { isAdmin } as any);
+    }
+    return child;
+  });
+
+  return <>{childrenWithProps}</>;
 }
