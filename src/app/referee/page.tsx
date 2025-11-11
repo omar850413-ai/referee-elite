@@ -36,7 +36,7 @@ export default function RefereeApp({ isAdmin }: { isAdmin?: boolean }) {
           ⚽ Soy Asesor FMF ⚽
         </h1>
         {isAdmin && (
-          <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary/10">
+          <Button asChild variant="outline" className="border-2 border-primary text-primary hover:bg-primary/10 font-bold">
             <Link href="/admin">
               <ShieldCheck className="mr-2 h-4 w-4" />
               Panel de Admin
