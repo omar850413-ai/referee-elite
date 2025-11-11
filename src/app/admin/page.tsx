@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfile } from '@/lib/types';
@@ -82,6 +82,9 @@ export default function AdminPage() {
       <Card>
         <CardHeader>
           <CardTitle>Gestión de Usuarios Registrados</CardTitle>
+          <CardDescription>
+            Aquí puedes ver todos los usuarios que han creado una cuenta. Usa los botones para aceptar o rechazar su acceso a la aplicación.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {loading && <p>Cargando usuarios...</p>}
@@ -155,14 +158,14 @@ export default function AdminPage() {
                   <strong>Obtén tu ID de Usuario (UID):</strong>
                   <ul className="list-disc list-inside pl-5 mt-1 space-y-1">
                       <li>Ve a la <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="font-bold underline hover:text-yellow-900 dark:hover:text-yellow-100">Consola de Firebase</a> y selecciona tu proyecto.</li>
-                      <li>En el menú de la izquierda, ve a <strong>Compilación &gt; Authentication</strong>.</li>
+                      <li>En el menú de la izquierda, ve a <strong>Compilación > Authentication</strong>.</li>
                       <li>En la pestaña <strong>Users</strong>, busca tu correo y copia el valor de la columna <strong>User UID</strong>. Se ve algo como <code className="bg-yellow-200 dark:bg-yellow-800/50 px-1 py-0.5 rounded">aBcDeFgHiJkLmNoPqRsTuVwXyZ12</code>.</li>
                   </ul>
               </li>
               <li>
                   <strong>Crea el documento de administrador:</strong>
                    <ul className="list-disc list-inside pl-5 mt-1 space-y-1">
-                      <li>En el menú de la izquierda, ve a <strong>Compilación &gt; Firestore Database</strong>.</li>
+                      <li>En el menú de la izquierda, ve a <strong>Compilación > Firestore Database</strong>.</li>
                       <li>Haz clic en <strong>+ Iniciar colección</strong>.</li>
                       <li>En <strong>ID de la colección</strong>, escribe <code className="bg-yellow-200 dark:bg-yellow-800/50 px-1 py-0.5 rounded">admins</code>.</li>
                       <li>Haz clic en <strong>Siguiente</strong>.</li>
