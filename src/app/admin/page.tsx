@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
-import { collection, getDocs, doc, updateDoc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -145,7 +145,7 @@ export default function AdminPage() {
       <div className="mt-8 p-6 border-l-4 border-yellow-500 bg-yellow-500/10 rounded-r-lg">
           <h3 className="text-xl font-bold text-yellow-800 dark:text-yellow-300 mb-3">🚨 Cómo convertirte en Administrador (Acción Manual Requerida)</h3>
           <p className="text-sm text-yellow-700 dark:text-yellow-200 mb-4">
-              Para poder usar este panel, tu cuenta necesita privilegios de administrador. Este es un paso de seguridad que debes hacer manualmente una sola vez.
+              Para poder usar este panel, tu cuenta necesita privilegios de administrador. Este es un paso de seguridad que debes hacer manually una sola vez.
           </p>
           <ol className="list-decimal list-inside space-y-3 text-sm text-yellow-800 dark:text-yellow-200">
               <li>
