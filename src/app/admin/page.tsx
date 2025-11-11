@@ -2,17 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfile } from '@/lib/types';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -24,11 +23,10 @@ export default function AdminPage() {
   useEffect(() => {
     const fetchUsers = async () => {
       if (!firestore) {
-        // Postpone execution if firestore is not yet available.
-        // The layout should handle the loading state.
         return;
       }
       try {
+        setLoading(true);
         const usersCollection = collection(firestore, 'users');
         const userSnapshot = await getDocs(usersCollection);
         const userList = userSnapshot.docs.map(doc => ({
@@ -36,7 +34,7 @@ export default function AdminPage() {
           ...doc.data(),
         })) as UserProfile[];
         setUsers(userList);
-        setError(null); // Clear previous errors on success
+        setError(null);
       } catch (error: any) {
         console.error("Error fetching users:", error);
         const errorMessage = 'No se pudieron cargar los usuarios. Es posible que todavía no tengas los permisos de administrador correctos.';
@@ -54,19 +52,20 @@ export default function AdminPage() {
     fetchUsers();
   }, [firestore, toast]);
 
-  const handleApprovalChange = (uid: string, currentStatus: boolean) => {
+  const handleApproval = (uid: string, shouldApprove: boolean) => {
     if (!firestore) return;
 
     const userDocRef = doc(firestore, 'users', uid);
-    const newStatus = !currentStatus;
     
-    // We assume the admin has permissions, and use a non-blocking update for UI responsiveness
-    updateDocumentNonBlocking(userDocRef, { approved: newStatus });
+    // Use a non-blocking update for UI responsiveness
+    updateDocumentNonBlocking(userDocRef, { approved: shouldApprove });
 
-    setUsers(users.map(user => user.uid === uid ? { ...user, approved: newStatus } : user));
+    // Optimistically update the UI
+    setUsers(users.map(user => user.uid === uid ? { ...user, approved: shouldApprove } : user));
+    
     toast({
       title: 'Éxito',
-      description: `El estado del usuario ha sido cambiado a: ${newStatus ? 'Aprobado' : 'No Aprobado'}.`,
+      description: `El usuario ha sido ${shouldApprove ? 'aprobado' : 'rechazado'}.`,
     });
   };
 
@@ -105,7 +104,8 @@ export default function AdminPage() {
                     <TableRow>
                     <TableHead>Nombre</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead className="text-right">Aprobado</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -113,15 +113,26 @@ export default function AdminPage() {
                     <TableRow key={user.uid}>
                         <TableCell className="font-medium">{user.displayName}</TableCell>
                         <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          {user.approved ? (
+                            <span className="flex items-center gap-2 text-green-600 font-semibold"><CheckCircle className="h-4 w-4" /> Aprobado</span>
+                          ) : (
+                            <span className="flex items-center gap-2 text-yellow-600 font-semibold"><AlertCircle className="h-4 w-4" /> Pendiente</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right">
-                        <div className="flex items-center justify-end">
-                            <Switch
-                                id={`switch-${user.uid}`}
-                                checked={user.approved}
-                                onCheckedChange={() => handleApprovalChange(user.uid, user.approved)}
-                                aria-label={`Approval switch for ${user.displayName}`}
-                            />
-                        </div>
+                          <div className="flex items-center justify-end gap-2">
+                            {!user.approved ? (
+                               <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleApproval(user.uid, true)}>
+                                 <CheckCircle className="mr-2 h-4 w-4" /> Aceptar
+                               </Button>
+                            ) : null}
+                            {user.approved ? (
+                              <Button size="sm" variant="destructive" onClick={() => handleApproval(user.uid, false)}>
+                                <XCircle className="mr-2 h-4 w-4" /> Rechazar
+                              </Button>
+                            ) : null}
+                          </div>
                         </TableCell>
                     </TableRow>
                     ))}
