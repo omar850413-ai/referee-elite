@@ -23,9 +23,10 @@ import ReportModal from '@/components/referee/modals/ReportModal';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck } from 'lucide-react';
+import { useAdmin } from '@/context/AdminContext';
 
-// Accept isAdmin as a prop
-export default function RefereeApp({ isAdmin }: { isAdmin?: boolean }) {
+export default function RefereeApp() {
+  const { isAdmin } = useAdmin(); // Consume the context to get admin status
   const [state, dispatch] = useReducer(reducer, initialState);
   const { teamNames, scores, fouls, timer, events, activeModal, modalData } = state;
 
