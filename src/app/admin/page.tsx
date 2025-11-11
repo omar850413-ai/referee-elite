@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,16 +11,23 @@ import { UserProfile } from '@/lib/types';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 export default function AdminPage() {
   const firestore = useFirestore();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchUsers = async () => {
-      if (!firestore) return;
+      if (!firestore) {
+        // Postpone execution if firestore is not yet available.
+        // The layout should handle the loading state.
+        return;
+      }
       try {
         const usersCollection = collection(firestore, 'users');
         const userSnapshot = await getDocs(usersCollection);
@@ -30,12 +36,15 @@ export default function AdminPage() {
           ...doc.data(),
         })) as UserProfile[];
         setUsers(userList);
-      } catch (error) {
+        setError(null); // Clear previous errors on success
+      } catch (error: any) {
         console.error("Error fetching users:", error);
+        const errorMessage = 'No se pudieron cargar los usuarios. Es posible que todavía no tengas los permisos de administrador correctos.';
+        setError(errorMessage);
         toast({
           variant: 'destructive',
-          title: 'Error',
-          description: 'No se pudieron cargar los usuarios. Es posible que no tengas permisos de administrador.',
+          title: 'Error de Permisos',
+          description: errorMessage,
         });
       } finally {
         setLoading(false);
@@ -51,12 +60,13 @@ export default function AdminPage() {
     const userDocRef = doc(firestore, 'users', uid);
     const newStatus = !currentStatus;
     
+    // We assume the admin has permissions, and use a non-blocking update for UI responsiveness
     updateDocumentNonBlocking(userDocRef, { approved: newStatus });
 
     setUsers(users.map(user => user.uid === uid ? { ...user, approved: newStatus } : user));
     toast({
       title: 'Éxito',
-      description: `Usuario ${newStatus ? 'aprobado' : 'rechazado'} correctamente.`,
+      description: `El estado del usuario ha sido cambiado a: ${newStatus ? 'Aprobado' : 'No Aprobado'}.`,
     });
   };
 
@@ -75,9 +85,20 @@ export default function AdminPage() {
           <CardTitle>Gestión de Usuarios Registrados</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <p>Cargando usuarios...</p>
-          ) : (
+          {loading && <p>Cargando usuarios...</p>}
+          {!loading && error && (
+             <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error al Cargar Usuarios</AlertTitle>
+                <AlertDescription>
+                    {error} Asegúrate de haber seguido las instrucciones de abajo correctamente.
+                </AlertDescription>
+            </Alert>
+          )}
+          {!loading && !error && users.length === 0 && (
+            <p className="text-muted-foreground italic">No hay usuarios registrados todavía.</p>
+          )}
+          {!loading && !error && users.length > 0 && (
             <div className="overflow-x-auto">
                 <Table>
                 <TableHeader>
@@ -93,11 +114,14 @@ export default function AdminPage() {
                         <TableCell className="font-medium">{user.displayName}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell className="text-right">
-                        <Switch
-                            checked={user.approved}
-                            onCheckedChange={() => handleApprovalChange(user.uid, user.approved)}
-                            aria-label={`Approval switch for ${user.displayName}`}
-                        />
+                        <div className="flex items-center justify-end">
+                            <Switch
+                                id={`switch-${user.uid}`}
+                                checked={user.approved}
+                                onCheckedChange={() => handleApprovalChange(user.uid, user.approved)}
+                                aria-label={`Approval switch for ${user.displayName}`}
+                            />
+                        </div>
                         </TableCell>
                     </TableRow>
                     ))}
@@ -110,7 +134,7 @@ export default function AdminPage() {
       <div className="mt-8 p-6 border-l-4 border-yellow-500 bg-yellow-500/10 rounded-r-lg">
           <h3 className="text-xl font-bold text-yellow-800 dark:text-yellow-300 mb-3">🚨 Cómo convertirte en Administrador (Acción Manual Requerida)</h3>
           <p className="text-sm text-yellow-700 dark:text-yellow-200 mb-4">
-              Para poder usar este panel, tu cuenta necesita privilegios de administrador. Este es un paso de seguridad que debes hacer manually una sola vez.
+              Para poder usar este panel, tu cuenta necesita privilegios de administrador. Este es un paso de seguridad que debes hacer manualmente una sola vez.
           </p>
           <ol className="list-decimal list-inside space-y-3 text-sm text-yellow-800 dark:text-yellow-200">
               <li>
