@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useUser, useFirestore, useAuth } from '@/firebase';
@@ -28,30 +27,36 @@ export default function RefereeLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isUserLoading, router]);
-
-  useEffect(() => {
-    if (user && firestore) {
+    // Si el hook de usuario está cargando, nosotros también.
+    if (isUserLoading) {
       setLoading(true);
+      return;
+    }
+
+    // Si no hay usuario después de cargar, lo mandamos al login.
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    
+    // Si tenemos usuario y firestore, buscamos sus datos.
+    if (user && firestore) {
       const userProfileRef = doc(firestore, 'users', user.uid);
       const adminDocRef = doc(firestore, 'admins', user.uid);
 
+      // Usamos Promise.all para obtener ambos documentos a la vez.
       Promise.all([getDoc(userProfileRef), getDoc(adminDocRef)])
         .then(([profileSnap, adminSnap]) => {
           if (profileSnap.exists()) {
             setProfile(profileSnap.data() as UserProfile);
           } else {
-            console.error('No user profile found!');
-            setProfile(null);
+            // Si el perfil no existe, es un estado anómalo, lo deslogueamos.
+            console.error('No user profile found for logged-in user.');
+            handleLogout();
+            return;
           }
-          if (adminSnap.exists()) {
-            setIsAdmin(true);
-          } else {
-            setIsAdmin(false);
-          }
+
+          setIsAdmin(adminSnap.exists());
         })
         .catch((error) => {
           console.error('Error fetching user data:', error);
@@ -59,10 +64,11 @@ export default function RefereeLayout({
           setIsAdmin(false);
         })
         .finally(() => {
+          // Terminamos de cargar solo después de tener la respuesta de la DB.
           setLoading(false);
         });
     }
-  }, [user, firestore]);
+  }, [user, isUserLoading, firestore, router]);
   
   const handleLogout = () => {
     if (auth) {
@@ -75,7 +81,7 @@ export default function RefereeLayout({
   };
 
 
-  if (isUserLoading || loading) {
+  if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -84,12 +90,13 @@ export default function RefereeLayout({
     );
   }
 
+  // Si después de cargar no hay perfil, lo sacamos.
   if (!profile) {
-     router.push('/login');
+     handleLogout();
      return null;
   }
 
-  // Allow access if the user is an admin OR their profile is approved.
+  // Comprobación de acceso: Permite entrar si es Admin O si su perfil está aprobado.
   if (!isAdmin && !profile.approved) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
@@ -106,7 +113,7 @@ export default function RefereeLayout({
     );
   }
 
-  // Pass isAdmin to children
+  // Si pasa todas las validaciones, le pasamos la prop 'isAdmin' a los componentes hijos.
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
       return React.cloneElement(child, { isAdmin } as any);
