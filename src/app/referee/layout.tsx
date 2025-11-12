@@ -1,85 +1,120 @@
 'use client';
-import React, { useEffect, useState } from 'react';
-import { useUser, useFirestore, useAuth } from '@/firebase';
+import React, { useEffect, useState, useRef } from 'react';
+import { useUser, useFirestore, useAuth, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminProvider, useAdmin } from '@/context/AdminContext';
 import { UserProfile } from '@/lib/types';
+import { useDoc } from '@/firebase/firestore/use-doc';
 
 function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading: isAuthLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
   const auth = useAuth();
-  const { setIsAdmin } = useAdmin();
+  const { isAdmin, setIsAdmin } = useAdmin();
 
   const [status, setStatus] = useState<'loading' | 'pending' | 'approved'>('loading');
+  
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+  const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+
+  // Session management state
+  const sessionId = useRef<string | null>(null);
+  const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Si la autenticación aún está cargando, o si no hay usuario y ya terminó de cargar, esperamos.
     if (isAuthLoading) {
       setStatus('loading');
       return;
     }
 
-    // Si terminó de cargar y no hay usuario, lo mandamos al login.
     if (!user) {
       router.push('/login');
       return;
     }
 
-    // Si llegamos aquí, tenemos un usuario. Ahora verificamos su estado.
-    const checkUserStatus = async () => {
-      if (!firestore || !user) return;
-
-      // 1. Primero, verificamos si es administrador. Esta es la comprobación más prioritaria.
-      const adminDocRef = doc(firestore, 'admins', user.uid);
-      try {
-        const adminDocSnap = await getDoc(adminDocRef);
-        if (adminDocSnap.exists()) {
-          setIsAdmin(true);
-          setStatus('approved');
-          return; // Es admin, tiene acceso. Terminamos la función.
-        }
-      } catch (error) {
-        // Un error de permisos aquí es normal para usuarios no-admin. Lo ignoramos.
-        console.log('User is not an admin.');
-      }
-      
-      // 2. Si no es admin, procedemos a verificar su perfil de usuario normal.
-      const userProfileRef = doc(firestore, 'users', user.uid);
-      try {
-        const userProfileSnap = await getDoc(userProfileRef);
-        if (userProfileSnap.exists()) {
-          const userProfile = userProfileSnap.data() as UserProfile;
-          if (userProfile.approved) {
-            setStatus('approved'); // Está aprobado. Tiene acceso.
-          } else {
-            setStatus('pending'); // Existe pero no está aprobado.
-          }
-        } else {
-          // El perfil de usuario aún no se ha creado o hay un problema.
-          setStatus('pending'); 
-        }
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-        setStatus('pending'); // En caso de error, lo dejamos como pendiente por seguridad.
-      }
-    };
-
-    checkUserStatus();
-
-  }, [user, isAuthLoading, firestore, router, setIsAdmin]);
-
-  const handleLogout = () => {
-    if (auth) {
-      signOut(auth).then(() => {
-        router.push('/login');
-      });
+    if (isProfileLoading) {
+      setStatus('loading');
+      return;
     }
+    
+    // Admin check
+    getDoc(doc(firestore, 'admins', user.uid)).then(adminDoc => {
+      if (adminDoc.exists()) {
+        setIsAdmin(true);
+        setStatus('approved');
+      } else if (profile && profile.approved) {
+        setStatus('approved');
+      } else {
+        setStatus('pending');
+      }
+    });
+
+  }, [user, isAuthLoading, profile, isProfileLoading, firestore, router, setIsAdmin]);
+
+  // Heartbeat effect for session management
+  useEffect(() => {
+    if (status === 'approved' && user && firestore) {
+      // Generate a unique session ID for this browser tab
+      if (!sessionId.current) {
+        sessionId.current = Date.now().toString(36) + Math.random().toString(36).substring(2);
+      }
+      const userDocRef = doc(firestore, 'users', user.uid);
+
+      // Function to send a heartbeat
+      const sendHeartbeat = async () => {
+        try {
+          await updateDoc(userDocRef, {
+            activeSessionId: sessionId.current,
+            sessionLastActive: Date.now(),
+          });
+        } catch (error) {
+          console.error("Failed to send session heartbeat:", error);
+          // If heartbeat fails (e.g. permissions), stop trying.
+          if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
+        }
+      };
+
+      // Send initial heartbeat and start interval
+      sendHeartbeat();
+      heartbeatInterval.current = setInterval(sendHeartbeat, 10000); // every 10 seconds
+
+      // Cleanup function for when the component unmounts or user changes
+      const cleanup = async () => {
+        if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
+        // Only clear the session if this tab was the active one
+        const currentDoc = await getDoc(userDocRef);
+        if (currentDoc.exists() && currentDoc.data().activeSessionId === sessionId.current) {
+           await updateDoc(userDocRef, { activeSessionId: null, sessionLastActive: null });
+        }
+      };
+
+      // Add unload listener to handle tab closing
+      window.addEventListener('beforeunload', cleanup);
+      
+      return () => {
+        cleanup();
+        window.removeEventListener('beforeunload', cleanup);
+      };
+    }
+  }, [status, user, firestore]);
+
+  const handleLogout = async () => {
+    if (user && firestore && sessionId.current) {
+       const userDocRef = doc(firestore, 'users', user.uid);
+       await updateDoc(userDocRef, { activeSessionId: null, sessionLastActive: null });
+    }
+    if (auth) {
+      await signOut(auth);
+    }
+    router.push('/login');
   };
 
   if (status === 'loading') {
@@ -107,7 +142,6 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Si el estado es 'approved', muestra la aplicación.
   return <>{children}</>;
 }
 

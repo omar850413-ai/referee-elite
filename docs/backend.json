@@ -17,6 +17,14 @@
         "approved": {
           "type": "boolean",
           "description": "Whether the user has been approved by an admin."
+        },
+        "activeSessionId": {
+          "type": "string",
+          "description": "A unique ID for the user's currently active session to prevent concurrent logins."
+        },
+        "sessionLastActive": {
+          "type": "number",
+          "description": "A timestamp (milliseconds since epoch) of when the session was last confirmed to be active."
         }
       },
       "required": [

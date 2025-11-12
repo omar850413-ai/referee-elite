@@ -2,8 +2,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useAuth, useFirestore, useMemoFirebase } from '@/firebase';
+import { signInWithEmailAndPassword, getAuth, onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -11,10 +11,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/types';
+
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,10 +31,43 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    
+    if (!firestore) {
+        setError('Servicio de base de datos no disponible. Intente más tarde.');
+        setLoading(false);
+        return;
+    }
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      // Step 1: Temporarily sign in to get the UID
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Step 2: Check for an active session in Firestore
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data() as UserProfile;
+        const sessionTimeout = 15 * 1000; // 15 seconds
+        const now = Date.now();
+
+        if (userData.activeSessionId && userData.sessionLastActive && (now - userData.sessionLastActive < sessionTimeout)) {
+          // Active session found, sign the temporary user out and show error
+          await auth.signOut();
+          setError('Esta cuenta está actualmente en uso en otro dispositivo.');
+          toast({ variant: 'destructive', title: 'Error de Sesión', description: 'Esta cuenta ya tiene una sesión activa.' });
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Step 3: If no active session, proceed with the login logic.
+      // The onAuthStateChanged listener in the layout will handle the rest.
+      // We don't need to do anything else here, as the initial sign-in is what we want.
       toast({ title: 'Éxito', description: 'Has iniciado sesión correctamente.' });
       router.push('/referee');
+
     } catch (error: any) {
       console.error(error);
       const errorCode = error.code;
@@ -41,7 +78,7 @@ export default function LoginPage() {
       setError(errorMessage);
       toast({ variant: 'destructive', title: 'Error', description: errorMessage });
     } finally {
-      setLoading(false);
+      // Do not set loading to false here immediately, let navigation happen
     }
   };
 
@@ -90,7 +127,7 @@ export default function LoginPage() {
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Iniciando...' : 'Iniciar Sesión'}
+              {loading ? <> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verificando... </> : 'Iniciar Sesión'}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">

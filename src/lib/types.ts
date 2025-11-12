@@ -77,4 +77,6 @@ export interface UserProfile {
   email: string;
   displayName: string;
   approved: boolean;
+  activeSessionId?: string | null;
+  sessionLastActive?: number | null;
 }
