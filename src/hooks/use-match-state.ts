@@ -18,13 +18,14 @@ const loadState = (): MatchState => {
     const storedState = JSON.parse(serializedState);
     // Basic validation to prevent loading corrupted data
     if (storedState.scores && storedState.timer) {
-      // The timer should not persist in a running state on reload.
-      // We pause it and adjust the time to be accurate.
-      if (storedState.timer.isRunning) {
+      // If the timer was running when the page was closed/reloaded,
+      // calculate the elapsed time and add it to the total.
+      if (storedState.timer.isRunning && storedState.timer.startTime > 0) {
         const elapsedMilliseconds = Date.now() - storedState.timer.startTime;
         storedState.timer.totalPausedSeconds += Math.floor(elapsedMilliseconds / 1000);
-        storedState.timer.isRunning = false;
       }
+      // Always ensure the timer is paused on load to give the user control.
+      storedState.timer.isRunning = false; 
       return storedState;
     }
   } catch (error) {
