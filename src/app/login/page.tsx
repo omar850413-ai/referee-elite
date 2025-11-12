@@ -32,7 +32,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     
-    if (!firestore) {
+    if (!auth || !firestore) {
         setError('Servicio de base de datos no disponible. Intente más tarde.');
         setLoading(false);
         return;
@@ -65,7 +65,7 @@ export default function LoginPage() {
       // Step 3: If no active session, proceed with the login logic.
       // The onAuthStateChanged listener in the layout will handle the rest.
       toast({ title: 'Éxito', description: 'Has iniciado sesión correctamente.' });
-      router.replace('/referee'); // <--- AQUI ESTÁ EL CAMBIO
+      router.replace('/referee');
 
     } catch (error: any) {
       console.error(error);
@@ -76,8 +76,7 @@ export default function LoginPage() {
       }
       setError(errorMessage);
       toast({ variant: 'destructive', title: 'Error', description: errorMessage });
-    } finally {
-      // Do not set loading to false here immediately, let navigation happen
+      setLoading(false);
     }
   };
 

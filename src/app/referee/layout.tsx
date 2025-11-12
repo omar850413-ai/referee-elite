@@ -99,8 +99,8 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
         }
       };
 
-      sendHeartbeat();
-      heartbeatInterval.current = setInterval(sendHeartbeat, 10000);
+      sendHeartbeat(); // Send first heartbeat immediately
+      heartbeatInterval.current = setInterval(sendHeartbeat, 10000); // Subsequent heartbeats every 10s
 
       const cleanup = async () => {
         if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
