@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   title: "Referee's Edge",
   description: 'Soccer match control application for referees.',
   manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: "Referee's Edge",
+  },
 };
 
 export default function RootLayout({
@@ -26,6 +31,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <meta name="theme-color" content="#0C4A6E" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
       </head>
       <body className="font-body bg-background text-foreground antialiased">
         <FirebaseClientProvider>{children}</FirebaseClientProvider>
