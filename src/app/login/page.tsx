@@ -64,9 +64,8 @@ export default function LoginPage() {
       
       // Step 3: If no active session, proceed with the login logic.
       // The onAuthStateChanged listener in the layout will handle the rest.
-      // We don't need to do anything else here, as the initial sign-in is what we want.
       toast({ title: 'Éxito', description: 'Has iniciado sesión correctamente.' });
-      router.push('/referee');
+      router.replace('/referee'); // <--- AQUI ESTÁ EL CAMBIO
 
     } catch (error: any) {
       console.error(error);
