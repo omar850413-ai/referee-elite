@@ -22,13 +22,28 @@ import ResetMatchModal from '@/components/referee/modals/ResetMatchModal';
 import ReportModal from '@/components/referee/modals/ReportModal';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, LogOut } from 'lucide-react';
 import { useAdmin } from '@/context/AdminContext';
+import { useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 export default function RefereeApp() {
   const { isAdmin } = useAdmin(); // Consume the context to get admin status
   const [state, dispatch] = useReducer(reducer, initialState);
   const { teamNames, scores, fouls, timer, events, activeModal, modalData } = state;
+
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    if (auth) {
+      signOut(auth).then(() => {
+        router.push('/login');
+      });
+    }
+  };
+
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-4 sm:p-6 md:p-8">
@@ -66,6 +81,17 @@ export default function RefereeApp() {
       <EventHistory events={events} teamNames={teamNames} />
 
       <ReportControls dispatch={dispatch as React.Dispatch<MatchAction>} />
+
+      <div className="pt-6 border-t">
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="w-full text-lg py-6"
+        >
+          <LogOut className="mr-2 h-5 w-5" />
+          Cerrar Sesión
+        </Button>
+      </div>
 
       <p className="text-xs text-center text-muted-foreground pt-4">
         App ID: <span className="font-mono">referee-edge-v8-public</span>
