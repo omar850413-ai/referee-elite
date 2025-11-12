@@ -24,9 +24,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, LogOut } from 'lucide-react';
 import { useAdmin } from '@/context/AdminContext';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { doc, updateDoc } from 'firebase/firestore';
 
 export default function RefereeApp() {
   const { isAdmin } = useAdmin(); // Consume the context to get admin status
@@ -34,14 +35,25 @@ export default function RefereeApp() {
   const { teamNames, scores, fouls, timer, events, activeModal, modalData } = state;
 
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
 
-  const handleLogout = () => {
-    if (auth) {
-      signOut(auth).then(() => {
-        router.push('/login');
-      });
+  const handleLogout = async () => {
+    // This assumes the user object is available from the hook.
+    // In a real app, you'd get the user from useUser() or similar.
+    const user = auth.currentUser;
+    if (user && firestore) {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      try {
+        await updateDoc(userDocRef, { activeSessionId: null, sessionLastActive: null });
+      } catch (error) {
+        console.error("Error clearing session on logout:", error)
+      }
     }
+    
+    signOut(auth).then(() => {
+        router.push('/login');
+    });
   };
 
 
@@ -95,6 +107,10 @@ export default function RefereeApp() {
 
       <p className="text-xs text-center text-muted-foreground pt-4">
         App ID: <span className="font-mono">referee-edge-v8-public</span>
+      </p>
+      
+      <p className="text-xs text-center text-muted-foreground pt-1">
+        by OmarSaldaña
       </p>
 
       {/* Modals */}

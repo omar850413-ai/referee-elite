@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
 import { useUser, useFirestore, useAuth, useMemoFirebase } from '@/firebase';
@@ -16,21 +17,20 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
   const firestore = useFirestore();
   const auth = useAuth();
   const { isAdmin, setIsAdmin } = useAdmin();
-
   const [status, setStatus] = useState<'loading' | 'pending' | 'approved'>('loading');
-  
+
   const userProfileRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(firestore, 'users', user.uid);
   }, [user, firestore]);
+
   const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
-  // Session management state
   const sessionId = useRef<string | null>(null);
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (isAuthLoading) {
+    if (isAuthLoading || isProfileLoading) {
       setStatus('loading');
       return;
     }
@@ -40,35 +40,33 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (isProfileLoading) {
-      setStatus('loading');
-      return;
-    }
-    
-    // Admin check
-    getDoc(doc(firestore, 'admins', user.uid)).then(adminDoc => {
-      if (adminDoc.exists()) {
-        setIsAdmin(true);
-        setStatus('approved');
-      } else if (profile && profile.approved) {
-        setStatus('approved');
-      } else {
+    // Now profile is loaded or is null
+    if (profile?.approved) {
+      setStatus('approved');
+    } else {
+      // If not approved via profile, check if they are an admin
+      const adminDocRef = doc(firestore, 'admins', user.uid);
+      getDoc(adminDocRef).then((adminDoc) => {
+        if (adminDoc.exists()) {
+          setIsAdmin(true);
+          setStatus('approved');
+        } else {
+          setStatus('pending');
+        }
+      }).catch(() => {
+        // If the check fails (e.g. permissions), they are definitely not admin
         setStatus('pending');
-      }
-    });
-
+      });
+    }
   }, [user, isAuthLoading, profile, isProfileLoading, firestore, router, setIsAdmin]);
 
-  // Heartbeat effect for session management
   useEffect(() => {
     if (status === 'approved' && user && firestore) {
-      // Generate a unique session ID for this browser tab
       if (!sessionId.current) {
         sessionId.current = Date.now().toString(36) + Math.random().toString(36).substring(2);
       }
       const userDocRef = doc(firestore, 'users', user.uid);
 
-      // Function to send a heartbeat
       const sendHeartbeat = async () => {
         try {
           await updateDoc(userDocRef, {
@@ -77,26 +75,26 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
           });
         } catch (error) {
           console.error("Failed to send session heartbeat:", error);
-          // If heartbeat fails (e.g. permissions), stop trying.
           if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
         }
       };
 
-      // Send initial heartbeat and start interval
       sendHeartbeat();
-      heartbeatInterval.current = setInterval(sendHeartbeat, 10000); // every 10 seconds
+      heartbeatInterval.current = setInterval(sendHeartbeat, 10000);
 
-      // Cleanup function for when the component unmounts or user changes
       const cleanup = async () => {
         if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
-        // Only clear the session if this tab was the active one
-        const currentDoc = await getDoc(userDocRef);
-        if (currentDoc.exists() && currentDoc.data().activeSessionId === sessionId.current) {
-           await updateDoc(userDocRef, { activeSessionId: null, sessionLastActive: null });
+        // Check if this tab was the active one before clearing the session
+        try {
+          const currentDoc = await getDoc(userDocRef);
+          if (currentDoc.exists() && currentDoc.data().activeSessionId === sessionId.current) {
+             await updateDoc(userDocRef, { activeSessionId: null, sessionLastActive: null });
+          }
+        } catch (e) {
+            console.error("Could not clear session on unload", e);
         }
       };
-
-      // Add unload listener to handle tab closing
+      
       window.addEventListener('beforeunload', cleanup);
       
       return () => {
@@ -107,14 +105,14 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
   }, [status, user, firestore]);
 
   const handleLogout = async () => {
-    if (user && firestore && sessionId.current) {
+    if (user && firestore) {
        const userDocRef = doc(firestore, 'users', user.uid);
        await updateDoc(userDocRef, { activeSessionId: null, sessionLastActive: null });
     }
     if (auth) {
       await signOut(auth);
     }
-    router.push('/login');
+    // router.push('/login') should be handled by the main useEffect detecting no user
   };
 
   if (status === 'loading') {
@@ -144,7 +142,6 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
-
 
 export default function RefereeLayout({
   children,
