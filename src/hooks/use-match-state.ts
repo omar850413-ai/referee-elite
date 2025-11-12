@@ -16,16 +16,25 @@ const loadState = (): MatchState => {
       return initialState;
     }
     const storedState = JSON.parse(serializedState);
+    
     // Basic validation to prevent loading corrupted data
     if (storedState.scores && storedState.timer) {
       // If the timer was running when the page was closed/reloaded,
-      // calculate the elapsed time and add it to the total.
+      // calculate the elapsed time and keep it running.
       if (storedState.timer.isRunning && storedState.timer.startTime > 0) {
         const elapsedMilliseconds = Date.now() - storedState.timer.startTime;
-        storedState.timer.totalPausedSeconds += Math.floor(elapsedMilliseconds / 1000);
+        const elapsedSeconds = Math.floor(elapsedMilliseconds / 1000);
+        
+        // Update the total time with what passed during the refresh
+        storedState.timer.totalPausedSeconds += elapsedSeconds;
+        // Set a new start time to the current moment to continue counting
+        storedState.timer.startTime = Date.now();
+        // KEEP IT RUNNING
+        storedState.timer.isRunning = true;
+      } else {
+        // If it was paused, keep it paused.
+        storedState.timer.isRunning = false;
       }
-      // Always ensure the timer is paused on load to give the user control.
-      storedState.timer.isRunning = false; 
       return storedState;
     }
   } catch (error) {
@@ -226,7 +235,7 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
 
 // Custom hook that combines the reducer with localStorage persistence
 export const usePersistentMatchState = () => {
-  const [state, dispatch] = useReducer(reducer, loadState());
+  const [state, dispatch] = useReducer(reducer, undefined, loadState);
 
   // Effect to save state to localStorage whenever it changes
   useEffect(() => {

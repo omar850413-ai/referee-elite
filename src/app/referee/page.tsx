@@ -71,6 +71,8 @@ export default function RefereeApp() {
     }
     
     signOut(auth).then(() => {
+        // On logout, also clear the match state from local storage
+        localStorage.removeItem('referee-edge-match-state');
         router.push('/login');
     });
   };
