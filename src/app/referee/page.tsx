@@ -40,22 +40,25 @@ export default function RefereeApp() {
   const router = useRouter();
   
   useEffect(() => {
-    // This pushes a state to the history, creating a "dummy" entry.
-    // This prevents the user from going back from this page.
+    // This robust back button prevention logic ensures the app state is not lost.
+    // 1. Push a "trap" state into the history.
     window.history.pushState(null, '', window.location.href);
 
+    // 2. Set up a listener for when the user tries to go back.
     const handleBackButton = (event: PopStateEvent) => {
-      // Re-push the state to effectively "cancel" the back action and stay on the page.
+      // 3. When the back button is pressed, immediately push the "trap" state back.
+      // This cancels the navigation and keeps the user on the current page.
       window.history.pushState(null, '', window.location.href);
     };
 
     window.addEventListener('popstate', handleBackButton);
 
-    // Cleanup the event listener when the component unmounts.
+    // 4. Clean up the listener when the component unmounts (e.g., on logout).
     return () => {
       window.removeEventListener('popstate', handleBackButton);
     };
-  }, []);
+  }, []); // The empty dependency array ensures this runs only once.
+
 
   const handleLogout = async () => {
     if (user && firestore) {
