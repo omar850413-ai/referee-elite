@@ -1,6 +1,6 @@
 
 'use client';
-import type { MatchAction, MatchState, GameEvent, Team } from '@/lib/types';
+import type { MatchAction, MatchState, GameEvent, Team, GoalEvent } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -58,11 +58,11 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
 
   const homeYellows = filterAndSort('home', 'yellow');
   const homeReds = filterAndSort('home', 'red');
-  const homeGoals = filterAndSort('home', 'goal');
+  const homeGoals = filterAndSort('home', 'goal') as GoalEvent[];
   const homeSubs = filterAndSort('home', 'substitution');
   const awayYellows = filterAndSort('away', 'yellow');
   const awayReds = filterAndSort('away', 'red');
-  const awayGoals = filterAndSort('away', 'goal');
+  const awayGoals = filterAndSort('away', 'goal') as GoalEvent[];
   const awaySubs = filterAndSort('away', 'substitution');
 
   const judgeIncidents = events
@@ -86,10 +86,17 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
 
     switch(type) {
       case 'goals':
-        headers = '<thead><tr><th>Tiempo</th><th># Camiseta</th></tr></thead>';
+        headers = '<thead><tr><th>Tiempo</th><th># Camiseta</th><th>Tipo</th></tr></thead>';
         rows = incidents.map(e => {
           if(e.type !== 'goal') return '';
-          return `<tr><td>${formatTime(e.time)}</td><td>#${e.jersey}</td></tr>`;
+          const goalEvent = e as GoalEvent;
+          let goalTypeDesc = "Gol";
+          if (goalEvent.goalType === 'penalty') goalTypeDesc = "De Penal";
+          if (goalEvent.goalType === 'own_goal') {
+            const opposingTeam = teamNames[goalEvent.team === 'home' ? 'away' : 'home'];
+            goalTypeDesc = `Autogol (${opposingTeam})`;
+          }
+          return `<tr><td>${formatTime(e.time)}</td><td>#${goalEvent.jersey}</td><td>${goalTypeDesc}</td></tr>`;
         }).join('');
         break;
       case 'cards':
@@ -104,7 +111,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
         headers = '<thead><tr><th>Tiempo</th><th>Sale #</th><th>Entra #</th></tr></thead>';
         rows = incidents.map(e => {
           if(e.type !== 'substitution') return '';
-          return `<tr><td>${e.playerOut}</td><td>${e.playerIn}</td></tr>`;
+          return `<tr><td>${formatTime(e.time)}</td><td>${e.playerOut}</td><td>${e.playerIn}</td></tr>`;
         }).join('');
         break;
     }

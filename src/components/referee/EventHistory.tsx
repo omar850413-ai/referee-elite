@@ -1,6 +1,6 @@
 'use client';
 
-import type { GameEvent, TeamNames } from '@/lib/types';
+import type { GameEvent, GoalEvent, TeamNames } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatTime } from '@/lib/utils';
@@ -43,7 +43,17 @@ const EventHistory = ({ events, teamNames }: EventHistoryProps) => {
         break;
       case 'goal':
         icon = '⚽';
-        content = `<span class="${teamClass}">${teamName}</span>: Gol de Camiseta <strong>#${event.jersey}</strong>`;
+        const goalEvent = event as GoalEvent;
+        let goalText = '';
+        if (goalEvent.goalType === 'penalty') {
+            goalText = `Gol de Penal de Camiseta <strong>#${goalEvent.jersey}</strong>`;
+        } else if (goalEvent.goalType === 'own_goal') {
+            const opposingTeamName = teamNames[goalEvent.team === 'home' ? 'away' : 'home'];
+            goalText = `Autogol de Camiseta <strong>#${goalEvent.jersey}</strong> (${opposingTeamName})`;
+        } else {
+            goalText = `Gol de Camiseta <strong>#${goalEvent.jersey}</strong>`;
+        }
+        content = `<span class="${teamClass}">${teamName}</span>: ${goalText}`;
         styleClass = 'bg-green-500/10 border-l-4 border-green-500';
         break;
       case 'goal_removed':

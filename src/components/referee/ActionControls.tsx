@@ -10,8 +10,12 @@ type ActionControlsProps = {
 };
 
 const ActionControls = ({ dispatch, teamNames, fouls }: ActionControlsProps) => {
-  const openGoalModal = (team: Team, isSubtraction: boolean) => {
-    dispatch({ type: 'OPEN_MODAL', payload: { type: 'goal', data: { team, isSubtraction } } });
+  const openGoalModal = (team: Team) => {
+    dispatch({ type: 'OPEN_MODAL', payload: { type: 'goal', data: { team } } });
+  };
+
+  const openRemoveGoalModal = (team: Team) => {
+    dispatch({ type: 'OPEN_MODAL', payload: { type: 'goal', data: { team, isSubtraction: true } } });
   };
 
   const handleFoul = (team: Team) => {
@@ -23,13 +27,13 @@ const ActionControls = ({ dispatch, teamNames, fouls }: ActionControlsProps) => 
       {/* Home Team Column */}
       <div className="flex flex-col space-y-3">
         <Button
-          onClick={() => openGoalModal('home', false)}
+          onClick={() => openGoalModal('home')}
           className="bg-add-goal hover:bg-add-goal-dark text-white font-bold py-6 text-xs sm:text-sm"
         >
           ⚽ Gol {teamNames.home.toUpperCase()} (+)
         </Button>
         <Button
-          onClick={() => openGoalModal('home', true)}
+          onClick={() => openRemoveGoalModal('home')}
           className="bg-remove-goal hover:bg-remove-goal-dark text-white font-bold py-6 text-xs sm:text-sm"
         >
           ➖ Quitar Gol {teamNames.home.toUpperCase()}
@@ -48,13 +52,13 @@ const ActionControls = ({ dispatch, teamNames, fouls }: ActionControlsProps) => 
       {/* Away Team Column */}
       <div className="flex flex-col space-y-3">
         <Button
-          onClick={() => openGoalModal('away', false)}
+          onClick={() => openGoalModal('away')}
           className="bg-add-goal hover:bg-add-goal-dark text-white font-bold py-6 text-xs sm:text-sm"
         >
           ⚽ Gol {teamNames.away.toUpperCase()} (+)
         </Button>
         <Button
-          onClick={() => openGoalModal('away', true)}
+          onClick={() => openRemoveGoalModal('away')}
           className="bg-remove-goal hover:bg-remove-goal-dark text-white font-bold py-6 text-xs sm:text-sm"
         >
           ➖ Quitar Gol {teamNames.away.toUpperCase()}

@@ -4,6 +4,7 @@ export type Team = 'home' | 'away';
 export type CardType = 'yellow' | 'red';
 export type Period = 'PRE_MATCH' | 'P1' | 'HALF_TIME' | 'P2' | 'FULL_TIME';
 export type ModalType = 'goal' | 'card' | 'note' | 'reset-timer' | 'reset-match' | 'report' | 'substitution';
+export type GoalType = 'regular' | 'penalty' | 'own_goal';
 
 export type Scores = { [key in Team]: number };
 export type Fouls = { [key in Team]: number };
@@ -22,7 +23,7 @@ export type BaseEvent = {
 
 export type PeriodStartEvent = BaseEvent & { type: 'period_start'; text: string };
 export type PeriodEndEvent = BaseEvent & { type: 'period_end'; text: string };
-export type GoalEvent = BaseEvent & { type: 'goal'; team: Team; jersey: number };
+export type GoalEvent = BaseEvent & { type: 'goal'; team: Team; jersey: number; goalType: GoalType };
 export type GoalRemovedEvent = BaseEvent & { type: 'goal_removed'; team: Team; jersey: number; reason: string };
 export type FoulEvent = BaseEvent & { type: 'foul'; team: Team };
 export type CardEvent = BaseEvent & { type: 'yellow' | 'red'; team: Team; jersey: number | string; reason: string };
@@ -61,7 +62,7 @@ export type MatchAction =
   | { type: 'END_P2' }
   | { type: 'TOGGLE_PAUSE' }
   | { type: 'UPDATE_TEAM_NAME'; payload: { team: Team; name: string } }
-  | { type: 'ADD_GOAL'; payload: { team: Team; jersey: number } }
+  | { type: 'ADD_GOAL'; payload: { team: Team; jersey: number, goalType: GoalType } }
   | { type: 'REMOVE_GOAL'; payload: { team: Team; jersey: number } }
   | { type: 'ADD_FOUL'; payload: { team: Team } }
   | { type: 'ADD_CARD'; payload: { team: Team; cardType: CardType; jersey: number | string; reason: string } }

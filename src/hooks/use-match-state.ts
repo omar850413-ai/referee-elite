@@ -135,11 +135,11 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
       };
 
     case 'ADD_GOAL': {
-      const { team, jersey } = action.payload;
+      const { team, jersey, goalType } = action.payload;
       return {
         ...state,
         scores: { ...state.scores, [team]: state.scores[team] + 1 },
-        events: [...state.events, { type: 'goal', team, time: currentTime, jersey }],
+        events: [...state.events, { type: 'goal', team, time: currentTime, jersey, goalType }],
       };
     }
 
