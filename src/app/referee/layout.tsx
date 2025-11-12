@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useUser, useFirestore, useAuth, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,11 +16,11 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const firestore = useFirestore();
   const auth = useAuth();
-  const { isAdmin, setIsAdmin } = useAdmin();
+  const { setIsAdmin } = useAdmin();
   const [status, setStatus] = useState<'loading' | 'pending' | 'approved'>('loading');
 
   const userProfileRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !firestore) return null;
     return doc(firestore, 'users', user.uid);
   }, [user, firestore]);
 
@@ -30,7 +30,7 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (isAuthLoading || isProfileLoading) {
+    if (isAuthLoading || (user && isProfileLoading)) {
       setStatus('loading');
       return;
     }
@@ -40,17 +40,19 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Now profile is loaded or is null
+    // At this point, user is loaded, and profile is either loaded or null.
     if (profile?.approved) {
       setStatus('approved');
     } else {
-      // If not approved via profile, check if they are an admin
+      // If not approved via profile, let's check if they are an admin.
+      // This check is safe because it only happens if the primary check fails.
       const adminDocRef = doc(firestore, 'admins', user.uid);
       getDoc(adminDocRef).then((adminDoc) => {
         if (adminDoc.exists()) {
-          setIsAdmin(true);
+          setIsAdmin(true); // User is an admin
           setStatus('approved');
         } else {
+          // Not approved and not an admin
           setStatus('pending');
         }
       }).catch(() => {
@@ -84,11 +86,12 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
 
       const cleanup = async () => {
         if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
+        if (!user) return; // Prevent error on logout
         // Check if this tab was the active one before clearing the session
         try {
-          const currentDoc = await getDoc(userDocRef);
+          const currentDoc = await getDoc(doc(firestore, 'users', user.uid));
           if (currentDoc.exists() && currentDoc.data().activeSessionId === sessionId.current) {
-             await updateDoc(userDocRef, { activeSessionId: null, sessionLastActive: null });
+             await updateDoc(doc(firestore, 'users', user.uid), { activeSessionId: null, sessionLastActive: null });
           }
         } catch (e) {
             console.error("Could not clear session on unload", e);
@@ -107,12 +110,18 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
   const handleLogout = async () => {
     if (user && firestore) {
        const userDocRef = doc(firestore, 'users', user.uid);
-       await updateDoc(userDocRef, { activeSessionId: null, sessionLastActive: null });
+       // Clear session immediately on logout
+       try {
+         await updateDoc(userDocRef, { activeSessionId: null, sessionLastActive: null });
+       } catch(e) {
+        // Non-critical, just log it
+        console.error("Could not clear session on logout", e);
+       }
     }
     if (auth) {
       await signOut(auth);
     }
-    // router.push('/login') should be handled by the main useEffect detecting no user
+    router.push('/login');
   };
 
   if (status === 'loading') {
