@@ -1,7 +1,38 @@
 'use client';
-import { useReducer } from 'react';
+import { useReducer, useEffect } from 'react';
 import type { MatchState, MatchAction } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
+
+const LOCAL_STORAGE_KEY = 'referee-edge-match-state';
+
+// Function to load state from localStorage
+const loadState = (): MatchState => {
+  try {
+    if (typeof window === 'undefined') {
+      return initialState;
+    }
+    const serializedState = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (serializedState === null) {
+      return initialState;
+    }
+    const storedState = JSON.parse(serializedState);
+    // Basic validation to prevent loading corrupted data
+    if (storedState.scores && storedState.timer) {
+      // The timer should not persist in a running state on reload.
+      // We pause it and adjust the time to be accurate.
+      if (storedState.timer.isRunning) {
+        const elapsedMilliseconds = Date.now() - storedState.timer.startTime;
+        storedState.timer.totalPausedSeconds += Math.floor(elapsedMilliseconds / 1000);
+        storedState.timer.isRunning = false;
+      }
+      return storedState;
+    }
+  } catch (error) {
+    console.error("Error loading state from localStorage:", error);
+  }
+  return initialState;
+};
+
 
 export const initialState: MatchState = {
   scores: { home: 0, away: 0 },
@@ -167,6 +198,10 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
       };
 
     case 'RESET_MATCH':
+      // Also clear localStorage on explicit reset
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+      }
       return initialState;
 
     case 'OPEN_MODAL':
@@ -188,6 +223,28 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
   }
 }
 
+// Custom hook that combines the reducer with localStorage persistence
+export const usePersistentMatchState = () => {
+  const [state, dispatch] = useReducer(reducer, loadState());
+
+  // Effect to save state to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      // Don't save if it's the very initial state before a match starts
+      if (state.timer.period !== 'PRE_MATCH' || state.events.length > 0) {
+        const serializedState = JSON.stringify(state);
+        localStorage.setItem(LOCAL_STORAGE_KEY, serializedState);
+      }
+    } catch (error) {
+      console.error("Error saving state to localStorage:", error);
+    }
+  }, [state]);
+
+  return [state, dispatch] as const;
+};
+
+// Keep the old export for compatibility if other components use it directly,
+// but the main page should switch to usePersistentMatchState.
 export const useMatchState = () => {
     return useReducer(reducer, initialState);
 }

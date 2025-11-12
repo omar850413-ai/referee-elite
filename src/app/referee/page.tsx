@@ -2,7 +2,7 @@
 'use client';
 
 import { useReducer, useEffect } from 'react';
-import { reducer, initialState } from '@/hooks/use-match-state';
+import { reducer, initialState, usePersistentMatchState } from '@/hooks/use-match-state';
 import type { MatchState, MatchAction } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import TimerControl from '@/components/referee/TimerControl';
@@ -31,7 +31,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 
 export default function RefereeApp() {
   const { isAdmin } = useAdmin(); // Consume the context to get admin status
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = usePersistentMatchState(); // Use the new persistent hook
   const { teamNames, scores, fouls, timer, events, activeModal, modalData } = state;
 
   const auth = useAuth();
