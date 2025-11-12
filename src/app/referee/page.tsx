@@ -24,7 +24,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, LogOut } from 'lucide-react';
 import { useAdmin } from '@/context/AdminContext';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -35,15 +35,17 @@ export default function RefereeApp() {
   const { teamNames, scores, fouls, timer, events, activeModal, modalData } = state;
 
   const auth = useAuth();
+  const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
   
   useEffect(() => {
     // This pushes a state to the history, creating a "dummy" entry.
+    // This prevents the user from going back from this page.
     window.history.pushState(null, '', window.location.href);
 
     const handleBackButton = (event: PopStateEvent) => {
-      // Re-push the state to effectively "cancel" the back action.
+      // Re-push the state to effectively "cancel" the back action and stay on the page.
       window.history.pushState(null, '', window.location.href);
     };
 
@@ -56,9 +58,6 @@ export default function RefereeApp() {
   }, []);
 
   const handleLogout = async () => {
-    // This assumes the user object is available from the hook.
-    // In a real app, you'd get the user from useUser() or similar.
-    const user = auth.currentUser;
     if (user && firestore) {
       const userDocRef = doc(firestore, 'users', user.uid);
       try {
