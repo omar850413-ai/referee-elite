@@ -30,37 +30,55 @@ function RefereeLayoutContent({ children }: { children: React.ReactNode }) {
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (isAuthLoading || (user && isProfileLoading)) {
-      setStatus('loading');
-      return;
+    if (isAuthLoading) {
+        setStatus('loading');
+        return;
     }
 
     if (!user) {
-      router.push('/login');
-      return;
+        router.push('/login');
+        return;
     }
 
-    // At this point, user is loaded, and profile is either loaded or null.
-    if (profile?.approved) {
-      setStatus('approved');
-    } else {
-      // If not approved via profile, let's check if they are an admin.
-      // This check is safe because it only happens if the primary check fails.
-      const adminDocRef = doc(firestore, 'admins', user.uid);
-      getDoc(adminDocRef).then((adminDoc) => {
-        if (adminDoc.exists()) {
-          setIsAdmin(true); // User is an admin
-          setStatus('approved');
-        } else {
-          // Not approved and not an admin
-          setStatus('pending');
-        }
-      }).catch(() => {
-        // If the check fails (e.g. permissions), they are definitely not admin
-        setStatus('pending');
-      });
+    if (!firestore) {
+        // Firestore not ready yet, wait.
+        setStatus('loading');
+        return;
     }
-  }, [user, isAuthLoading, profile, isProfileLoading, firestore, router, setIsAdmin]);
+
+    // New logic: First, check for admin status. This is a high-privilege check.
+    const adminDocRef = doc(firestore, 'admins', user.uid);
+    getDoc(adminDocRef).then(adminDoc => {
+        if (adminDoc.exists()) {
+            // User is an admin, grant access immediately.
+            setIsAdmin(true);
+            setStatus('approved');
+        } else {
+            // User is not an admin, now check their regular user profile status.
+            if (isProfileLoading) {
+                // If profile is still loading, we wait.
+                setStatus('loading');
+            } else if (profile?.approved) {
+                // Profile is loaded and user is approved.
+                setStatus('approved');
+            } else {
+                // Profile is loaded but not approved, or doesn't exist.
+                setStatus('pending');
+            }
+        }
+    }).catch(error => {
+        console.error("Error checking admin status:", error);
+        // If checking admin status fails, fall back to checking user profile
+        if (isProfileLoading) {
+            setStatus('loading');
+        } else if (profile?.approved) {
+            setStatus('approved');
+        } else {
+            setStatus('pending');
+        }
+    });
+
+}, [user, isAuthLoading, profile, isProfileLoading, firestore, router, setIsAdmin]);
 
   useEffect(() => {
     if (status === 'approved' && user && firestore) {
