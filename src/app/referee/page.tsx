@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useReducer } from 'react';
+import { useReducer, useEffect } from 'react';
 import { reducer, initialState } from '@/hooks/use-match-state';
 import type { MatchState, MatchAction } from '@/lib/types';
 import { Card } from '@/components/ui/card';
@@ -37,6 +37,23 @@ export default function RefereeApp() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
+  
+  useEffect(() => {
+    // This pushes a state to the history, creating a "dummy" entry.
+    window.history.pushState(null, '', window.location.href);
+
+    const handleBackButton = (event: PopStateEvent) => {
+      // Re-push the state to effectively "cancel" the back action.
+      window.history.pushState(null, '', window.location.href);
+    };
+
+    window.addEventListener('popstate', handleBackButton);
+
+    // Cleanup the event listener when the component unmounts.
+    return () => {
+      window.removeEventListener('popstate', handleBackButton);
+    };
+  }, []);
 
   const handleLogout = async () => {
     // This assumes the user object is available from the hook.
