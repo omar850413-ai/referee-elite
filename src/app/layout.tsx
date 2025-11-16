@@ -31,7 +31,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <meta name="theme-color" content="#0C4A6E" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
       </head>
       <body className="font-body bg-background text-foreground antialiased">
         <FirebaseClientProvider>{children}</FirebaseClientProvider>
