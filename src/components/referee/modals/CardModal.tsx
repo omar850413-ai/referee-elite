@@ -23,14 +23,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
-type CardModalProps = {
-  isOpen: boolean;
-  dispatch: React.Dispatch<MatchAction>;
-  modalData: ModalData;
-  timerIsRunning: boolean;
-  teamNames: TeamNames;
-};
-
 const yellowCardReasons = [
   'Causal 1 : Retrasar la reanudación del juego',
   'Causal 2 : Mostrar desaprobación con palabras o acciones',
@@ -50,6 +42,7 @@ const unsportingBehaviorReasons = [
   'Por provocar a un adversario',
   'Por quitarse la camiseta en la celebración de un gol',
   'Por realizar una carga temeraria',
+  'Por sujetar a un adversario de forma temeraria',
   'Simulación',
   'Cometer cualquier otra infracción con la que se termina evitando un ataque prometedor',
 ];
