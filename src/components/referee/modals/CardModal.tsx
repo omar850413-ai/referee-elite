@@ -51,6 +51,7 @@ const unsportingBehaviorReasons = [
   'Por quitarse la camiseta en la celebración de un gol',
   'Por realizar una carga temeraria',
   'Simulación',
+  'Cometer cualquier otra infracción con la que se termina evitando un ataque prometedor',
 ];
 
 const redCardReasons = [
