@@ -85,6 +85,16 @@ body {
   }
 }
 
+@layer components {
+  /* Custom class for reason select dropdowns */
+  .reason-select-content [data-radix-collection-item] {
+    @apply h-auto;
+  }
+  .reason-select-content [data-radix-collection-item] > span {
+    @apply whitespace-normal;
+  }
+}
+
 @page {
   size: letter;
   margin: 0;
