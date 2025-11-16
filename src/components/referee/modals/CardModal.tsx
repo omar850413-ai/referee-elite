@@ -222,7 +222,7 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
               <SelectTrigger id="card-reason">
                 <SelectValue placeholder="Seleccione una causal" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="reason-select-content">
                 {(cardType === 'yellow' ? yellowCardReasons : redCardReasons).map((r, index) => (
                   <SelectItem key={index} value={r}>
                     {r}
@@ -238,7 +238,7 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
                 <SelectTrigger id="card-sub-reason">
                   <SelectValue placeholder="Seleccione un criterio" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="reason-select-content">
                   {unsportingBehaviorReasons.map((subReason, index) => (
                     <SelectItem key={index} value={subReason}>
                       {subReason}
