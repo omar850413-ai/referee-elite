@@ -85,6 +85,12 @@ body {
   }
 }
 
+/* Custom rule to allow text wrapping in select items */
+[data-radix-select-content] [data-radix-select-item-text] {
+  white-space: normal;
+}
+
+
 @page {
   size: letter;
   margin: 0;
