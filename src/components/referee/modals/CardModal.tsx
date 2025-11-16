@@ -71,6 +71,14 @@ const staffRoles = [
   'Otro miembro del Cuerpo Tecnico',
 ];
 
+type CardModalProps = {
+  isOpen: boolean;
+  dispatch: React.Dispatch<MatchAction>;
+  modalData: ModalData;
+  timerIsRunning: boolean;
+  teamNames: TeamNames;
+};
+
 const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: CardModalProps) => {
   const [recipientType, setRecipientType] = useState<'player' | 'staff'>('player');
   const [jersey, setJersey] = useState('');
@@ -222,7 +230,7 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
               <SelectTrigger id="card-reason">
                 <SelectValue placeholder="Seleccione una causal" />
               </SelectTrigger>
-              <SelectContent className="reason-select-content">
+              <SelectContent>
                 {(cardType === 'yellow' ? yellowCardReasons : redCardReasons).map((r, index) => (
                   <SelectItem key={index} value={r}>
                     {r}
@@ -238,7 +246,7 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
                 <SelectTrigger id="card-sub-reason">
                   <SelectValue placeholder="Seleccione un criterio" />
                 </SelectTrigger>
-                <SelectContent className="reason-select-content">
+                <SelectContent>
                   {unsportingBehaviorReasons.map((subReason, index) => (
                     <SelectItem key={index} value={subReason}>
                       {subReason}
