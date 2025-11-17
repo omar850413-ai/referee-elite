@@ -86,15 +86,16 @@ body {
 }
 
 @layer components {
-  /* Allow select items to wrap text and adjust height */
-  [data-radix-select-content] [data-radix-collection-item] {
-    @apply h-auto;
-  }
-  [data-radix-select-content] [data-radix-collection-item] > span > span {
-    @apply whitespace-normal;
+  /* Custom class for reason select dropdowns */
+  .reason-select-content {
+    /* On small screens, don't let the menu be wider than the viewport */
+    @apply max-w-[90vw]; 
+    /* On larger screens, this allows it to grow, but `min-w-..` below sets the floor */
+    @apply w-full sm:w-auto; 
+    /* The minimum width will be the width of the trigger button */
+    @apply min-w-[var(--radix-select-trigger-width)];
   }
 
-  /* Custom class for reason select dropdowns */
   .reason-select-content [data-radix-collection-item] {
     @apply h-auto;
   }
