@@ -86,6 +86,14 @@ body {
 }
 
 @layer components {
+  /* Allow select items to wrap text and adjust height */
+  [data-radix-select-content] [data-radix-collection-item] {
+    @apply h-auto;
+  }
+  [data-radix-select-content] [data-radix-collection-item] > span > span {
+    @apply whitespace-normal;
+  }
+
   /* Custom class for reason select dropdowns */
   .reason-select-content [data-radix-collection-item] {
     @apply h-auto;
