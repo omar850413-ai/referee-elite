@@ -140,7 +140,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
             <div className="space-y-6 text-gray-800">
               <div className="text-center mb-6 border-b-2 border-gray-300 pb-4 report-title-section">
                 <p className="text-sm text-gray-500 mb-1">
-                  Generado: {currentDate} {currentTime} hrs
+                  Generado: ${currentDate} ${currentTime} hrs
                 </p>
                 <h2 className="text-4xl font-extrabold text-gray-800 mb-1">Resultado Final</h2>
                 <p className="text-6xl font-black text-primary-dark">
@@ -176,7 +176,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
                    <ul className="space-y-2 text-sm">
                     {judgeIncidents.map((e, i) => (
                       <li key={i} className={`p-3 border rounded-lg shadow-sm ${e.type === 'note' ? 'bg-secondary/10 border-secondary' : 'bg-remove-goal/10 border-remove-goal'}`}>
-                         <b>{formatTime(e.time)}:</b> {e.type === 'note' ? e.text : `GOL CORREGIDO #${e.jersey} (${teamNames[e.team!]})`}
+                         <b>${formatTime(e.time)}:</b> {e.type === 'note' ? e.text : `GOL ANULADO #${e.jersey} (${teamNames[e.team!]})`}
                       </li>
                     ))}
                    </ul>

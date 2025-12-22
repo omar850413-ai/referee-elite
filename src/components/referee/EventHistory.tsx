@@ -58,7 +58,7 @@ const EventHistory = ({ events, teamNames }: EventHistoryProps) => {
         break;
       case 'goal_removed':
         icon = '➖';
-        content = `<span class="${teamClass}">${teamName}</span>: <strong>GOL CORREGIDO</strong> de Camiseta <strong>#${event.jersey}</strong>.`;
+        content = `<span class="${teamClass}">${teamName}</span>: <strong>GOL ANULADO</strong> de Camiseta <strong>#${event.jersey}</strong>.`;
         styleClass = 'bg-purple-500/20 border-l-4 border-purple-500';
         break;
       case 'foul':

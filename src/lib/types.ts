@@ -1,5 +1,6 @@
 
 
+
 export type Team = 'home' | 'away';
 export type CardType = 'yellow' | 'red';
 export type Period = 'PRE_MATCH' | 'P1' | 'HALF_TIME' | 'P2' | 'FULL_TIME';
@@ -45,6 +46,14 @@ export interface ModalData {
   data?: any;
 }
 
+// This type will hold the event data captured at the moment the button is pressed.
+export interface PendingEvent {
+    type: 'goal' | 'card' | 'note' | 'substitution';
+    time: number;
+    data: any;
+}
+
+
 export interface MatchState {
   scores: Scores;
   fouls: Fouls;
@@ -53,6 +62,7 @@ export interface MatchState {
   teamNames: TeamNames;
   activeModal: ModalType | null;
   modalData: ModalData | null;
+  pendingEvent: PendingEvent | null; // Holds the event data while modal is open
 }
 
 export type MatchAction =
@@ -62,12 +72,12 @@ export type MatchAction =
   | { type: 'END_P2' }
   | { type: 'TOGGLE_PAUSE' }
   | { type: 'UPDATE_TEAM_NAME'; payload: { team: Team; name: string } }
-  | { type: 'ADD_GOAL'; payload: { team: Team; jersey: number, goalType: GoalType } }
-  | { type: 'REMOVE_GOAL'; payload: { team: Team; jersey: number } }
+  | { type: 'ADD_GOAL'; payload: { team: Team; jersey: number, goalType: GoalType, time: number } }
+  | { type: 'REMOVE_GOAL'; payload: { team: Team; jersey: number, time: number } }
   | { type: 'ADD_FOUL'; payload: { team: Team } }
-  | { type: 'ADD_CARD'; payload: { team: Team; cardType: CardType; jersey: number | string; reason: string } }
-  | { type: 'ADD_NOTE'; payload: { text: string } }
-  | { type: 'ADD_SUBSTITUTION'; payload: { team: Team; playerIn: number; playerOut: number } }
+  | { type: 'ADD_CARD'; payload: { team: Team; cardType: CardType; jersey: number | string; reason: string, time: number } }
+  | { type: 'ADD_NOTE'; payload: { text: string, time: number } }
+  | { type: 'ADD_SUBSTITUTION'; payload: { team: Team; playerIn: number; playerOut: number, time: number } }
   | { type: 'RESET_TIMER' }
   | { type: 'RESET_MATCH' }
   | { type: 'OPEN_MODAL'; payload: ModalData }

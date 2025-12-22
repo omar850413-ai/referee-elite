@@ -35,6 +35,10 @@ const loadState = (): MatchState => {
         // If it was paused, keep it paused.
         storedState.timer.isRunning = false;
       }
+      
+      // Ensure pendingEvent is cleared on load
+      storedState.pendingEvent = null;
+
       return storedState;
     }
   } catch (error) {
@@ -57,6 +61,7 @@ export const initialState: MatchState = {
   teamNames: { home: 'LOCAL', away: 'VISITANTE' },
   activeModal: null,
   modalData: null,
+  pendingEvent: null, // Initialize pending event
 };
 
 const getCurrentTimeSeconds = (timer: MatchState['timer']): number => {
@@ -135,16 +140,17 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
       };
 
     case 'ADD_GOAL': {
-      const { team, jersey, goalType } = action.payload;
+      const { team, jersey, goalType, time } = action.payload;
       return {
         ...state,
         scores: { ...state.scores, [team]: state.scores[team] + 1 },
-        events: [...state.events, { type: 'goal', team, time: currentTime, jersey, goalType }],
+        events: [...state.events, { type: 'goal', team, time, jersey, goalType }],
+        pendingEvent: null, // Clear pending event after use
       };
     }
 
     case 'REMOVE_GOAL': {
-      const { team, jersey } = action.payload;
+      const { team, jersey, time } = action.payload;
       if (state.scores[team] <= 0) {
         toast({ variant: 'destructive', title: 'Error', description: 'No se puede quitar gol con marcador en cero.' });
         return state;
@@ -154,8 +160,9 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
         scores: { ...state.scores, [team]: state.scores[team] - 1 },
         events: [
           ...state.events,
-          { type: 'goal_removed', team, time: currentTime, jersey, reason: 'Corrección manual' },
+          { type: 'goal_removed', team, time, jersey, reason: 'Corrección manual' },
         ],
+        pendingEvent: null, // Clear pending event
       };
     }
 
@@ -173,31 +180,29 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
     }
     
     case 'ADD_CARD': {
-      const { team, cardType, jersey, reason } = action.payload;
+      const { team, cardType, jersey, reason, time } = action.payload;
       return {
         ...state,
-        events: [...state.events, { type: cardType, team, time: currentTime, jersey, reason }],
+        events: [...state.events, { type: cardType, team, time, jersey, reason }],
+        pendingEvent: null, // Clear pending event
       };
     }
 
     case 'ADD_NOTE': {
+       const { text, time } = action.payload;
       return {
         ...state,
-        events: [...state.events, { type: 'note', text: action.payload.text, time: currentTime }],
+        events: [...state.events, { type: 'note', text, time }],
+        pendingEvent: null, // Clear pending event
       };
     }
 
     case 'ADD_SUBSTITUTION': {
-      if (!state.timer.isRunning && state.timer.period !== 'HALF_TIME') {
-        toast({ variant: 'destructive', title: 'Error', description: 'Las sustituciones solo se pueden registrar durante el juego o en el entretiempo.' });
-        return state;
-      }
-      const { team, playerIn, playerOut } = action.payload;
-      // If substitution is during halftime, force the time to 45:00.
-      const substitutionTime = state.timer.period === 'HALF_TIME' ? 45 * 60 : currentTime;
+      const { team, playerIn, playerOut, time } = action.payload;
       return {
         ...state,
-        events: [...state.events, { type: 'substitution', team, time: substitutionTime, playerIn, playerOut }],
+        events: [...state.events, { type: 'substitution', team, time, playerIn, playerOut }],
+        pendingEvent: null, // Clear pending event
       };
     }
 
@@ -215,10 +220,30 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
       return initialState;
 
     case 'OPEN_MODAL':
+      const { type, data } = action.payload;
+      
+      // For event types that need precise timing, capture it here.
+      const isTimedEvent = ['goal', 'card', 'note', 'substitution'].includes(type);
+      
+      if (isTimedEvent && !state.timer.isRunning && state.timer.period !== 'HALF_TIME' && type !== 'note' && type !== 'goal') {
+         toast({
+           variant: 'destructive',
+           title: 'Error',
+           description: 'El cronómetro debe estar corriendo para registrar este evento.',
+         });
+         return state; // Abort opening the modal
+      }
+
+      // For substitutions, allow at half-time even if timer is stopped.
+      const substitutionTime = state.timer.period === 'HALF_TIME' ? 45 * 60 : currentTime;
+      const eventTime = type === 'substitution' ? substitutionTime : currentTime;
+
       return {
         ...state,
-        activeModal: action.payload.type,
+        activeModal: type,
         modalData: action.payload,
+        // Create a pending event with the *current* time
+        pendingEvent: isTimedEvent ? { type, time: eventTime, data } : null,
       };
 
     case 'CLOSE_MODAL':
@@ -226,6 +251,7 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
         ...state,
         activeModal: null,
         modalData: null,
+        pendingEvent: null, // Clear any pending event when a modal is closed
       };
 
     default:

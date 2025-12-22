@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { MatchAction } from '@/lib/types';
+import type { MatchAction, PendingEvent } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -18,10 +18,10 @@ import { useToast } from '@/hooks/use-toast';
 type NoteModalProps = {
   isOpen: boolean;
   dispatch: React.Dispatch<MatchAction>;
-  timerIsRunning: boolean;
+  pendingEvent: PendingEvent | null;
 };
 
-const NoteModal = ({ isOpen, dispatch, timerIsRunning }: NoteModalProps) => {
+const NoteModal = ({ isOpen, dispatch, pendingEvent }: NoteModalProps) => {
   const [note, setNote] = useState('');
   const { toast } = useToast();
 
@@ -31,11 +31,11 @@ const NoteModal = ({ isOpen, dispatch, timerIsRunning }: NoteModalProps) => {
   };
 
   const handleSubmit = () => {
-    if (!timerIsRunning) {
+     if (!pendingEvent) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'El cronómetro debe estar corriendo para registrar una anotación.',
+        description: 'No hay un evento de nota pendiente. El cronómetro debe estar corriendo.',
       });
       return;
     }
@@ -44,7 +44,7 @@ const NoteModal = ({ isOpen, dispatch, timerIsRunning }: NoteModalProps) => {
       return;
     }
 
-    dispatch({ type: 'ADD_NOTE', payload: { text: note.trim() } });
+    dispatch({ type: 'ADD_NOTE', payload: { text: note.trim(), time: pendingEvent.time } });
     handleClose();
   };
 
@@ -56,7 +56,7 @@ const NoteModal = ({ isOpen, dispatch, timerIsRunning }: NoteModalProps) => {
             Anotar Incidente en Tiempo Real
           </DialogTitle>
         </DialogHeader>
-        {!timerIsRunning && (
+        {!pendingEvent && (
           <Alert variant="destructive">
             <AlertDescription>
               El cronómetro debe estar corriendo para registrar una anotación.

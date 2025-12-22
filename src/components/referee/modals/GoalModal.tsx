@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { MatchAction, Team, TeamNames, ModalData, GoalType } from '@/lib/types';
+import type { MatchAction, Team, TeamNames, ModalData, GoalType, PendingEvent } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -26,12 +26,12 @@ import {
 type GoalModalProps = {
   isOpen: boolean;
   dispatch: React.Dispatch<MatchAction>;
-  modalData: ModalData;
-  timerIsRunning: boolean;
+  modalData: ModalData | null;
+  pendingEvent: PendingEvent | null;
   teamNames: TeamNames;
 };
 
-const GoalModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: GoalModalProps) => {
+const GoalModal = ({ isOpen, dispatch, modalData, pendingEvent, teamNames }: GoalModalProps) => {
   const [jersey, setJersey] = useState('');
   const [goalType, setGoalType] = useState<GoalType>('regular');
   const [ownGoalTeam, setOwnGoalTeam] = useState<Team | ''>('');
@@ -53,7 +53,7 @@ const GoalModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: G
 
   const { team, isSubtraction } = modalData.data as { team: Team; isSubtraction?: boolean };
   const teamName = teamNames[team];
-  const title = isSubtraction ? `⚠️ Quitar Gol de ${teamName}` : `⚽ Registrar Gol para ${teamName}`;
+  const title = isSubtraction ? `⚠️ Anular Gol de ${teamName}` : `⚽ Registrar Gol para ${teamName}`;
   const otherTeam: Team = team === 'home' ? 'away' : 'home';
 
   const handleClose = () => {
@@ -61,8 +61,8 @@ const GoalModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: G
   };
 
   const handleAddGoal = () => {
-    if (!timerIsRunning) {
-      toast({ variant: 'destructive', title: 'Error', description: 'El cronómetro debe estar corriendo.' });
+    if (!pendingEvent) {
+      toast({ variant: 'destructive', title: 'Error', description: 'No hay un evento de gol pendiente.' });
       return;
     }
 
@@ -78,27 +78,33 @@ const GoalModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: G
         toast({ variant: 'destructive', title: 'Error', description: 'Debe seleccionar el equipo que cometió el autogol.' });
         return;
       }
-      // The goal is awarded to the *other* team
       teamThatScored = ownGoalTeam === 'home' ? 'away' : 'home';
     }
 
-    dispatch({ type: 'ADD_GOAL', payload: { team: teamThatScored, jersey: jerseyNum, goalType } });
+    dispatch({
+      type: 'ADD_GOAL',
+      payload: { team: teamThatScored, jersey: jerseyNum, goalType, time: pendingEvent.time },
+    });
     handleClose();
   };
   
   const handleRemoveGoal = () => {
+    if (!pendingEvent) {
+      toast({ variant: 'destructive', title: 'Error', description: 'No hay un evento pendiente.' });
+      return;
+    }
     const jerseyNum = parseInt(jersey);
     if (!jerseyNum || jerseyNum < 1 || jerseyNum > 999) {
         toast({ variant: 'destructive', title: 'Error', description: 'Número de camiseta inválido.' });
         return;
     }
-    dispatch({ type: 'REMOVE_GOAL', payload: { team, jersey: jerseyNum } });
+    dispatch({ type: 'REMOVE_GOAL', payload: { team, jersey: jerseyNum, time: pendingEvent.time } });
     handleClose();
   }
 
   const renderAddGoalForm = () => (
     <>
-      {!timerIsRunning && (
+      {pendingEvent?.time === undefined && (
         <Alert variant="destructive">
           <AlertDescription>El cronómetro debe estar corriendo para registrar un gol.</AlertDescription>
         </Alert>
@@ -141,7 +147,7 @@ const GoalModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: G
 
   const renderRemoveGoalForm = () => (
      <div className="py-4">
-        <Label htmlFor="goal-player-number">Número de Camiseta del Gol a Quitar:</Label>
+        <Label htmlFor="goal-player-number">Número de Camiseta del Gol a Anular:</Label>
         <Input id="goal-player-number" type="number" min="1" max="999" value={jersey} onChange={(e) => setJersey(e.target.value)} className="mt-2" />
     </div>
   );
@@ -160,7 +166,7 @@ const GoalModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: G
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>Cancelar</Button>
           <Button onClick={isSubtraction ? handleRemoveGoal : handleAddGoal} className={`text-white font-semibold ${isSubtraction ? 'bg-remove-goal hover:bg-remove-goal-dark' : 'bg-add-goal hover:bg-add-goal-dark'}`}>
-            {isSubtraction ? 'Confirmar Quitar Gol' : 'Confirmar Gol'}
+            {isSubtraction ? 'Confirmar Anular Gol' : 'Confirmar Gol'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -36,7 +36,7 @@ const ActionControls = ({ dispatch, teamNames, fouls }: ActionControlsProps) => 
           onClick={() => openRemoveGoalModal('home')}
           className="bg-remove-goal hover:bg-remove-goal-dark text-white font-bold py-6 text-xs sm:text-sm"
         >
-          ➖ Quitar Gol {teamNames.home.toUpperCase()}
+          ➖ Anular Gol {teamNames.home.toUpperCase()}
         </Button>
         <Button
           onClick={() => handleFoul('home')}
@@ -61,7 +61,7 @@ const ActionControls = ({ dispatch, teamNames, fouls }: ActionControlsProps) => 
           onClick={() => openRemoveGoalModal('away')}
           className="bg-remove-goal hover:bg-remove-goal-dark text-white font-bold py-6 text-xs sm:text-sm"
         >
-          ➖ Quitar Gol {teamNames.away.toUpperCase()}
+          ➖ Anular Gol {teamNames.away.toUpperCase()}
         </Button>
         <Button
           onClick={() => handleFoul('away')}

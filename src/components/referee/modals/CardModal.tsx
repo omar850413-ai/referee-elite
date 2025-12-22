@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { MatchAction, Team, CardType, TeamNames, ModalData } from '@/lib/types';
+import type { MatchAction, Team, CardType, TeamNames, ModalData, PendingEvent } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -74,12 +74,12 @@ const staffRoles = [
 type CardModalProps = {
   isOpen: boolean;
   dispatch: React.Dispatch<MatchAction>;
-  modalData: ModalData;
-  timerIsRunning: boolean;
+  modalData: ModalData | null;
+  pendingEvent: PendingEvent | null;
   teamNames: TeamNames;
 };
 
-const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: CardModalProps) => {
+const CardModal = ({ isOpen, dispatch, modalData, pendingEvent, teamNames }: CardModalProps) => {
   const [recipientType, setRecipientType] = useState<'player' | 'staff'>('player');
   const [jersey, setJersey] = useState('');
   const [staffRole, setStaffRole] = useState('');
@@ -116,11 +116,11 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
   };
 
   const handleSubmit = () => {
-    if (!timerIsRunning) {
+    if (!pendingEvent) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'El cronómetro debe estar corriendo para registrar una tarjeta.',
+        description: 'No hay un evento de tarjeta pendiente.',
       });
       return;
     }
@@ -153,8 +153,16 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
 
     const finalReason = showSubReason ? `${reason} - ${subReason}` : reason;
 
-    // The jersey parameter is now a string to accommodate both jersey numbers and staff roles
-    dispatch({ type: 'ADD_CARD', payload: { team, cardType, jersey: targetIdentifier, reason: finalReason.trim() } });
+    dispatch({
+      type: 'ADD_CARD',
+      payload: {
+        team,
+        cardType,
+        jersey: targetIdentifier,
+        reason: finalReason.trim(),
+        time: pendingEvent.time,
+      },
+    });
     handleClose();
   };
   
@@ -165,7 +173,7 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
         <DialogHeader>
           <DialogTitle className={`text-2xl font-bold text-center ${titleColor}`}>{title}</DialogTitle>
         </DialogHeader>
-        {!timerIsRunning && (
+        {!pendingEvent && (
           <Alert variant="destructive">
             <AlertDescription>
               El cronómetro debe estar corriendo para registrar una tarjeta.
@@ -213,7 +221,7 @@ const CardModal = ({ isOpen, dispatch, modalData, timerIsRunning, teamNames }: C
                 <SelectTrigger id="staff-role">
                   <SelectValue placeholder="Seleccione un cargo" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="reason-select-content">
                   {staffRoles.map((role, index) => (
                     <SelectItem key={index} value={role}>
                       {role}

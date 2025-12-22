@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { MatchAction, Team, TeamNames, ModalData, Period } from '@/lib/types';
+import type { MatchAction, Team, TeamNames, ModalData, Period, PendingEvent } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -18,13 +18,13 @@ import { useToast } from '@/hooks/use-toast';
 type SubstitutionModalProps = {
   isOpen: boolean;
   dispatch: React.Dispatch<MatchAction>;
-  modalData: ModalData;
-  timerIsRunning: boolean;
+  modalData: ModalData | null;
+  pendingEvent: PendingEvent | null;
   period: Period;
   teamNames: TeamNames;
 };
 
-const SubstitutionModal = ({ isOpen, dispatch, modalData, timerIsRunning, period, teamNames }: SubstitutionModalProps) => {
+const SubstitutionModal = ({ isOpen, dispatch, modalData, pendingEvent, period, teamNames }: SubstitutionModalProps) => {
   const [playerIn, setPlayerIn] = useState('');
   const [playerOut, setPlayerOut] = useState('');
   const { toast } = useToast();
@@ -41,14 +41,14 @@ const SubstitutionModal = ({ isOpen, dispatch, modalData, timerIsRunning, period
   const { team } = modalData.data as { team: Team };
   const teamName = teamNames[team];
   const title = `Sustitución - ${teamName}`;
-  const canSubstitute = timerIsRunning || period === 'HALF_TIME';
+  const canSubstitute = !!pendingEvent;
 
   const handleClose = () => {
     dispatch({ type: 'CLOSE_MODAL' });
   };
 
   const handleSubmit = () => {
-    if (!canSubstitute) {
+    if (!pendingEvent) {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -70,7 +70,10 @@ const SubstitutionModal = ({ isOpen, dispatch, modalData, timerIsRunning, period
       return;
     }
 
-    dispatch({ type: 'ADD_SUBSTITUTION', payload: { team, playerIn: playerInNum, playerOut: playerOutNum } });
+    dispatch({
+      type: 'ADD_SUBSTITUTION',
+      payload: { team, playerIn: playerInNum, playerOut: playerOutNum, time: pendingEvent.time },
+    });
     handleClose();
   };
 

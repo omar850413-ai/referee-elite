@@ -32,7 +32,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 export default function RefereeApp() {
   const { isAdmin } = useAdmin(); // Consume the context to get admin status
   const [state, dispatch] = usePersistentMatchState(); // Use the new persistent hook
-  const { teamNames, scores, fouls, timer, events, activeModal, modalData } = state;
+  const { teamNames, scores, fouls, timer, events, activeModal, modalData, pendingEvent } = state;
 
   const auth = useAuth();
   const { user } = useUser();
@@ -139,26 +139,26 @@ export default function RefereeApp() {
         isOpen={activeModal === 'goal'}
         dispatch={dispatch}
         modalData={modalData}
-        timerIsRunning={timer.isRunning}
+        pendingEvent={pendingEvent}
         teamNames={teamNames}
       />
       <CardModal
         isOpen={activeModal === 'card'}
         dispatch={dispatch}
         modalData={modalData}
-        timerIsRunning={timer.isRunning}
+        pendingEvent={pendingEvent}
         teamNames={teamNames}
       />
       <NoteModal
         isOpen={activeModal === 'note'}
         dispatch={dispatch}
-        timerIsRunning={timer.isRunning}
+        pendingEvent={pendingEvent}
       />
        <SubstitutionModal
         isOpen={activeModal === 'substitution'}
         dispatch={dispatch}
         modalData={modalData}
-        timerIsRunning={timer.isRunning}
+        pendingEvent={pendingEvent}
         period={timer.period}
         teamNames={teamNames}
       />
