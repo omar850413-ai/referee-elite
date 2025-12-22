@@ -1,6 +1,7 @@
 
 
 
+
 export type Team = 'home' | 'away';
 export type CardType = 'yellow' | 'red';
 export type Period = 'PRE_MATCH' | 'P1' | 'HALF_TIME' | 'P2' | 'FULL_TIME';
