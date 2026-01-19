@@ -9,12 +9,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { formatTime } from '@/lib/utils';
 
 type SubstitutionModalProps = {
   isOpen: boolean;
@@ -83,6 +85,11 @@ const SubstitutionModal = ({ isOpen, dispatch, modalData, pendingEvent, period, 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center text-blue-600">{title}</DialogTitle>
+          {pendingEvent && (
+            <DialogDescription className="text-center text-lg font-mono">
+              Tiempo del evento: {formatTime(pendingEvent.time)}
+            </DialogDescription>
+          )}
         </DialogHeader>
         {!canSubstitute && (
           <Alert variant="destructive">

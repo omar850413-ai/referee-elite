@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { formatTime } from '@/lib/utils';
 
 type GoalModalProps = {
   isOpen: boolean;
@@ -160,6 +162,11 @@ const GoalModal = ({ isOpen, dispatch, modalData, pendingEvent, teamNames }: Goa
           <DialogTitle className={`text-2xl font-bold text-center ${isSubtraction ? 'text-remove-goal' : 'text-add-goal'}`}>
             {title}
           </DialogTitle>
+           {pendingEvent && !isSubtraction && (
+            <DialogDescription className="text-center text-lg font-mono">
+              Tiempo del evento: {formatTime(pendingEvent.time)}
+            </DialogDescription>
+          )}
         </DialogHeader>
         <div className="py-4 space-y-4">
             {isSubtraction ? renderRemoveGoalForm() : renderAddGoalForm()}
