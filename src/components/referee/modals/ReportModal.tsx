@@ -11,7 +11,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatTime } from '@/lib/utils';
-import { toJpeg } from 'html-to-image';
 import { useRef } from 'react';
 
 type ReportModalProps = {
@@ -27,22 +26,10 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
     dispatch({ type: 'CLOSE_MODAL' });
   };
 
-  const handleDownloadImage = () => {
-    if (reportContentRef.current === null) {
-      return;
-    }
-
-    toJpeg(reportContentRef.current, { cacheBust: true, backgroundColor: '#ffffff' })
-      .then((dataUrl) => {
-        const link = document.createElement('a');
-        link.download = 'informe-partido.jpg';
-        link.href = dataUrl;
-        link.click();
-      })
-      .catch((err) => {
-        console.error('oops, something went wrong!', err);
-      });
+  const handlePrint = () => {
+    window.print();
   };
+
 
   const { scores, fouls, teamNames, events, timer } = matchState;
   const finalTime = formatTime(timer.totalPausedSeconds + (timer.isRunning ? (Date.now() - timer.startTime) / 1000 : 0));
@@ -144,11 +131,11 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
                 </p>
                 <h2 className="text-4xl font-extrabold text-gray-800 mb-1">Resultado Final</h2>
                 <p className="text-6xl font-black text-primary-dark">
-                  {teamNames.home} <span className="text-gray-700">{scores.home}</span> -{' '}
-                  <span className="text-gray-700">{scores.away}</span> {teamNames.away}
+                  {teamNames.home} <span className="text-gray-700">${scores.home}</span> -{' '}
+                  <span className="text-gray-700">${scores.away}</span> {teamNames.away}
                 </p>
                 <p className="text-xl text-gray-600 font-semibold mt-2">
-                  Tiempo Total de Juego: {finalTime}
+                  Tiempo Total de Juego: ${finalTime}
                 </p>
               </div>
 
@@ -156,7 +143,7 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
                 {['home', 'away'].map((team) => (
                   <div key={team} className="p-4 rounded-xl space-y-4 incident-section">
                     <h4 className="text-xl font-extrabold text-primary-dark border-b-2 border-primary-dark pb-1">
-                      {teamNames[team as Team]} ({team === 'home' ? 'LOCAL' : 'VISITANTE'})
+                      {teamNames[team as Team]} (${team === 'home' ? 'LOCAL' : 'VISITANTE'})
                     </h4>
                     <div dangerouslySetInnerHTML={{ __html: `<h5>⚽ Goles Anotados (${team === 'home' ? scores.home : scores.away})</h5>${generateIncidentTable(team === 'home' ? homeGoals : awayGoals, 'goals')}` }} />
                     <div dangerouslySetInnerHTML={{ __html: `<h5>🔄 Sustituciones (${team === 'home' ? homeSubs.length : awaySubs.length})</h5>${generateIncidentTable(team === 'home' ? homeSubs : awaySubs, 'subs')}` }} />
@@ -191,8 +178,8 @@ const ReportModal = ({ isOpen, dispatch, matchState }: ReportModalProps) => {
           <Button variant="outline" onClick={handleClose} className="mb-2 sm:mb-0">
             Cerrar
           </Button>
-          <Button onClick={handleDownloadImage} className="bg-indigo-600 hover:bg-indigo-700 mb-2 sm:mb-0">
-            Descargar Informe como Imagen
+          <Button onClick={handlePrint} className="bg-indigo-600 hover:bg-indigo-700 mb-2 sm:mb-0">
+            Imprimir Informe
           </Button>
         </DialogFooter>
       </DialogContent>
