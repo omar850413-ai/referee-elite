@@ -28,6 +28,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    turbopack: {
+      // This option tells Turbopack where the root of the project is.
+      // `__dirname` is a Node.js global that gives the directory name of the current module.
+      root: __dirname,
+    },
+  },
 };
 
 export default nextConfig;
