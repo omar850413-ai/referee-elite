@@ -3,11 +3,6 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  experimental: {
-    turbopack: {
-      root: process.cwd(),
-    },
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -32,6 +27,12 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  experimental: {
+    turbopack: {
+      // This explicitly sets the project root for Turbopack, fixing the build error.
+      root: process.cwd(),
+    },
   },
 };
 
