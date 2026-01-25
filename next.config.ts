@@ -3,6 +3,13 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
+  experimental: {
+    turbopack: {
+      // This tells Turbopack to use the current directory as the project root.
+      // It's necessary to fix an issue where it incorrectly infers the root.
+      root: process.cwd(),
+    },
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
