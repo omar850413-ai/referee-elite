@@ -1,51 +1,76 @@
 
 'use client';
 
-import { useState } from 'react';
-import type { MatchAction, PendingEvent } from '@/lib/types';
+import { useState, useEffect } from 'react';
+import type { MatchAction, PendingEvent, GameEvent, NoteEvent } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { formatTime } from '@/lib/utils';
 
 type NoteModalProps = {
   isOpen: boolean;
   dispatch: React.Dispatch<MatchAction>;
   pendingEvent: PendingEvent | null;
+  editingEvent: GameEvent | null;
 };
 
-const NoteModal = ({ isOpen, dispatch, pendingEvent }: NoteModalProps) => {
+const NoteModal = ({ isOpen, dispatch, pendingEvent, editingEvent }: NoteModalProps) => {
   const [note, setNote] = useState('');
   const { toast } = useToast();
+  const isEditing = !!editingEvent;
+
+  useEffect(() => {
+    if (isOpen) {
+      if (isEditing && editingEvent?.type === 'note') {
+        setNote((editingEvent as NoteEvent).text);
+      } else {
+        setNote('');
+      }
+    }
+  }, [isOpen, isEditing, editingEvent]);
 
   const handleClose = () => {
-    setNote('');
     dispatch({ type: 'CLOSE_MODAL' });
   };
+  
+  const eventTime = isEditing ? editingEvent.time : pendingEvent?.time;
+  const title = isEditing ? 'Editar Anotación' : 'Anotar Incidente en Tiempo Real';
 
   const handleSubmit = () => {
-     if (!pendingEvent) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'No hay un evento de nota pendiente. El cronómetro debe estar corriendo.',
-      });
-      return;
-    }
     if (!note.trim()) {
       toast({ variant: 'destructive', title: 'Error', description: 'La anotación no puede estar vacía.' });
       return;
     }
-
-    dispatch({ type: 'ADD_NOTE', payload: { text: note.trim(), time: pendingEvent.time } });
+    
+    if (isEditing) {
+      dispatch({
+        type: 'UPDATE_EVENT',
+        payload: {
+          updatedEvent: {
+            ...editingEvent,
+            text: note.trim(),
+          } as NoteEvent
+        }
+      });
+    } else {
+      if (!pendingEvent) {
+        toast({ variant: 'destructive', title: 'Error', description: 'El cronómetro debe estar corriendo.' });
+        return;
+      }
+      dispatch({ type: 'ADD_NOTE', payload: { text: note.trim(), time: pendingEvent.time } });
+    }
+    
     handleClose();
   };
 
@@ -54,10 +79,15 @@ const NoteModal = ({ isOpen, dispatch, pendingEvent }: NoteModalProps) => {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-accent text-center">
-            Anotar Incidente en Tiempo Real
+            {title}
           </DialogTitle>
+          {eventTime !== undefined && (
+            <DialogDescription className="text-center text-lg font-mono">
+              Tiempo del evento: {formatTime(eventTime)}
+            </DialogDescription>
+          )}
         </DialogHeader>
-        {!pendingEvent && (
+        {!pendingEvent && !isEditing && (
           <Alert variant="destructive">
             <AlertDescription>
               El cronómetro debe estar corriendo para registrar una anotación.
@@ -82,7 +112,7 @@ const NoteModal = ({ isOpen, dispatch, pendingEvent }: NoteModalProps) => {
             Cancelar
           </Button>
           <Button onClick={handleSubmit} className="bg-accent hover:bg-orange-700">
-            Registrar Anotación
+            {isEditing ? 'Guardar Cambios' : 'Registrar Anotación'}
           </Button>
         </DialogFooter>
       </DialogContent>

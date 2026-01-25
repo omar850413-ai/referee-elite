@@ -2,7 +2,7 @@
 'use client';
 
 import { useReducer, useEffect } from 'react';
-import { reducer, initialState, usePersistentMatchState } from '@/hooks/use-match-state';
+import { usePersistentMatchState } from '@/hooks/use-match-state';
 import type { MatchState, MatchAction } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import TimerControl from '@/components/referee/TimerControl';
@@ -32,7 +32,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 export default function RefereeApp() {
   const { isAdmin } = useAdmin(); // Consume the context to get admin status
   const [state, dispatch] = usePersistentMatchState(); // Use the new persistent hook
-  const { teamNames, scores, fouls, timer, events, activeModal, modalData, pendingEvent } = state;
+  const { teamNames, scores, fouls, timer, events, activeModal, modalData, pendingEvent, editingEvent } = state;
 
   const auth = useAuth();
   const { user } = useUser();
@@ -111,7 +111,7 @@ export default function RefereeApp() {
 
       <SubstitutionControls dispatch={dispatch as React.Dispatch<MatchAction>} teamNames={teamNames} />
 
-      <EventHistory events={events} teamNames={teamNames} />
+      <EventHistory events={events} teamNames={teamNames} dispatch={dispatch} />
 
       <ReportControls dispatch={dispatch as React.Dispatch<MatchAction>} />
 
@@ -140,6 +140,7 @@ export default function RefereeApp() {
         dispatch={dispatch}
         modalData={modalData}
         pendingEvent={pendingEvent}
+        editingEvent={editingEvent}
         teamNames={teamNames}
       />
       <CardModal
@@ -147,18 +148,21 @@ export default function RefereeApp() {
         dispatch={dispatch}
         modalData={modalData}
         pendingEvent={pendingEvent}
+        editingEvent={editingEvent}
         teamNames={teamNames}
       />
       <NoteModal
         isOpen={activeModal === 'note'}
         dispatch={dispatch}
         pendingEvent={pendingEvent}
+        editingEvent={editingEvent}
       />
        <SubstitutionModal
         isOpen={activeModal === 'substitution'}
         dispatch={dispatch}
         modalData={modalData}
         pendingEvent={pendingEvent}
+        editingEvent={editingEvent}
         period={timer.period}
         teamNames={teamNames}
       />

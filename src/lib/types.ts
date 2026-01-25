@@ -1,7 +1,4 @@
 
-
-
-
 export type Team = 'home' | 'away';
 export type CardType = 'yellow' | 'red';
 export type Period = 'PRE_MATCH' | 'P1' | 'HALF_TIME' | 'P2' | 'FULL_TIME';
@@ -20,16 +17,17 @@ export type TimerState = {
 };
 
 export type BaseEvent = {
+  id: string;
   time: number;
 };
 
-export type PeriodStartEvent = BaseEvent & { type: 'period_start'; text: string };
-export type PeriodEndEvent = BaseEvent & { type: 'period_end'; text: string };
+export type PeriodStartEvent = BaseEvent & { type: 'period_start'; text: string; team?: undefined };
+export type PeriodEndEvent = BaseEvent & { type: 'period_end'; text: string; team?: undefined };
 export type GoalEvent = BaseEvent & { type: 'goal'; team: Team; jersey: number; goalType: GoalType };
 export type GoalRemovedEvent = BaseEvent & { type: 'goal_removed'; team: Team; jersey: number; reason: string };
 export type FoulEvent = BaseEvent & { type: 'foul'; team: Team };
 export type CardEvent = BaseEvent & { type: 'yellow' | 'red'; team: Team; jersey: number | string; reason: string };
-export type NoteEvent = BaseEvent & { type: 'note'; text: string };
+export type NoteEvent = BaseEvent & { type: 'note'; text: string; team?: undefined };
 export type SubstitutionEvent = BaseEvent & { type: 'substitution'; team: Team; playerIn: number; playerOut: number };
 
 export type GameEvent =
@@ -45,6 +43,7 @@ export type GameEvent =
 export interface ModalData {
   type: ModalType;
   data?: any;
+  eventToEdit?: GameEvent;
 }
 
 // This type will hold the event data captured at the moment the button is pressed.
@@ -64,6 +63,7 @@ export interface MatchState {
   activeModal: ModalType | null;
   modalData: ModalData | null;
   pendingEvent: PendingEvent | null; // Holds the event data while modal is open
+  editingEvent: GameEvent | null;
 }
 
 export type MatchAction =
@@ -79,6 +79,7 @@ export type MatchAction =
   | { type: 'ADD_CARD'; payload: { team: Team; cardType: CardType; jersey: number | string; reason: string, time: number } }
   | { type: 'ADD_NOTE'; payload: { text: string, time: number } }
   | { type: 'ADD_SUBSTITUTION'; payload: { team: Team; playerIn: number; playerOut: number, time: number } }
+  | { type: 'UPDATE_EVENT', payload: { updatedEvent: GameEvent } }
   | { type: 'RESET_TIMER' }
   | { type: 'RESET_MATCH' }
   | { type: 'OPEN_MODAL'; payload: ModalData }

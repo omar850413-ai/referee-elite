@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { MatchAction, Team, CardType, TeamNames, ModalData, PendingEvent } from '@/lib/types';
+import type { MatchAction, Team, CardType, TeamNames, ModalData, PendingEvent, GameEvent, CardEvent } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -79,33 +79,64 @@ type CardModalProps = {
   dispatch: React.Dispatch<MatchAction>;
   modalData: ModalData | null;
   pendingEvent: PendingEvent | null;
+  editingEvent: GameEvent | null;
   teamNames: TeamNames;
 };
 
-const CardModal = ({ isOpen, dispatch, modalData, pendingEvent, teamNames }: CardModalProps) => {
+const CardModal = ({ isOpen, dispatch, modalData, pendingEvent, editingEvent, teamNames }: CardModalProps) => {
   const [recipientType, setRecipientType] = useState<'player' | 'staff'>('player');
   const [jersey, setJersey] = useState('');
   const [staffRole, setStaffRole] = useState('');
   const [reason, setReason] = useState('');
   const [subReason, setSubReason] = useState('');
   const { toast } = useToast();
+  const isEditing = !!editingEvent;
 
   useEffect(() => {
     if (isOpen) {
-      setRecipientType('player');
-      setJersey('');
-      setStaffRole('');
-      setReason('');
-      setSubReason('');
+      if (isEditing && (editingEvent?.type === 'yellow' || editingEvent?.type === 'red')) {
+        const eventToEdit = editingEvent as CardEvent;
+        // Check if jersey is a number or staff role string
+        const jerseyStr = eventToEdit.jersey.toString().replace('#', '');
+        const jerseyNum = parseInt(jerseyStr);
+        
+        if (!isNaN(jerseyNum)) {
+          setRecipientType('player');
+          setJersey(jerseyNum.toString());
+          setStaffRole('');
+        } else {
+          setRecipientType('staff');
+          setStaffRole(jerseyStr);
+          setJersey('');
+        }
+
+        // Handle sub-reasons
+        if (eventToEdit.reason.includes(' - ')) {
+          const parts = eventToEdit.reason.split(' - ');
+          setReason(parts[0]);
+          setSubReason(parts[1]);
+        } else {
+          setReason(eventToEdit.reason);
+          setSubReason('');
+        }
+      } else {
+        // Reset for "add new" mode
+        setRecipientType('player');
+        setJersey('');
+        setStaffRole('');
+        setReason('');
+        setSubReason('');
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, isEditing, editingEvent]);
 
   if (!modalData || modalData.type !== 'card') return null;
 
   const { cardType, team } = modalData.data as { cardType: CardType; team: Team };
   const teamName = teamNames[team];
-  const title = cardType === 'yellow' ? `Amonestación (🟨) - ${teamName}` : `Expulsión (🟥) - ${teamName}`;
+  const title = isEditing ? 'Editar Tarjeta' : (cardType === 'yellow' ? `Amonestación (🟨) - ${teamName}` : `Expulsión (🟥) - ${teamName}`);
   const titleColor = cardType === 'yellow' ? 'text-yellow-500' : 'text-red-500';
+  const eventTime = isEditing ? editingEvent.time : pendingEvent?.time;
 
   const showSubReason = reason === 'Causal 6 : Conducta antideportiva';
 
@@ -119,16 +150,7 @@ const CardModal = ({ isOpen, dispatch, modalData, pendingEvent, teamNames }: Car
   };
 
   const handleSubmit = () => {
-    if (!pendingEvent) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'No hay un evento de tarjeta pendiente.',
-      });
-      return;
-    }
-
-    let targetIdentifier: string;
+    let targetIdentifier: string | number;
 
     if (recipientType === 'player') {
       const jerseyNum = parseInt(jersey);
@@ -136,7 +158,7 @@ const CardModal = ({ isOpen, dispatch, modalData, pendingEvent, teamNames }: Car
         toast({ variant: 'destructive', title: 'Error', description: 'Número de camiseta inválido.' });
         return;
       }
-      targetIdentifier = `#${jerseyNum}`;
+      targetIdentifier = jerseyNum;
     } else { // staff
       if (!staffRole) {
         toast({ variant: 'destructive', title: 'Error', description: 'Debe seleccionar un rol del cuerpo técnico.' });
@@ -156,16 +178,35 @@ const CardModal = ({ isOpen, dispatch, modalData, pendingEvent, teamNames }: Car
 
     const finalReason = showSubReason ? `${reason} - ${subReason}` : reason;
 
-    dispatch({
-      type: 'ADD_CARD',
-      payload: {
-        team,
-        cardType,
-        jersey: targetIdentifier,
-        reason: finalReason.trim(),
-        time: pendingEvent.time,
-      },
-    });
+    if (isEditing) {
+      dispatch({
+        type: 'UPDATE_EVENT',
+        payload: {
+          updatedEvent: {
+            ...editingEvent,
+            jersey: targetIdentifier,
+            reason: finalReason.trim(),
+            team,
+            type: cardType,
+          } as CardEvent,
+        },
+      });
+    } else {
+       if (!pendingEvent) {
+          toast({ variant: 'destructive', title: 'Error', description: 'No hay un evento pendiente.' });
+          return;
+       }
+       dispatch({
+        type: 'ADD_CARD',
+        payload: {
+          team,
+          cardType,
+          jersey: targetIdentifier,
+          reason: finalReason.trim(),
+          time: pendingEvent.time,
+        },
+      });
+    }
     handleClose();
   };
   
@@ -175,13 +216,13 @@ const CardModal = ({ isOpen, dispatch, modalData, pendingEvent, teamNames }: Car
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className={`text-2xl font-bold text-center ${titleColor}`}>{title}</DialogTitle>
-          {pendingEvent && (
+          {eventTime !== undefined && (
             <DialogDescription className="text-center text-lg font-mono">
-              Tiempo del evento: {formatTime(pendingEvent.time)}
+              Tiempo del evento: {formatTime(eventTime)}
             </DialogDescription>
           )}
         </DialogHeader>
-        {!pendingEvent && (
+        {!pendingEvent && !isEditing && (
           <Alert variant="destructive">
             <AlertDescription>
               El cronómetro debe estar corriendo para registrar una tarjeta.
@@ -281,7 +322,7 @@ const CardModal = ({ isOpen, dispatch, modalData, pendingEvent, teamNames }: Car
             Cancelar
           </Button>
           <Button onClick={handleSubmit} className="bg-accent hover:bg-orange-700">
-            Registrar Tarjeta
+            {isEditing ? 'Guardar Cambios' : 'Registrar Tarjeta'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,18 +1,54 @@
+
 'use client';
 
-import type { GameEvent, GoalEvent, TeamNames } from '@/lib/types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import type { MatchAction, GameEvent, GoalEvent, TeamNames, ModalType } from '@/lib/types';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { formatTime } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import { formatTime, cn } from '@/lib/utils';
+import { Edit } from 'lucide-react';
 
 type EventHistoryProps = {
   events: GameEvent[];
   teamNames: TeamNames;
+  dispatch: React.Dispatch<MatchAction>;
 };
 
-const EventHistory = ({ events, teamNames }: EventHistoryProps) => {
+const EventHistory = ({ events, teamNames, dispatch }: EventHistoryProps) => {
   const sortedEvents = [...events].sort((a, b) => a.time - b.time);
+
+  const handleEventClick = (event: GameEvent) => {
+    let modalType: ModalType | null = null;
+    let modalData: any = {};
+
+    switch (event.type) {
+      case 'goal':
+        modalType = 'goal';
+        modalData = { team: event.team };
+        break;
+      case 'goal_removed':
+        // Not editable as it's a correction itself
+        return;
+      case 'yellow':
+      case 'red':
+        modalType = 'card';
+        modalData = { cardType: event.type, team: event.team };
+        break;
+      case 'substitution':
+        modalType = 'substitution';
+        modalData = { team: event.team };
+        break;
+      case 'note':
+        modalType = 'note';
+        break;
+      // Other events like fouls, period start/end are not editable
+      default:
+        return;
+    }
+
+    if (modalType) {
+      dispatch({ type: 'OPEN_MODAL', payload: { type: modalType, data: modalData, eventToEdit: event } });
+    }
+  };
 
   const getEventContent = (event: GameEvent) => {
     const timeFormatted = formatTime(event.time);
@@ -22,6 +58,7 @@ const EventHistory = ({ events, teamNames }: EventHistoryProps) => {
     let content = '';
     let baseClass = 'p-3 rounded-lg flex justify-between items-center text-sm font-semibold transition duration-150 ease-in-out';
     let styleClass = '';
+    const isEditable = ['goal', 'yellow', 'red', 'substitution', 'note'].includes(event.type);
 
     const formatJersey = (jersey: number | string) => {
       if (typeof jersey === 'string') {
@@ -87,22 +124,43 @@ const EventHistory = ({ events, teamNames }: EventHistoryProps) => {
         styleClass = 'bg-primary/10 border-l-4 border-primary';
         break;
     }
+    
+    const eventBody = (
+      <>
+        <div className="flex items-center space-x-2 text-left">
+          <span>{icon}</span>
+          <span dangerouslySetInnerHTML={{ __html: content }} />
+        </div>
+        <div className="flex items-center gap-2">
+            {isEditable && <Edit className="h-3 w-3 text-muted-foreground group-hover:text-accent-foreground" />}
+            <span className="text-muted-foreground font-mono">{timeFormatted}</span>
+        </div>
+      </>
+    );
 
-    if (event.type === 'period_start' || event.type === 'period_end') {
+     if (event.type === 'period_start' || event.type === 'period_end') {
        return (
-        <li className={cn(baseClass, styleClass, 'justify-center')}>
-          <span className="flex items-center justify-center w-full" dangerouslySetInnerHTML={{ __html: `${icon} ${content} <span class="text-muted-foreground font-mono ml-3">T: ${timeFormatted}</span>` }} />
+        <li key={event.id} className="group">
+          <div className={cn(baseClass, styleClass, 'justify-center')}>
+            <span className="flex items-center justify-center w-full" dangerouslySetInnerHTML={{ __html: `${icon} ${content} <span class="text-muted-foreground font-mono ml-3">T: ${timeFormatted}</span>` }} />
+          </div>
         </li>
       );
     }
     
     return (
-      <li className={cn(baseClass, styleClass)}>
-        <div className="flex items-center space-x-2">
-          <span>{icon}</span>
-          <span dangerouslySetInnerHTML={{ __html: content }} />
-        </div>
-        <span className="text-muted-foreground font-mono">{timeFormatted}</span>
+      <li key={event.id} className="group">
+        <button
+          onClick={() => handleEventClick(event)}
+          disabled={!isEditable}
+          className={cn(
+            baseClass, styleClass, 'w-full',
+            isEditable && 'cursor-pointer hover:ring-2 hover:ring-accent focus:outline-none focus:ring-2 focus:ring-accent',
+            !isEditable && 'cursor-default'
+          )}
+        >
+          {eventBody}
+        </button>
       </li>
     );
   };
@@ -113,12 +171,15 @@ const EventHistory = ({ events, teamNames }: EventHistoryProps) => {
         <CardTitle className="text-xl font-bold text-foreground/80 border-b pb-2">
           Historial de Incidencias
         </CardTitle>
+        <CardDescription className="text-sm text-muted-foreground pt-1">
+          Haz clic en un evento para editarlo. Los eventos de falta o inicio/fin de periodo no son editables.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-80 w-full">
           <ul className="space-y-2 pr-4">
             {sortedEvents.length > 0 ? (
-              sortedEvents.map((event, index) => <div key={index}>{getEventContent(event)}</div>)
+              sortedEvents.map((event) => getEventContent(event))
             ) : (
               <li className="text-muted-foreground italic text-center p-4">
                 No hay eventos registrados.

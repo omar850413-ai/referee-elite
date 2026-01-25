@@ -1,10 +1,32 @@
 
 'use client';
 import { useReducer, useEffect } from 'react';
-import type { MatchState, MatchAction } from '@/lib/types';
+import type { MatchState, MatchAction, GameEvent, Scores, Fouls } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
 
 const LOCAL_STORAGE_KEY = 'referee-edge-match-state';
+
+// Helper function to derive scores and fouls from the event history
+// This is the source of truth and prevents state desynchronization
+const recalculateScoresAndFouls = (events: GameEvent[]) => {
+  const newScores: Scores = { home: 0, away: 0 };
+  const newFouls: Fouls = { home: 0, away: 0 };
+
+  for (const event of events) {
+    if (event.type === 'goal') {
+      newScores[event.team]++;
+    } else if (event.type === 'goal_removed') {
+      // Ensure score doesn't go below zero
+      if (newScores[event.team] > 0) {
+        newScores[event.team]--;
+      }
+    } else if (event.type === 'foul') {
+      newFouls[event.team]++;
+    }
+  }
+  return { newScores, newFouls };
+};
+
 
 // Function to load state from localStorage
 const loadState = (): MatchState => {
@@ -37,8 +59,10 @@ const loadState = (): MatchState => {
         storedState.timer.isRunning = false;
       }
       
-      // Ensure pendingEvent is cleared on load
+      // Ensure transient state is cleared on load
       storedState.pendingEvent = null;
+      storedState.editingEvent = null;
+      storedState.activeModal = null;
 
       return storedState;
     }
@@ -62,7 +86,8 @@ export const initialState: MatchState = {
   teamNames: { home: 'LOCAL', away: 'VISITANTE' },
   activeModal: null,
   modalData: null,
-  pendingEvent: null, // Initialize pending event
+  pendingEvent: null,
+  editingEvent: null,
 };
 
 const getCurrentTimeSeconds = (timer: MatchState['timer']): number => {
@@ -83,7 +108,7 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
         timer: { isRunning: true, totalPausedSeconds: 0, startTime: Date.now(), period: 'P1' },
         events: [
           ...state.events,
-          { type: 'period_start', text: 'Inicio Primer Tiempo', time: 0 },
+          { id: crypto.randomUUID(), type: 'period_start', text: 'Inicio Primer Tiempo', time: 0 },
         ],
       };
 
@@ -93,7 +118,7 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
         timer: { ...state.timer, isRunning: false, totalPausedSeconds: currentTime, period: 'HALF_TIME' },
         events: [
           ...state.events,
-          { type: 'period_end', text: 'Final del Primer Tiempo', time: currentTime },
+          { id: crypto.randomUUID(), type: 'period_end', text: 'Final del Primer Tiempo', time: currentTime },
         ],
       };
 
@@ -104,7 +129,7 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
         timer: { isRunning: true, totalPausedSeconds: p2startTime, startTime: Date.now(), period: 'P2' },
         events: [
           ...state.events,
-          { type: 'period_start', text: 'Inicio Segundo Tiempo (45:00)', time: p2startTime },
+          { id: crypto.randomUUID(), type: 'period_start', text: 'Inicio Segundo Tiempo (45:00)', time: p2startTime },
         ],
       };
 
@@ -114,7 +139,7 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
         timer: { ...state.timer, isRunning: false, totalPausedSeconds: currentTime, period: 'FULL_TIME' },
         events: [
           ...state.events,
-          { type: 'period_end', text: 'Final del Partido', time: currentTime },
+          { id: crypto.randomUUID(), type: 'period_end', text: 'Final del Partido', time: currentTime },
         ],
       };
 
@@ -142,11 +167,13 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
 
     case 'ADD_GOAL': {
       const { team, jersey, goalType, time } = action.payload;
+      const newEvents = [...state.events, { id: crypto.randomUUID(), type: 'goal', team, time, jersey, goalType }];
+      const { newScores } = recalculateScoresAndFouls(newEvents);
       return {
         ...state,
-        scores: { ...state.scores, [team]: state.scores[team] + 1 },
-        events: [...state.events, { type: 'goal', team, time, jersey, goalType }],
-        pendingEvent: null, // Clear pending event after use
+        scores: newScores,
+        events: newEvents,
+        pendingEvent: null,
       };
     }
 
@@ -156,13 +183,15 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
         toast({ variant: 'destructive', title: 'Error', description: 'No se puede quitar gol con marcador en cero.' });
         return state;
       }
+      const newEvents = [
+          ...state.events,
+          { id: crypto.randomUUID(), type: 'goal_removed', team, time, jersey, reason: 'Corrección manual' },
+      ];
+      const { newScores } = recalculateScoresAndFouls(newEvents);
       return {
         ...state,
-        scores: { ...state.scores, [team]: state.scores[team] - 1 },
-        events: [
-          ...state.events,
-          { type: 'goal_removed', team, time, jersey, reason: 'Corrección manual' },
-        ],
+        scores: newScores,
+        events: newEvents,
         pendingEvent: null, // Clear pending event
       };
     }
@@ -173,10 +202,12 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
         toast({ variant: 'destructive', title: 'Error', description: 'El cronómetro debe estar corriendo.' });
         return state;
       }
+      const newEvents = [...state.events, { id: crypto.randomUUID(), type: 'foul', team, time: currentTime }];
+      const { newFouls } = recalculateScoresAndFouls(newEvents);
       return {
         ...state,
-        fouls: { ...state.fouls, [team]: state.fouls[team] + 1 },
-        events: [...state.events, { type: 'foul', team, time: currentTime }],
+        fouls: newFouls,
+        events: newEvents,
       };
     }
     
@@ -184,7 +215,7 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
       const { team, cardType, jersey, reason, time } = action.payload;
       return {
         ...state,
-        events: [...state.events, { type: cardType, team, time, jersey, reason }],
+        events: [...state.events, { id: crypto.randomUUID(), type: cardType, team, time, jersey, reason }],
         pendingEvent: null, // Clear pending event
       };
     }
@@ -193,7 +224,7 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
        const { text, time } = action.payload;
       return {
         ...state,
-        events: [...state.events, { type: 'note', text, time }],
+        events: [...state.events, { id: crypto.randomUUID(), type: 'note', text, time }],
         pendingEvent: null, // Clear pending event
       };
     }
@@ -202,10 +233,25 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
       const { team, playerIn, playerOut, time } = action.payload;
       return {
         ...state,
-        events: [...state.events, { type: 'substitution', team, time, playerIn, playerOut }],
+        events: [...state.events, { id: crypto.randomUUID(), type: 'substitution', team, time, playerIn, playerOut }],
         pendingEvent: null, // Clear pending event
       };
     }
+    
+    case 'UPDATE_EVENT': {
+      const { updatedEvent } = action.payload;
+      const newEvents = state.events.map(e => e.id === updatedEvent.id ? updatedEvent : e);
+      // Recalculate scores and fouls as they might have changed
+      const { newScores, newFouls } = recalculateScoresAndFouls(newEvents);
+      return {
+        ...state,
+        events: newEvents,
+        scores: newScores,
+        fouls: newFouls,
+        editingEvent: null, // Clear editing state
+      };
+    }
+
 
     case 'RESET_TIMER':
       return {
@@ -221,12 +267,22 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
       return initialState;
 
     case 'OPEN_MODAL':
-      const { type, data } = action.payload;
+      const { type, data, eventToEdit } = action.payload;
+
+      if (eventToEdit) {
+         return {
+          ...state,
+          activeModal: type,
+          modalData: action.payload,
+          editingEvent: eventToEdit,
+          pendingEvent: null, // Not a new event
+        };
+      }
       
       // For event types that need precise timing, capture it here.
       const isTimedEvent = ['goal', 'card', 'note', 'substitution'].includes(type);
       
-      if (isTimedEvent && !state.timer.isRunning && state.timer.period !== 'HALF_TIME' && type !== 'note' && type !== 'goal') {
+      if (isTimedEvent && !state.timer.isRunning && state.timer.period !== 'HALF_TIME' && type !== 'note' && !(type === 'goal' && data.isSubtraction)) {
          toast({
            variant: 'destructive',
            title: 'Error',
@@ -243,6 +299,7 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
         ...state,
         activeModal: type,
         modalData: action.payload,
+        editingEvent: null, // Not editing
         // Create a pending event with the *current* time
         pendingEvent: isTimedEvent ? { type, time: eventTime, data } : null,
       };
@@ -253,6 +310,7 @@ export function reducer(state: MatchState, action: MatchAction): MatchState {
         activeModal: null,
         modalData: null,
         pendingEvent: null, // Clear any pending event when a modal is closed
+        editingEvent: null,
       };
 
     default:

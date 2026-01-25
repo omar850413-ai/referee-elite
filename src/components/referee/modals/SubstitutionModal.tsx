@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { MatchAction, Team, TeamNames, ModalData, Period, PendingEvent } from '@/lib/types';
+import type { MatchAction, Team, TeamNames, ModalData, Period, PendingEvent, GameEvent, SubstitutionEvent } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -23,43 +23,43 @@ type SubstitutionModalProps = {
   dispatch: React.Dispatch<MatchAction>;
   modalData: ModalData | null;
   pendingEvent: PendingEvent | null;
+  editingEvent: GameEvent | null;
   period: Period;
   teamNames: TeamNames;
 };
 
-const SubstitutionModal = ({ isOpen, dispatch, modalData, pendingEvent, period, teamNames }: SubstitutionModalProps) => {
+const SubstitutionModal = ({ isOpen, dispatch, modalData, pendingEvent, editingEvent, period, teamNames }: SubstitutionModalProps) => {
   const [playerIn, setPlayerIn] = useState('');
   const [playerOut, setPlayerOut] = useState('');
   const { toast } = useToast();
+  const isEditing = !!editingEvent;
 
   useEffect(() => {
     if (isOpen) {
-      setPlayerIn('');
-      setPlayerOut('');
+      if (isEditing && editingEvent?.type === 'substitution') {
+        const eventToEdit = editingEvent as SubstitutionEvent;
+        setPlayerIn(eventToEdit.playerIn.toString());
+        setPlayerOut(eventToEdit.playerOut.toString());
+      } else {
+        setPlayerIn('');
+        setPlayerOut('');
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, isEditing, editingEvent]);
 
   if (!modalData || modalData.type !== 'substitution') return null;
 
   const { team } = modalData.data as { team: Team };
   const teamName = teamNames[team];
-  const title = `Sustitución - ${teamName}`;
-  const canSubstitute = !!pendingEvent;
+  const title = isEditing ? 'Editar Sustitución' : `Sustitución - ${teamName}`;
+  const eventTime = isEditing ? editingEvent.time : pendingEvent?.time;
+  const canSubstitute = !!pendingEvent || isEditing;
 
   const handleClose = () => {
     dispatch({ type: 'CLOSE_MODAL' });
   };
 
   const handleSubmit = () => {
-    if (!pendingEvent) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Las sustituciones solo se pueden registrar durante el juego o en el entretiempo.',
-      });
-      return;
-    }
-
     const playerInNum = parseInt(playerIn);
     const playerOutNum = parseInt(playerOut);
 
@@ -73,10 +73,29 @@ const SubstitutionModal = ({ isOpen, dispatch, modalData, pendingEvent, period, 
       return;
     }
 
-    dispatch({
-      type: 'ADD_SUBSTITUTION',
-      payload: { team, playerIn: playerInNum, playerOut: playerOutNum, time: pendingEvent.time },
-    });
+    if (isEditing) {
+       dispatch({
+        type: 'UPDATE_EVENT',
+        payload: {
+          updatedEvent: {
+            ...editingEvent,
+            playerIn: playerInNum,
+            playerOut: playerOutNum,
+            team,
+          } as SubstitutionEvent,
+        },
+      });
+    } else {
+      if (!pendingEvent) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No hay un evento pendiente.' });
+        return;
+      }
+       dispatch({
+        type: 'ADD_SUBSTITUTION',
+        payload: { team, playerIn: playerInNum, playerOut: playerOutNum, time: pendingEvent.time },
+      });
+    }
+
     handleClose();
   };
 
@@ -85,9 +104,9 @@ const SubstitutionModal = ({ isOpen, dispatch, modalData, pendingEvent, period, 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center text-blue-600">{title}</DialogTitle>
-          {pendingEvent && (
+          {eventTime !== undefined && (
             <DialogDescription className="text-center text-lg font-mono">
-              Tiempo del evento: {formatTime(pendingEvent.time)}
+              Tiempo del evento: {formatTime(eventTime)}
             </DialogDescription>
           )}
         </DialogHeader>
@@ -129,7 +148,7 @@ const SubstitutionModal = ({ isOpen, dispatch, modalData, pendingEvent, period, 
             Cancelar
           </Button>
           <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
-            Confirmar Sustitución
+            {isEditing ? 'Guardar Cambios' : 'Confirmar Sustitución'}
           </Button>
         </DialogFooter>
       </DialogContent>
