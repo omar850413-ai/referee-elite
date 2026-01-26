@@ -26,9 +26,6 @@ const nextConfig = {
       },
     ],
   },
-  turbopack: {
-    root: '/home/user/studio',
-  },
 };
 
 export default nextConfig;
