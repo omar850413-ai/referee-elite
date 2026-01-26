@@ -1,3 +1,4 @@
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
@@ -25,10 +26,8 @@ const nextConfig = {
       },
     ],
   },
-  experimental: {
-    turbopack: {
-      root: '/home/user/studio',
-    },
+  turbopack: {
+    root: '/home/user/studio',
   },
 };
 
