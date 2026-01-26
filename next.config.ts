@@ -1,7 +1,5 @@
-
-import type {NextConfig} from 'next';
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -27,13 +25,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-};
-
-// The turbopack config needs to be at the top level for the version of Next.js
-// running in this environment. We add it to the config object this way to avoid
-// potential TypeScript errors from the installed `next` package version.
-(nextConfig as any).turbopack = {
-  root: process.cwd(),
+  turbopack: {
+    root: process.cwd(),
+  },
 };
 
 export default nextConfig;
