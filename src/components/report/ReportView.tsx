@@ -74,6 +74,8 @@ export function ReportView({ matchState }: ReportViewProps) {
   const awaySubs = awayEvents.filter(e => e.category === 'subs');
 
   const notes = events.filter(e => e.category === 'notes');
+  const peggiPlays = events.filter(e => e.category === 'peggi');
+
 
   const parseEvent = (event: MatchEvent) => {
     let message = event.message
@@ -209,7 +211,7 @@ export function ReportView({ matchState }: ReportViewProps) {
           {localBg && <image href={localBg} data-ai-hint="jaguar pattern" x="-200" y="150" width="800" height="800" opacity="0.05" />}
           {awayBg && <image href={awayBg} data-ai-hint="gopher animal" x="200" y="150" width="800" height="800" opacity="0.05" />}
 
-          {/* Main Content */}
+          {/* Header */}
           <text x="400" y="80" textAnchor="middle" fill="white" fontSize="24" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {`${matchInfo.league || 'TORNEO'} - JORNADA ${matchInfo.round || 'N/A'}`}
           </text>
@@ -217,6 +219,7 @@ export function ReportView({ matchState }: ReportViewProps) {
             Asesor: {matchInfo.advisor || 'No especificado'}
           </text>
 
+          {/* Main Content */}
           <text x="200" y="180" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.home}</text>
           <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.home}</text>
 
@@ -231,13 +234,23 @@ export function ReportView({ matchState }: ReportViewProps) {
 
           {/* Footer */}
           <rect y="1000" width="800" height="200" fill="rgba(0,0,0,0.2)" />
-          <g transform="translate(0, 1050)">
+          <g transform="translate(0, 1020)">
             {notes.length > 0 && (
               <>
                 <text x="400" y="0" textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA">ANOTACIONES DEL ASESOR</text>
-                 <foreignObject x="50" y="30" width="700" height="100">
-                  <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#A1A1AA', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
+                 <foreignObject x="50" y="25" width="700" height="60">
+                  <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E2E8F0', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
                     {notes.map(n => n.message.replace('📝', '').trim()).join('; ')}
+                  </p>
+                </foreignObject>
+              </>
+            )}
+            {peggiPlays.length > 0 && (
+              <>
+                <text x="400" y="95" textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA">JUGADAS PEGGI</text>
+                 <foreignObject x="50" y="120" width="700" height="60">
+                  <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E2E8F0', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
+                    {peggiPlays.map(p => p.message.replace('🔎', '').trim()).join('; ')}
                   </p>
                 </foreignObject>
               </>
