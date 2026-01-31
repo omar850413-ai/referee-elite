@@ -23,6 +23,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls, UserProfile } from '@/lib/types';
 import { formatTime } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { generateReport, ReportInput } from '@/ai/flows/generate-report-flow';
+
 
 const causalesAmarilla = [
   'Conducta antideportiva',
@@ -51,6 +54,7 @@ export default function Home() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const userProfileRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -343,7 +347,45 @@ export default function Home() {
   };
 
   const handleGenerateReport = async () => {
-    alert('La generación de informes visuales se ha deshabilitado temporalmente para resolver un problema de dependencias. Se restaurará pronto.');
+    if (events.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'No hay eventos',
+        description: 'No se puede generar un informe sin eventos en la bitácora.',
+      });
+      return;
+    }
+  
+    setIsGeneratingReport(true);
+    setGeneratedReportUrl(null);
+  
+    try {
+      const reportInput: ReportInput = {
+        matchInfo,
+        teamNames,
+        scores,
+        fouls,
+        events,
+      };
+      const result = await generateReport(reportInput);
+      
+      if (result.imageUrl) {
+        setGeneratedReportUrl(result.imageUrl);
+        setModal('view-report');
+      } else {
+        throw new Error('La generación de la imagen no devolvió una URL.');
+      }
+  
+    } catch (error) {
+      console.error('Error generating report:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error al generar el informe',
+        description: 'Hubo un problema al contactar el servicio de IA. Inténtalo de nuevo.',
+      });
+    } finally {
+      setIsGeneratingReport(false);
+    }
   };
 
   const timerButtonLabel = [
@@ -586,12 +628,10 @@ export default function Home() {
           </Button>
           <Button
             onClick={handleGenerateReport}
-            disabled={true}
-            variant="secondary"
-            title="Deshabilitado temporalmente"
-            className="w-full bg-gray-400 hover:bg-gray-500 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
+            disabled={isGeneratingReport}
+            className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
           >
-            {'📄 Informe Visual (Temporalmente Deshabilitado)'}
+            {isGeneratingReport ? 'Generando Informe...' : '📄 Generar Informe Visual'}
           </Button>
           <Button
             onClick={openNoteModal}
@@ -835,15 +875,15 @@ export default function Home() {
             {generatedReportUrl ? (
                 <div className="mt-4 space-y-4">
                     <div className="border rounded-lg overflow-hidden">
-                        <Image src={generatedReportUrl} alt="Informe del partido generado" width={600} height={800} style={{ width: '100%', height: 'auto' }} />
+                        <Image src={generatedReportUrl} alt="Informe del partido generado" width={1080} height={1920} style={{ width: '100%', height: 'auto' }} />
                     </div>
-                    <a href={generatedReportUrl} download="informe-partido.png" className="block w-full">
+                    <a href={generatedReportUrl} download="informe-partido.svg" className="block w-full">
                         <Button className="w-full">Descargar Informe</Button>
                     </a>
                 </div>
             ) : (
                 <div className="text-center p-8">
-                    <p>Generando informe...</p>
+                    <p>No se pudo generar el informe.</p>
                 </div>
             )}
         </DialogContent>

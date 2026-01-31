@@ -1,3 +1,4 @@
 'use server';
-// This file has been temporarily emptied to resolve a critical dependency issue.
-// The "Generate Visual Report" feature will be restored shortly.
+
+// The Genkit AI features are temporarily disabled due to technical issues.
+export const ai = {};
