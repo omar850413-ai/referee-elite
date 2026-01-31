@@ -45,7 +45,7 @@ export default function Home() {
   const [matchState, setMatchState] = useState(0); // 0: Pre, 1: 1T, 2: HT, 3: 2T, 4: FT
   const [isRunning, setIsRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerIntervalRef = useRef<any>(null);
 
   const [scores, setScores] = useState<Scores>({ home: 0, away: 0 });
   const [fouls, setFouls] = useState<Fouls>({ home: 0, away: 0 });
