@@ -303,7 +303,7 @@ export default function Home() {
         <div className="flex items-center justify-center gap-3 border-b-4 border-primary/50 pb-2">
           <span className="text-2xl">⚽</span>
           <h1 className="text-2xl font-black text-center text-primary-foreground bg-primary/90 px-3 rounded-md uppercase italic tracking-tighter">
-            Referee's Edge
+            Asesor Pro
           </h1>
           <span className="text-2xl">⚽</span>
         </div>
