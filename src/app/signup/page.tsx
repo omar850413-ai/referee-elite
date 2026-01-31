@@ -52,8 +52,12 @@ export default function SignUpPage() {
         isApproved: isSigningUpAsAdmin, // Admin is auto-approved
       });
 
-      // 3. Redirect to home (which will handle approval logic)
-      router.push('/');
+      // 3. Redirect intelligently based on role
+      if (isSigningUpAsAdmin) {
+        router.push('/'); // Admins go to home
+      } else {
+        router.push('/pending-approval'); // New users go to pending page
+      }
     } catch (err: any) {
       if (err.code === 'permission-denied') {
         setError('Error de permisos. No se pudo crear el perfil de usuario.');
