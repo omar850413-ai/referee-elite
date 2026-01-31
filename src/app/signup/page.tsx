@@ -16,10 +16,12 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -89,14 +91,28 @@ export default function SignUpPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Mínimo 6 caracteres"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Mínimo 6 caracteres"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                    {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                    ) : (
+                        <Eye className="h-5 w-5" />
+                    )}
+                </button>
+              </div>
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
           </CardContent>
