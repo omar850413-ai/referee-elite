@@ -61,6 +61,7 @@ export default function Home() {
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
+  const [isStateLoaded, setIsStateLoaded] = useState(false);
   const [matchState, setMatchState] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -104,6 +105,59 @@ export default function Home() {
 
   const capturedTimeRef = useRef('00:00');
   
+  // Load state from localStorage on initial client-side mount
+  useEffect(() => {
+    try {
+      const savedStateJSON = localStorage.getItem('matchSession');
+      if (savedStateJSON) {
+        const savedState = JSON.parse(savedStateJSON);
+
+        setMatchState(savedState.matchState ?? 0);
+        setScores(savedState.scores ?? { home: 0, away: 0 });
+        setFouls(savedState.fouls ?? { home: 0, away: 0 });
+        setTeamNames(savedState.teamNames ?? { home: 'LOCAL', away: 'VISITA' });
+        setEvents(savedState.events ?? []);
+        setMatchInfo(savedState.matchInfo ?? { advisor: '', league: '', round: '' });
+        setIsRunning(savedState.isRunning ?? false);
+
+        let totalElapsed = savedState.elapsedSeconds ?? 0;
+        if (savedState.isRunning && savedState.lastUpdated) {
+          const offlineSeconds = (Date.now() - savedState.lastUpdated) / 1000;
+          totalElapsed += offlineSeconds;
+        }
+        setElapsedSeconds(totalElapsed);
+      }
+    } catch (error) {
+      console.error("Failed to load state from localStorage", error);
+      localStorage.removeItem('matchSession');
+    } finally {
+      setIsStateLoaded(true);
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (!isStateLoaded) return;
+
+    const matchSession = {
+      matchState,
+      elapsedSeconds,
+      isRunning,
+      scores,
+      fouls,
+      teamNames,
+      events,
+      matchInfo,
+      lastUpdated: Date.now(),
+    };
+
+    try {
+      localStorage.setItem('matchSession', JSON.stringify(matchSession));
+    } catch (error) {
+      console.error("Failed to save state to localStorage", error);
+    }
+  }, [isStateLoaded, matchState, elapsedSeconds, isRunning, scores, fouls, teamNames, events, matchInfo]);
+
   useEffect(() => {
     if (isUserLoading || isProfileLoading) return;
 
@@ -152,7 +206,7 @@ export default function Home() {
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [isRunning]);
+  }, [isRunning, elapsedSeconds]); // Re-added elapsedSeconds to handle resume correctly
 
   const addEvent = (category: string, message: string, time: string) => {
     const newEvent: MatchEvent = {
@@ -211,6 +265,11 @@ export default function Home() {
       setEvents([]);
       setMatchInfo({ advisor: '', league: '', round: '' });
       setModal(null);
+      try {
+        localStorage.removeItem('matchSession');
+      } catch (error) {
+        console.error("Failed to clear session from localStorage", error);
+      }
   };
 
   const addFoul = (side: 'home' | 'away') => {
@@ -371,7 +430,7 @@ export default function Home() {
   const isSuperAdmin = user?.email === 'omar850413@gmail.com';
   const isApproved = userProfile?.isApproved || isSuperAdmin;
 
-  if (isUserLoading || isProfileLoading || !isApproved) {
+  if (isUserLoading || isProfileLoading || !isApproved || !isStateLoaded) {
     return (
       <div className="p-4 bg-slate-100 min-h-screen flex items-center justify-center">
         <div className="max-w-md mx-auto space-y-4 w-full">
