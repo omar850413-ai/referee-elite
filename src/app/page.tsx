@@ -132,7 +132,7 @@ export default function Home() {
       setIsRunning(true);
       addEvent('general', '▶️ INICIO PARTIDO', '00:00');
     } else if (matchState === 1) { // To Half Time
-      addEvent('general', '⏹️ FIN 1T', getSmartTime());
+      addEvent('general', `⏹️ FIN 1T`, getSmartTime());
       setIsRunning(false);
       setMatchState(2);
       setElapsedSeconds(45 * 60);
@@ -141,7 +141,7 @@ export default function Home() {
       setIsRunning(true);
       addEvent('general', '▶️ INICIO 2T', '45:00');
     } else if (matchState === 3) { // To Full Time
-      addEvent('general', '🏁 FIN PARTIDO', getSmartTime());
+      addEvent('general', `🏁 FIN PARTIDO`, getSmartTime());
       setIsRunning(false);
       setMatchState(4);
     }
