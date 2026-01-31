@@ -2,22 +2,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { doc } from 'firebase/firestore';
-import {
-  useUser,
-  useFirestore,
-  useDoc,
-  useMemoFirebase,
-} from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
@@ -27,6 +19,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls, UserProfile } from '@/lib/types';
 import { formatTime } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -99,6 +92,14 @@ export default function Home() {
   const [newTeamName, setNewTeamName] = useState('');
   const [editEventMsg, setEditEventMsg] = useState('');
   const [editEventTime, setEditEventTime] = useState('');
+  
+  // PEGGI states
+  const [peggiDecision, setPeggiDecision] = useState<'yes' | 'no' | null>(null);
+  const [peggiDescription, setPeggiDescription] = useState('');
+
+  // Report Generation states
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [generatedReportUrl, setGeneratedReportUrl] = useState<string | null>(null);
 
   const capturedTimeRef = useRef('00:00');
   
@@ -112,8 +113,6 @@ export default function Home() {
 
     const isSuperAdmin = user.email === 'omar850413@gmail.com';
 
-    // The super admin bypasses the approval check.
-    // Other users are redirected if their profile isn't loaded or not approved.
     if (!isSuperAdmin && !userProfile?.isApproved) {
       router.push('/pending-approval');
       return;
@@ -185,9 +184,7 @@ export default function Home() {
     }
   };
 
-  const triggerResetCrono = () => {
-    setModal('reset-crono-confirm');
-  };
+  const triggerResetCrono = () => setModal('reset-crono-confirm');
 
   const handleResetCrono = () => {
     setIsRunning(false);
@@ -201,9 +198,7 @@ export default function Home() {
     setModal(null);
   };
   
-  const triggerFullReset = () => {
-    setModal('reset-full-confirm');
-  };
+  const triggerFullReset = () => setModal('reset-full-confirm');
 
   const handleFullReset = () => {
       setIsRunning(false);
@@ -273,9 +268,7 @@ export default function Home() {
     setModal('card-detail');
   };
   
-  const openStaffRoleMenu = () => {
-    setModal('staff-role');
-  }
+  const openStaffRoleMenu = () => setModal('staff-role');
 
   const selectStaffRole = (role: string) => {
     setCurrentCardTarget('staff');
@@ -322,6 +315,36 @@ export default function Home() {
     setEvents(events.filter(e => e.id !== editingEventId));
     setModal(null);
   }
+
+  const openPeggiModal = () => {
+    if (matchState === 0) return;
+    capturedTimeRef.current = getSmartTime();
+    setPeggiDecision(null);
+    setPeggiDescription('');
+    setModal('peggi');
+  };
+
+  const handleSavePeggi = () => {
+    if (!peggiDecision) return;
+    if (peggiDecision === 'yes' && !peggiDescription.trim()) {
+      alert('Por favor, ingresa una descripción para la jugada PEGGI.');
+      return;
+    }
+
+    let message = '';
+    if (peggiDecision === 'yes') {
+      message = `🔎 PEGGI: Sí - ${peggiDescription.trim()}`;
+    } else {
+      message = '🔎 PEGGI: No';
+    }
+
+    addEvent('peggi', message, capturedTimeRef.current);
+    setModal(null);
+  };
+
+  const handleGenerateReport = async () => {
+    alert('La generación de informes visuales se ha deshabilitado temporalmente para resolver un problema de dependencias. Se restaurará pronto.');
+  };
 
   const timerButtonLabel = [
     'Iniciar Partido',
@@ -562,16 +585,25 @@ export default function Home() {
             🏟️ Datos del Partido
           </Button>
           <Button
+            onClick={handleGenerateReport}
+            disabled={true}
             variant="secondary"
-            className="w-full bg-emerald-700 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
+            title="Deshabilitado temporalmente"
+            className="w-full bg-gray-400 hover:bg-gray-500 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
           >
-            📄 Generar Informe Visual
+            {'📄 Informe Visual (Temporalmente Deshabilitado)'}
           </Button>
           <Button
             onClick={openNoteModal}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
           >
             📝 Nota Asesor
+          </Button>
+           <Button
+            onClick={openPeggiModal}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
+          >
+            🔎 Jugada PEGGI
           </Button>
           <Button
             onClick={triggerFullReset}
@@ -758,6 +790,62 @@ export default function Home() {
               <Button onClick={deleteEvent} variant="destructive" className="px-4">🗑️</Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={modal === 'peggi'} onOpenChange={() => setModal(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle className="text-center uppercase italic text-purple-600">Análisis PEGGI</DialogTitle>
+                <DialogDescription className="text-center pt-2">
+                    ¿La jugada es un incidente claro y obvio que el árbitro omitió o erró? (PEGGI)
+                </DialogDescription>
+            </DialogHeader>
+            <RadioGroup value={peggiDecision ?? undefined} onValueChange={(value: 'yes' | 'no') => setPeggiDecision(value)} className="my-4 grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="yes" id="peggi-yes" />
+                    <Label htmlFor="peggi-yes" className="text-2xl font-black text-emerald-600">SÍ</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="peggi-no" />
+                    <Label htmlFor="peggi-no" className="text-2xl font-black text-red-600">NO</Label>
+                </div>
+            </RadioGroup>
+
+            {peggiDecision === 'yes' && (
+                <Textarea 
+                    value={peggiDescription}
+                    onChange={e => setPeggiDescription(e.target.value)}
+                    placeholder="Describe brevemente la jugada..."
+                    className="mt-2"
+                />
+            )}
+            
+            <DialogFooter className="mt-4">
+                <Button onClick={handleSavePeggi} disabled={!peggiDecision} className="w-full shadow-lg">Guardar Análisis</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modal === 'view-report'} onOpenChange={() => setModal(null)}>
+        <DialogContent className="max-w-lg">
+            <DialogHeader>
+                <DialogTitle className="text-center uppercase italic text-primary/90">Informe del Partido</DialogTitle>
+            </DialogHeader>
+            {generatedReportUrl ? (
+                <div className="mt-4 space-y-4">
+                    <div className="border rounded-lg overflow-hidden">
+                        <Image src={generatedReportUrl} alt="Informe del partido generado" width={600} height={800} style={{ width: '100%', height: 'auto' }} />
+                    </div>
+                    <a href={generatedReportUrl} download="informe-partido.png" className="block w-full">
+                        <Button className="w-full">Descargar Informe</Button>
+                    </a>
+                </div>
+            ) : (
+                <div className="text-center p-8">
+                    <p>Generando informe...</p>
+                </div>
+            )}
         </DialogContent>
       </Dialog>
 
