@@ -80,17 +80,14 @@ export default function Home() {
   const capturedTimeRef = useRef('00:00');
 
   const getSmartTime = () => {
-    let mins = Math.floor(elapsedSeconds / 60);
-    let secs = elapsedSeconds % 60;
+    const totalSeconds = Math.floor(elapsedSeconds);
+    let mins = Math.floor(totalSeconds / 60);
+    let secs = totalSeconds % 60;
     if (matchState === 1 && mins >= 45) {
-      return `45+${(mins - 45).toString().padStart(2, '0')}:${secs
-        .toString()
-        .padStart(2, '0')}`;
+      return `45+${mins - 45}:${secs.toString().padStart(2, '0')}`;
     }
     if (matchState === 3 && mins >= 90) {
-      return `90+${(mins - 90).toString().padStart(2, '0')}:${secs
-        .toString()
-        .padStart(2, '0')}`;
+      return `90+${mins - 90}:${secs.toString().padStart(2, '0')}`;
     }
     return `${mins.toString().padStart(2, '0')}:${secs
       .toString()
@@ -99,9 +96,13 @@ export default function Home() {
 
   useEffect(() => {
     if (isRunning) {
+      // To avoid drift, we calculate elapsed time based on when the timer started.
+      const startTime = Date.now() - elapsedSeconds * 1000;
+
       timerIntervalRef.current = setInterval(() => {
-        setElapsedSeconds((prev) => prev + 1);
-      }, 1000);
+        const newElapsedSeconds = (Date.now() - startTime) / 1000;
+        setElapsedSeconds(newElapsedSeconds);
+      }, 100); // Update every 100ms for a smoother display
     } else {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
@@ -112,7 +113,8 @@ export default function Home() {
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [isRunning]);
+  }, [isRunning]); // Only re-run when the timer is started or stopped.
+
 
   const addEvent = (category: string, message: string, time: string) => {
     const newEvent: MatchEvent = {
@@ -125,23 +127,23 @@ export default function Home() {
   };
 
   const handleTimerClick = () => {
-    if (matchState === 0) {
-      setIsRunning(true);
+    if (matchState === 0) { // To 1st Half
       setMatchState(1);
+      setIsRunning(true);
       addEvent('general', '▶️ INICIO PARTIDO', '00:00');
-    } else if (matchState === 1) {
+    } else if (matchState === 1) { // To Half Time
+      addEvent('general', '⏹️ FIN 1T', getSmartTime());
       setIsRunning(false);
       setMatchState(2);
       setElapsedSeconds(45 * 60);
-      addEvent('general', '⏹️ FIN 1T', getSmartTime());
-    } else if (matchState === 2) {
-      setIsRunning(true);
+    } else if (matchState === 2) { // To 2nd Half
       setMatchState(3);
+      setIsRunning(true);
       addEvent('general', '▶️ INICIO 2T', '45:00');
-    } else if (matchState === 3) {
+    } else if (matchState === 3) { // To Full Time
+      addEvent('general', '🏁 FIN PARTIDO', getSmartTime());
       setIsRunning(false);
       setMatchState(4);
-      addEvent('general', '🏁 FIN PARTIDO', getSmartTime());
     }
   };
 
