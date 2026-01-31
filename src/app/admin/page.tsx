@@ -56,6 +56,16 @@ export default function AdminPage() {
       alert('Hubo un error al aprobar el usuario.');
     }
   };
+
+  const handleBlockUser = async (userId: string) => {
+    const userDocRef = doc(firestore, 'users', userId);
+    try {
+      await updateDoc(userDocRef, { isApproved: false });
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      alert('Hubo un error al bloquear el usuario.');
+    }
+  };
   
   const handleLogout = async () => {
     await signOut(auth);
@@ -104,22 +114,34 @@ export default function AdminPage() {
             <p>Cargando usuarios...</p>
           ) : (
             <div className="space-y-4">
-              {users?.map((u) => (
-                <div key={u.id} className="flex justify-between items-center p-4 border rounded-lg bg-white shadow-sm">
-                  <div>
-                    <p className="font-semibold">{u.email}</p>
-                    {u.isApproved ? (
-                      <Badge variant="default" className="bg-emerald-500">Aprobado</Badge>
-                    ) : (
-                      <Badge variant="secondary">Pendiente</Badge>
+              {users?.map((u) => {
+                const canManage = user && u.id !== user.uid && u.email !== 'omar850413@gmail.com';
+                const isTargetSuperAdmin = u.email === 'omar850413@gmail.com';
+
+                return (
+                  <div key={u.id} className="flex justify-between items-center p-4 border rounded-lg bg-white shadow-sm">
+                    <div className='flex items-center gap-2'>
+                      <p className="font-semibold">{u.email}</p>
+                      {u.isApproved ? (
+                        <Badge variant="default" className="bg-emerald-500">Aprobado</Badge>
+                      ) : (
+                        <Badge variant="destructive">No Aprobado</Badge>
+                      )}
+                      {u.isAdmin && !isTargetSuperAdmin && <Badge className="ml-2">Admin</Badge>}
+                      {isTargetSuperAdmin && <Badge className="ml-2 bg-amber-500 text-white">Super Admin</Badge>}
+                    </div>
+                    {canManage && (
+                       <div>
+                        {u.isApproved ? (
+                          <Button variant="destructive" size="sm" onClick={() => handleBlockUser(u.id)}>Bloquear</Button>
+                        ) : (
+                          <Button size="sm" onClick={() => handleApproveUser(u.id)}>Aprobar</Button>
+                        )}
+                      </div>
                     )}
-                     {u.isAdmin && <Badge className="ml-2">Admin</Badge>}
                   </div>
-                  {!u.isApproved && (
-                    <Button onClick={() => handleApproveUser(u.id)}>Aprobar</Button>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
