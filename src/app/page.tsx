@@ -380,7 +380,7 @@ export default function Home() {
           <h1 className="text-2xl font-black text-center text-primary-foreground bg-primary/90 px-3 rounded-md uppercase italic tracking-tighter">
             Asesor Pro
           </h1>
-          {userProfile?.isAdmin && (
+          {(userProfile?.isAdmin || isSuperAdmin) && (
             <Link href="/admin">
               <Button variant="outline" size="sm">Panel de Control</Button>
             </Link>
