@@ -4,12 +4,18 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarInset,
+} from "@/components/ui/sidebar";
+import AppSidebar from "@/components/layout/AppSidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Nuevo Proyecto",
-  description: "Un nuevo comienzo para tu aplicación.",
+  title: "Soy Asesor",
+  description: "Tu plataforma de asesoramiento.",
 };
 
 export default function RootLayout({
@@ -20,11 +26,18 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className={inter.className}>
-        <div className="flex flex-col min-h-screen bg-background">
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </div>
+        <SidebarProvider>
+          <Sidebar>
+            <AppSidebar />
+          </Sidebar>
+          <SidebarInset>
+            <div className="flex flex-col min-h-screen">
+              <Header />
+              <main className="flex-1 bg-muted/40">{children}</main>
+              <Footer />
+            </div>
+          </SidebarInset>
+        </SidebarProvider>
         <Toaster />
       </body>
     </html>
