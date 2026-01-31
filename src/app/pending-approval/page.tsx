@@ -1,13 +1,43 @@
 'use client';
-import { useAuth } from '@/firebase';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { signOut } from 'firebase/auth';
+import { doc } from 'firebase/firestore';
+
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { UserProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { signOut } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
 
 export default function PendingApprovalPage() {
   const auth = useAuth();
   const router = useRouter();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(
+    () => (user ? doc(firestore, 'users', user.uid) : null),
+    [user, firestore]
+  );
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+
+  useEffect(() => {
+    // Don't do anything while auth or profile data is loading
+    if (isUserLoading || isProfileLoading) {
+      return;
+    }
+    
+    // If there's no user, send to login
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    // If the user profile exists and is approved, redirect to home
+    if (userProfile?.isApproved) {
+      router.push('/');
+    }
+  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -25,7 +55,9 @@ export default function PendingApprovalPage() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-600 mb-4">
-            Por favor, espera a recibir la confirmación. Si tienes alguna duda, contacta al administrador.
+            {isUserLoading || isProfileLoading 
+              ? 'Verificando estado de aprobación...' 
+              : 'Por favor, espera a recibir la confirmación. Si tienes alguna duda, contacta al administrador.'}
           </p>
           <Button onClick={handleLogout} variant="outline">
             Cerrar Sesión
