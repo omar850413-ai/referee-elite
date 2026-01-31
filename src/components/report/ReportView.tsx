@@ -210,12 +210,17 @@ export function ReportView({ matchState }: ReportViewProps) {
           {awayBg && <image href={awayBg} data-ai-hint="gopher animal" x="200" y="150" width="800" height="800" opacity="0.05" />}
 
           {/* Main Content */}
-          <text x="200" y="100" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.home}</text>
-          <text x="200" y="140" fontFamily="Inter, sans-serif" fontSize="16" fill="rgba(255,255,255,0.7)" textAnchor="middle">{matchInfo.league} - Jornada {matchInfo.round}</text>
+          <text x="400" y="80" textAnchor="middle" fill="white" fontSize="24" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {`${matchInfo.league || 'TORNEO'} - JORNADA ${matchInfo.round || 'N/A'}`}
+          </text>
+          <text x="400" y="110" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16">
+            Asesor: {matchInfo.advisor || 'No especificado'}
+          </text>
+
+          <text x="200" y="180" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.home}</text>
           <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.home}</text>
 
-          <text x="600" y="100" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.away}</text>
-          <text x="600" y="140" fontFamily="Inter, sans-serif" fontSize="16" fill="rgba(255,255,255,0.7)" textAnchor="middle">{matchInfo.league} - Jornada {matchInfo.round}</text>
+          <text x="600" y="180" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.away}</text>
           <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.away}</text>
 
           <text x="400" y="280" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="900" fill="white" textAnchor="middle" opacity="0.8">{scores.home} - {scores.away}</text>
@@ -239,7 +244,6 @@ export function ReportView({ matchState }: ReportViewProps) {
             )}
           </g>
 
-          <text x="780" y="1180" fontFamily="Inter, sans-serif" fontSize="14" fontWeight="700" fill="rgba(255,255,255,0.5)" textAnchor="end">Asesor: {matchInfo.advisor || 'N/A'}</text>
           <text x="20" y="1180" fontFamily="Inter, sans-serif" fontSize="14" fontWeight="900" fill="hsl(var(--primary))" textAnchor="start" style={{ fontStyle: 'italic', textTransform: 'uppercase' }}>Asesor Pro</text>
 
         </svg>
