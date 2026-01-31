@@ -603,6 +603,10 @@ export default function Home() {
             ))}
           </div>
         </div>
+
+        <div className="text-center mt-8">
+          <p className="text-xs text-gray-400 font-light">by Omar Saldaña</p>
+        </div>
       </div>
 
       {/* MODALS */}
