@@ -44,7 +44,6 @@
     "firebase": "10.12.4",
     "react-hook-form": "7.52.0",
     "zod": "3.24.1",
-    "recharts": "2.12.7",
     "embla-carousel-react": "8.0.2"
   },
   "devDependencies": {
