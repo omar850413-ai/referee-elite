@@ -19,10 +19,11 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls, UserProfile } from '@/lib/types';
+import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls, UserProfile, Timer } from '@/lib/types';
 import { formatTime } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { ReportView } from '@/components/report/ReportView';
 
 
 const causalesAmarilla = [
@@ -98,6 +99,8 @@ export default function Home() {
   // PEGGI states
   const [peggiDecision, setPeggiDecision] = useState<'yes' | 'no' | null>(null);
   const [peggiDescription, setPeggiDescription] = useState('');
+  
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   const capturedTimeRef = useRef('00:00');
   
@@ -340,12 +343,16 @@ export default function Home() {
     setModal(null);
   };
 
-  const handleGenerateReport = async () => {
-    toast({
-      variant: 'destructive',
-      title: 'Función Desactivada',
-      description: 'La generación de informes visuales está temporalmente desactivada debido a un problema técnico persistente que no se puede resolver en este momento.',
-    });
+  const handleGenerateReport = () => {
+    if (events.length === 0) {
+      toast({
+        title: 'No hay datos suficientes',
+        description: 'Aún no han ocurrido eventos para generar un informe.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    setIsReportOpen(true);
   };
 
   const timerButtonLabel = [
@@ -823,6 +830,26 @@ export default function Home() {
             <DialogFooter className="mt-4">
                 <Button onClick={handleSavePeggi} disabled={!peggiDecision} className="w-full shadow-lg">Guardar Análisis</Button>
             </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
+        <DialogContent className="max-w-4xl p-4 md:p-6">
+          <ReportView
+            matchState={{
+              scores,
+              fouls,
+              teamNames,
+              events,
+              matchInfo,
+              timer: { 
+                status: ['NOT_STARTED', 'FIRST_HALF', 'HALF_TIME', 'SECOND_HALF', 'FINISHED'][matchState] as Timer['status'], 
+                elapsedSeconds, 
+                isRunning, 
+                startTime: 0 
+              },
+            }}
+          />
         </DialogContent>
       </Dialog>
 
