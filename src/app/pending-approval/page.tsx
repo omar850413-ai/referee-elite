@@ -33,11 +33,11 @@ export default function PendingApprovalPage() {
       return;
     }
 
-    // If the user profile exists and is approved, redirect to home
+    // If the user profile exists and is approved, force a hard redirect to home.
     if (userProfile?.isApproved) {
-      router.push('/');
+      window.location.href = '/';
     }
-  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+  }, [user, userProfile, isUserLoading, isProfileLoading]);
 
   const handleLogout = async () => {
     await signOut(auth);

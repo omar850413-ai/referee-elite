@@ -2,8 +2,9 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { signOut } from 'firebase/auth';
 import { collection, doc, updateDoc } from 'firebase/firestore';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useAuth, useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,7 @@ type UserWithId = UserProfile & { id: string };
 
 export default function AdminPage() {
   const router = useRouter();
+  const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
@@ -55,6 +57,11 @@ export default function AdminPage() {
     }
   };
   
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/login');
+  };
+  
   const isSuperAdmin = user?.email === 'omar850413@gmail.com';
   const hasAdminRights = userProfile?.isAdmin || isSuperAdmin;
 
@@ -84,7 +91,10 @@ export default function AdminPage() {
 
   return (
     <div className="p-4 md:p-8 min-h-screen bg-slate-100">
-       <Link href="/" className="text-primary hover:underline mb-4 inline-block">&larr; Volver a la App</Link>
+       <div className="flex justify-between items-center mb-4">
+        <Link href="/" className="text-primary hover:underline">&larr; Volver a la App</Link>
+        <Button onClick={handleLogout} variant="outline" size="sm">Cerrar Sesión</Button>
+       </div>
       <Card>
         <CardHeader>
           <CardTitle>Panel de Control de Usuarios</CardTitle>
