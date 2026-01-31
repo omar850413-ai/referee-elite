@@ -14,6 +14,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls } from '@/lib/types';
 import { formatTime } from '@/lib/utils';
@@ -96,13 +98,11 @@ export default function Home() {
 
   useEffect(() => {
     if (isRunning) {
-      // To avoid drift, we calculate elapsed time based on when the timer started.
       const startTime = Date.now() - elapsedSeconds * 1000;
-
       timerIntervalRef.current = setInterval(() => {
         const newElapsedSeconds = (Date.now() - startTime) / 1000;
         setElapsedSeconds(newElapsedSeconds);
-      }, 100); // Update every 100ms for a smoother display
+      }, 100);
     } else {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
@@ -113,8 +113,7 @@ export default function Home() {
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [isRunning]); // Only re-run when the timer is started or stopped.
-
+  }, [isRunning]);
 
   const addEvent = (category: string, message: string, time: string) => {
     const newEvent: MatchEvent = {
@@ -148,24 +147,26 @@ export default function Home() {
   };
 
   const triggerResetCrono = () => {
-    if (confirm('¿Reiniciar cronómetro del periodo actual?')) {
-      setIsRunning(false);
-      if (matchState <= 2) {
-        setElapsedSeconds(0);
-        setMatchState(0);
-      } else {
-        setElapsedSeconds(45 * 60);
-        setMatchState(2);
-      }
-    }
+    setModal('reset-crono-confirm');
   };
 
+  const handleResetCrono = () => {
+    setIsRunning(false);
+    if (matchState <= 2) {
+      setElapsedSeconds(0);
+      setMatchState(0);
+    } else {
+      setElapsedSeconds(45 * 60);
+      setMatchState(2);
+    }
+    setModal(null);
+  };
+  
   const triggerFullReset = () => {
-    if (
-      confirm(
-        '🚨 ¿BORRAR TODO EL PARTIDO?\nEsto limpiará marcadores, faltas, nombres, bitácora e información técnica.'
-      )
-    ) {
+    setModal('reset-full-confirm');
+  };
+
+  const handleFullReset = () => {
       setIsRunning(false);
       setMatchState(0);
       setElapsedSeconds(0);
@@ -174,7 +175,7 @@ export default function Home() {
       setTeamNames({ home: 'LOCAL', away: 'VISITA' });
       setEvents([]);
       setMatchInfo({ advisor: '', league: '', round: '' });
-    }
+      setModal(null);
   };
 
   const addFoul = (side: 'home' | 'away') => {
@@ -674,6 +675,37 @@ export default function Home() {
               <Button onClick={deleteEvent} variant="destructive" className="px-4">🗑️</Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Modals */}
+      <Dialog open={modal === 'reset-crono-confirm'} onOpenChange={() => setModal(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Reiniciar cronómetro?</DialogTitle>
+            <DialogDescription className="pt-2">
+              Se reiniciará el tiempo para el periodo actual. Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="pt-4">
+              <Button variant="outline" onClick={() => setModal(null)}>Cancelar</Button>
+              <Button variant="destructive" onClick={handleResetCrono}>Sí, reiniciar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modal === 'reset-full-confirm'} onOpenChange={() => setModal(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>🚨 ¿Estás absolutamente seguro?</DialogTitle>
+            <DialogDescription className="pt-2">
+              Esto borrará TODOS los datos del partido de forma permanente: marcadores, faltas, bitácora e información.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="pt-4">
+              <Button variant="outline" onClick={() => setModal(null)}>Cancelar</Button>
+              <Button variant="destructive" onClick={handleFullReset}>Sí, borrar todo</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
