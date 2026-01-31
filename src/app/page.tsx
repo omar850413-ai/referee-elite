@@ -102,7 +102,7 @@ export default function Home() {
       timerIntervalRef.current = setInterval(() => {
         const newElapsedSeconds = (Date.now() - startTime) / 1000;
         setElapsedSeconds(newElapsedSeconds);
-      }, 100);
+      }, 1000);
     } else {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
@@ -711,5 +711,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
