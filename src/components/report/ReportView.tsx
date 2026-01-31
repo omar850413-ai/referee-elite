@@ -221,12 +221,10 @@ export function ReportView({ matchState }: ReportViewProps) {
 
           {/* Main Content */}
           <text x="200" y="180" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.home}</text>
-          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.home}</text>
+          <text x="200" y="300" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.home}</text>
 
           <text x="600" y="180" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.away}</text>
-          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.away}</text>
-
-          <text x="400" y="280" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="900" fill="white" textAnchor="middle" opacity="0.8">{scores.home} - {scores.away}</text>
+          <text x="600" y="300" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.away}</text>
 
           {/* Event Columns */}
           {homeColumn}
