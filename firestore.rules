@@ -11,10 +11,19 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // New function to identify the super admin by email
+    function isSuperAdmin() {
+      return isSignedIn() && request.auth.token.email == 'omar850413@gmail.com';
+    }
+
+    function isUserApproved() {
+      // An approved user is the super admin OR a user with isApproved: true in their profile.
+      return isSuperAdmin() || (isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isApproved == true);
+    }
+    
     function isRequestingUserAdmin() {
-      // Check if the requesting user has the 'isAdmin' flag in their profile.
-      // This requires a read to another document.
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      // The super admin is always an admin. Others must have the flag.
+      return isSuperAdmin() || (isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true);
     }
 
     // Rules for User Profiles
@@ -23,26 +32,25 @@ service cloud.firestore {
       allow get: if isOwner(userId) || isRequestingUserAdmin();
       // An admin can list all user profiles for the control panel.
       allow list: if isRequestingUserAdmin();
-      // A new user can create their own profile document upon signup.
-      // - A normal user can create a profile if they set isAdmin and isApproved to false.
-      // - The designated admin user can create a profile for themselves, setting isAdmin and isApproved to true.
+      
+      // ANY signed-in user can create their OWN profile document...
       allow create: if isOwner(userId) &&
-                       ( (request.resource.data.isAdmin == false && request.resource.data.isApproved == false) ||
-                         (request.resource.data.email == 'omar850413@gmail.com' && request.resource.data.isAdmin == true && request.resource.data.isApproved == true) );
-      // An admin can update any user profile (e.g., to approve them).
+                      // ... and they must provide their own email
+                      request.resource.data.email == request.auth.token.email &&
+                      // ... BUT if they are NOT the super admin, they CANNOT set isAdmin or isApproved to true.
+                      (isSuperAdmin() || (request.resource.data.isAdmin == false && request.resource.data.isApproved == false));
+
+      // An admin can update any user profile (e.g., to approve them). The super admin can update their own.
       allow update: if isRequestingUserAdmin();
+
       // Deletes are disallowed for now to prevent accidental data loss.
       allow delete: if false;
     }
 
     // Rules for Match Data
     match /matches/{matchId} {
-      // Only approved users can create, read, update, or delete match data that they own.
-      allow read, write: if isSignedIn() &&
-                           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isApproved == true &&
-                           request.resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() &&
-                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isApproved == true;
+      // Only approved users can read or write match data.
+      allow read, write: if isUserApproved();
     }
   }
 }
