@@ -2,77 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Inter', sans-serif;
-}
-
 @layer base {
   :root {
-    --background: 200 100% 95%;
-    --foreground: 224 71% 4%;
-    --card: 200 50% 100%;
-    --card-foreground: 224 71% 4%;
-    --popover: 200 50% 100%;
-    --popover-foreground: 224 71% 4%;
-    --primary: 217 91% 60%;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 217 33% 70%;
-    --secondary-foreground: 224 71% 4%;
-    --muted: 217 33% 85%;
-    --muted-foreground: 215 20% 45%;
-    --accent: 49 97% 63%;
-    --accent-foreground: 224 71% 4%;
-    --destructive: 0 84% 60%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 80%;
-    --input: 217 33% 80%;
-    --ring: 217 91% 60%;
-    --radius: 0.75rem;
-    --primary-dark: 217 91% 50%;
-    --card-yellow: 49 97% 63%;
-    --expel-red: 0 84% 60%;
-    --dark-card: 222 47% 15%;
-    --foul-button: 84 70% 53%;
-    --foul-button-hover: 84 70% 43%;
-    --add-goal: 145 75% 36%;
-    --add-goal-dark: 146 68% 29%;
-    --remove-goal: 0 84% 60%;
-    --remove-goal-dark: 0 72% 51%;
-    --timer-background: 39 100% 90%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222 47% 11%;
+    --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 15%;
+    --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
+    --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217 33% 50%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 25%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 49 97% 63%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 63% 31%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 217 91% 60%;
-    --radius: 0.75rem;
-    --primary-dark: 217 91% 50%;
-    --card-yellow: 49 97% 63%;
-    --expel-red: 0 84% 60%;
-    --dark-card: 222 47% 15%;
-    --foul-button: 84 70% 53%;
-    --foul-button-hover: 84 70% 43%;
-    --add-goal: 145 75% 36%;
-    --add-goal-dark: 146 68% 29%;
-    --remove-goal: 0 84% 60%;
-    --remove-goal-dark: 0 72% 51%;
-    --timer-background: 30 80% 20%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
   }
 }
 
@@ -82,147 +55,5 @@ body {
   }
   body {
     @apply bg-background text-foreground;
-  }
-}
-
-@layer components {
-  /* Custom class for reason select dropdowns */
-  .reason-select-content {
-    /* On small screens, don't let the menu be wider than the viewport */
-    @apply max-w-[90vw]; 
-    /* On larger screens, this allows it to grow, but `min-w-..` below sets the floor */
-    @apply w-full sm:w-auto; 
-    /* The minimum width will be the width of the trigger button */
-    @apply min-w-[var(--radix-select-trigger-width)];
-  }
-
-  .reason-select-content [data-radix-collection-item] {
-    @apply h-auto;
-  }
-  .reason-select-content [data-radix-collection-item] > span {
-    @apply whitespace-normal;
-  }
-}
-
-@page {
-  size: letter;
-  margin: 0;
-}
-
-@media print {
-  body {
-    font-size: 10pt;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-    background-color: #ffffff;
-    color: #000000;
-  }
-  
-  html, body {
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-  }
-
-  body > *:not([data-radix-portal]) {
-    display: none !important;
-  }
-
-  body > [data-radix-portal] {
-    display: block !important;
-    position: static !important;
-    width: 100% !important;
-    height: 100% !important;
-  }
-
-  body > [data-radix-portal] * {
-    visibility: hidden !important;
-  }
-  
-  #report-modal-content,
-  #report-modal-content * {
-    visibility: visible !important;
-  }
-
-  [data-radix-dialog-overlay] {
-    display: none !important;
-  }
-
-  [data-radix-dialog-content] {
-    position: static !important;
-    inset: auto !important;
-    transform: none !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    min-height: auto !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    background: white !important;
-    color: black !important;
-    display: block !important;
-    border-radius: 0 !important;
-  }
-  
-  #report-modal-content {
-    display: block;
-    position: relative;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    padding: 0.5in !important;
-    box-shadow: none !important;
-    border: none !important;
-  }
-
-  .no-print {
-    display: none !important;
-  }
-  
-  .report-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 9pt;
-    page-break-inside: avoid;
-  }
-  .report-table th,
-  .report-table td {
-    border: 1px solid #ddd;
-    padding: 4px;
-    text-align: left;
-  }
-  .report-table th {
-    background-color: #f2f2f2 !important;
-  }
-  .report-table td {
-    background-color: #ffffff !important;
-  }
-  
-  .text-primary-dark {
-     color: hsl(194 91% 37%) !important;
-  }
-  
-  .text-gray-700 {
-    color: #4a5568 !important;
-  }
-
-  #incidents-detail-grid {
-    display: grid !important;
-    grid-template-columns: 1fr !important; /* Single column layout for print */
-    gap: 1.5rem !important;
-  }
-  
-  .incident-section {
-    page-break-inside: avoid;
-    border: 1px solid #e5e7eb;
-    background-color: #fafafa !important;
-  }
-  
-  .report-title-section {
-    page-break-after: avoid;
-    page-break-inside: avoid;
   }
 }

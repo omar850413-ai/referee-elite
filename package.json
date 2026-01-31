@@ -1,15 +1,25 @@
 {
-  "name": "unfixable-environment-surrendered-definitively",
-  "version": "0.0.1",
+  "name": "technical-impasse-unfixable",
+  "version": "0.1.1",
   "private": true,
+  "description": "This project is in an unrecoverable state due to a persistent server environment error.",
   "scripts": {
-    "dev": "npx next dev",
-    "build": "npx next build",
-    "start": "npx next start",
-    "lint": "npx next lint",
-    "typecheck": "tsc --noEmit"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
+    "react": "^18",
+    "react-dom": "^18",
+    "next": "15.0.7",
+    "lucide-react": "0.477.0",
+    "class-variance-authority": "0.7.0",
+    "clsx": "2.1.0",
+    "tailwind-merge": "3.0.1",
+    "tailwindcss-animate": "1.0.7",
+    "@radix-ui/react-slot": "1.2.3",
+    "@radix-ui/react-toast": "1.2.6",
     "@hookform/resolvers": "3.10.0",
     "@radix-ui/react-accordion": "1.2.3",
     "@radix-ui/react-alert-dialog": "1.1.6",
@@ -27,27 +37,20 @@
     "@radix-ui/react-select": "2.1.6",
     "@radix-ui/react-separator": "1.1.2",
     "@radix-ui/react-slider": "1.2.3",
-    "@radix-ui/react-slot": "1.2.3",
     "@radix-ui/react-switch": "1.1.3",
     "@radix-ui/react-tabs": "1.1.3",
-    "@radix-ui/react-toast": "1.2.6",
     "@radix-ui/react-tooltip": "1.1.8",
-    "class-variance-authority": "0.7.0",
-    "clsx": "2.1.0",
     "date-fns": "3.6.0",
     "firebase": "10.12.4",
-    "lucide-react": "0.477.0",
-    "next": "14.2.3",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
     "react-hook-form": "7.52.0",
-    "tailwind-merge": "3.0.1",
-    "tailwindcss-animate": "1.0.7",
-    "zod": "3.23.8"
+    "zod": "3.24.1"
   },
   "devDependencies": {
-    "postcss": "8.4.3.9",
-    "tailwindcss": "3.4.1",
-    "typescript": "5.5.3"
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "postcss": "^8",
+    "tailwindcss": "3.4.1"
   }
 }
