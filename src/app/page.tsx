@@ -68,7 +68,7 @@ export default function Home() {
   const [matchState, setMatchState] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const [scores, setScores] = useState<Scores>({ home: 0, away: 0 });
   const [fouls, setFouls] = useState<Fouls>({ home: 0, away: 0 });
@@ -110,7 +110,11 @@ export default function Home() {
       return;
     }
 
-    if (!userProfile?.isApproved) {
+    const isSuperAdmin = user.email === 'omar850413@gmail.com';
+
+    // The super admin bypasses the approval check.
+    // Other users are redirected if their profile isn't loaded or not approved.
+    if (!isSuperAdmin && !userProfile?.isApproved) {
       router.push('/pending-approval');
       return;
     }
@@ -332,7 +336,10 @@ export default function Home() {
     ]
   }`;
 
-  if (isUserLoading || isProfileLoading || !user || !userProfile?.isApproved) {
+  const isSuperAdmin = user?.email === 'omar850413@gmail.com';
+  const isApproved = userProfile?.isApproved || isSuperAdmin;
+
+  if (isUserLoading || isProfileLoading || !isApproved) {
     return (
       <div className="p-4 bg-slate-100 min-h-screen flex items-center justify-center">
         <div className="max-w-md mx-auto space-y-4 w-full">

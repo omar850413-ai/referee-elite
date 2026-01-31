@@ -31,9 +31,16 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (isUserLoading || isProfileLoading) return;
+
     if (!user) {
       router.push('/login');
-    } else if (!userProfile?.isAdmin) {
+      return;
+    }
+    
+    const isSuperAdmin = user.email === 'omar850413@gmail.com';
+    const hasAdminRights = userProfile?.isAdmin || isSuperAdmin;
+
+    if (!hasAdminRights) {
       router.push('/');
     }
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
@@ -48,7 +55,10 @@ export default function AdminPage() {
     }
   };
   
-  if (isUserLoading || isProfileLoading || !userProfile?.isAdmin) {
+  const isSuperAdmin = user?.email === 'omar850413@gmail.com';
+  const hasAdminRights = userProfile?.isAdmin || isSuperAdmin;
+
+  if (isUserLoading || isProfileLoading || !hasAdminRights) {
     return (
        <div className="p-4 md:p-8 min-h-screen bg-slate-100">
         <Skeleton className="h-10 w-48 mb-4" />
