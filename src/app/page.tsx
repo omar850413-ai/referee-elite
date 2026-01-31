@@ -102,6 +102,7 @@ export default function Home() {
   const [peggiDescription, setPeggiDescription] = useState('');
   
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [manualScores, setManualScores] = useState<Scores>({ home: 0, away: 0 });
 
   const capturedTimeRef = useRef('00:00');
   
@@ -414,6 +415,11 @@ export default function Home() {
     setIsReportOpen(true);
   };
 
+  const openScoreEditor = () => {
+    setManualScores(scores);
+    setModal('edit-score');
+  };
+
   const timerButtonLabel = [
     'Iniciar Partido',
     'Fin 1er Tiempo',
@@ -429,6 +435,7 @@ export default function Home() {
 
   const isSuperAdmin = user?.email === 'omar850413@gmail.com';
   const isApproved = userProfile?.isApproved || isSuperAdmin;
+  const isAdmin = userProfile?.isAdmin || isSuperAdmin;
 
   if (isUserLoading || isProfileLoading || !isApproved || !isStateLoaded) {
     return (
@@ -471,7 +478,7 @@ export default function Home() {
           <h1 className="text-2xl font-black text-center text-primary-foreground bg-primary/90 px-3 rounded-md uppercase italic tracking-tighter">
             Asesor Pro
           </h1>
-          {(userProfile?.isAdmin || isSuperAdmin) && (
+          {isAdmin && (
             <Link href="/admin">
               <Button variant="outline" size="sm">Panel de Control</Button>
             </Link>
@@ -513,9 +520,14 @@ export default function Home() {
 
           <CardContent className="p-6 flex flex-col gap-6">
             <div className="flex justify-between items-start gap-4">
-              <div className="flex-1 text-center">
+              <div 
+                onClick={openScoreEditor}
+                className="flex-1 text-center cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors"
+                title="Haz clic para corregir el marcador"
+              >
                 <p
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setCurrentSide('home');
                     setNewTeamName(teamNames.home);
                     setModal('edit-name');
@@ -539,9 +551,14 @@ export default function Home() {
               <div className="pt-8 text-3xl font-black text-gray-200 italic">
                 VS
               </div>
-              <div className="flex-1 text-center">
+              <div 
+                onClick={openScoreEditor}
+                className="flex-1 text-center cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors"
+                title="Haz clic para corregir el marcador"
+              >
                 <p
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setCurrentSide('away');
                     setNewTeamName(teamNames.away);
                     setModal('edit-name');
@@ -909,6 +926,44 @@ export default function Home() {
               },
             }}
           />
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={modal === 'edit-score'} onOpenChange={() => setModal(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-center uppercase italic text-primary/90">Corregir Marcador</DialogTitle>
+            <DialogDescription className="text-center pt-2">
+                Ajusta los marcadores directamente. Esto registrará un evento de corrección.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 my-4">
+            <div className="text-center">
+                <Label htmlFor="home-score" className="text-xs font-black text-primary/80 uppercase mb-3">{teamNames.home}</Label>
+                <Input
+                    id="home-score"
+                    type="number"
+                    value={manualScores.home}
+                    onChange={(e) => setManualScores(s => ({ ...s, home: Math.max(0, parseInt(e.target.value) || 0) }))}
+                    className="w-full text-center text-5xl font-black border-2 p-4 rounded-2xl my-2 h-auto"
+                />
+            </div>
+            <div className="text-center">
+                <Label htmlFor="away-score" className="text-xs font-black text-primary/80 uppercase mb-3">{teamNames.away}</Label>
+                <Input
+                    id="away-score"
+                    type="number"
+                    value={manualScores.away}
+                    onChange={(e) => setManualScores(s => ({ ...s, away: Math.max(0, parseInt(e.target.value) || 0) }))}
+                     className="w-full text-center text-5xl font-black border-2 p-4 rounded-2xl my-2 h-auto"
+                />
+            </div>
+          </div>
+          <Button onClick={() => {
+            addEvent('general', `✏️ Marcador corregido a ${manualScores.home} - ${manualScores.away}`, getSmartTime());
+            setScores(manualScores);
+            setModal(null);
+          }} className="w-full shadow-lg">Actualizar Marcador</Button>
         </DialogContent>
       </Dialog>
 
