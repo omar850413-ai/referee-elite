@@ -113,7 +113,7 @@ export default function Home() {
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [isRunning, elapsedSeconds]); // Only re-run when the timer is started or stopped.
+  }, [isRunning]); // Only re-run when the timer is started or stopped.
 
 
   const addEvent = (category: string, message: string, time: string) => {
