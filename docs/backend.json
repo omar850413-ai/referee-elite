@@ -99,15 +99,43 @@
         "round": { "type": "string", "description": "The matchday or round number." }
       },
       "required": ["advisor", "league", "round"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "type": "object",
+      "description": "Represents a user's profile information, including approval and admin status.",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "isApproved": {
+          "type": "boolean",
+          "description": "Indicates if the user has been approved by an administrator."
+        },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Indicates if the user has administrative privileges."
+        }
+      },
+      "required": ["email", "isApproved", "isAdmin"]
     }
   },
   "auth": {
     "providers": [
-      "anonymous"
+      "email_password"
     ]
   },
   "firestore": {
     "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "schema": { "$ref": "#/entities/UserProfile" },
+          "description": "Stores user profile information."
+        }
+      },
       {
         "path": "/matches/{matchId}",
         "definition": {

@@ -1,5 +1,15 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { doc } from 'firebase/firestore';
+import {
+  useUser,
+  useFirestore,
+  useDoc,
+  useMemoFirebase,
+} from '@/firebase';
+
 import {
   Card,
   CardContent,
@@ -17,8 +27,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls } from '@/lib/types';
+import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls, UserProfile } from '@/lib/types';
 import { formatTime } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const causalesAmarilla = [
   'Conducta antideportiva',
@@ -44,7 +55,17 @@ const causalesStaff = [
 ];
 
 export default function Home() {
-  const [matchState, setMatchState] = useState(0); // 0: Pre, 1: 1T, 2: HT, 3: 2T, 4: FT
+  const router = useRouter();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(
+    () => (user ? doc(firestore, 'users', user.uid) : null),
+    [user, firestore]
+  );
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+
+  const [matchState, setMatchState] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -80,6 +101,20 @@ export default function Home() {
   const [editEventTime, setEditEventTime] = useState('');
 
   const capturedTimeRef = useRef('00:00');
+  
+  useEffect(() => {
+    if (isUserLoading || isProfileLoading) return;
+
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    if (!userProfile?.isApproved) {
+      router.push('/pending-approval');
+      return;
+    }
+  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
   const getSmartTime = () => {
     const totalSeconds = Math.floor(elapsedSeconds);
@@ -297,15 +332,52 @@ export default function Home() {
     ]
   }`;
 
+  if (isUserLoading || isProfileLoading || !user || !userProfile?.isApproved) {
+    return (
+      <div className="p-4 bg-slate-100 min-h-screen flex items-center justify-center">
+        <div className="max-w-md mx-auto space-y-4 w-full">
+          <div className="flex items-center justify-center gap-3 border-b-4 border-primary/50 pb-2">
+             <h1 className="text-2xl font-black text-center text-primary-foreground bg-primary/90 px-3 rounded-md uppercase italic tracking-tighter">
+              Asesor Pro
+            </h1>
+          </div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-16 w-full mb-2" />
+              <Skeleton className="h-10 w-full" />
+            </CardHeader>
+            <CardContent className="p-6 flex flex-col gap-6">
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-20 mx-auto" />
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-20 mx-auto" />
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 bg-slate-100">
       <div className="max-w-md mx-auto space-y-4 pb-12">
         <div className="flex items-center justify-center gap-3 border-b-4 border-primary/50 pb-2">
-          <span className="text-2xl">⚽</span>
           <h1 className="text-2xl font-black text-center text-primary-foreground bg-primary/90 px-3 rounded-md uppercase italic tracking-tighter">
             Asesor Pro
           </h1>
-          <span className="text-2xl">⚽</span>
+          {userProfile?.isAdmin && (
+            <Link href="/admin">
+              <Button variant="outline" size="sm">Panel de Control</Button>
+            </Link>
+          )}
         </div>
 
         <Card>

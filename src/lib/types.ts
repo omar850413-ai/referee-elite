@@ -41,3 +41,9 @@ export interface MatchState {
   teamNames: TeamNames;
   matchInfo: MatchInfo;
 }
+
+export interface UserProfile {
+  email: string;
+  isApproved: boolean;
+  isAdmin: boolean;
+}

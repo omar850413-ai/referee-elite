@@ -1,66 +1,45 @@
-/**
- * Core Philosophy: This ruleset enforces a strict user-ownership model. All data related to a specific user's match is stored in a private, isolated data tree. There is no concept of public or shared data, ensuring that a referee can only ever access their own match information.
- *
- * Data Structure: All application data for a user is nested under the path `/artifacts/{appId}/users/{userId}`. Specifically, a user's active match state is stored in a single document at `/artifacts/{appId}/users/{userId}/match_control/current`. This structure inherently provides security by segregating each user's data at the path level.
- *
- * Key Security Decisions:
- * - User Data Isolation: Access is strictly controlled by matching the `userId` in the document path with the authenticated user's `uid`. This prevents any user from reading, writing, or even knowing about another user's data.
- * - No Cross-Document Reads: The security logic does not require any `get()` or `exists()` calls to other documents for authorization. Path-based ownership is sufficient, leading to highly performant and scalable rules.
- * - Prototyping Flexibility: In line with the prototyping philosophy, these rules do not validate the specific schema of the `MatchState` document. The focus is solely on securing access, allowing the data model to evolve without needing constant rule updates.
- *
- * Denormalization for Authorization: This ruleset uses path-based security, which is a structural form of denormalization. The user's unique ID (`userId`) is part of the document path, making it directly available for authorization checks without needing to read the document's content.
- *
- * Structural Segregation: The entire data model is built on structural segregation. Each user is given a private branch in the Firestore tree (`/users/{userId}`), which is the most secure and performant way to manage private, user-owned data.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ------------------------------------------------------------------------
     // Helper Functions
-    // ------------------------------------------------------------------------
-
-    /**
-     * Checks if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the currently authenticated user's UID matches the provided userId.
-     * This is the primary function for enforcing user ownership.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * Checks for ownership and ensures the document already exists.
-     * Used for safe update and delete operations.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+    function isRequestingUserAdmin() {
+      // Check if the requesting user has the 'isAdmin' flag in their profile.
+      // This requires a read to another document.
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-
-    // ------------------------------------------------------------------------
-    // Collection Rules
-    // ------------------------------------------------------------------------
-
-    /**
-     * @description Controls access to a user's private match control documents.
-     * @path /artifacts/{appId}/users/{userId}/match_control/{matchId}
-     * @allow (create) A signed-in user with UID 'user123' can create a document at `/artifacts/ref-app/users/user123/match_control/current`.
-     * @deny (get) A signed-in user with UID 'user456' is denied access to a document at `/artifacts/ref-app/users/user123/match_control/current`.
-     * @principle Restricts access to a user's own data tree based on their UID in the document path.
-     */
-    match /artifacts/{appId}/users/{userId}/match_control/{matchId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+    // Rules for User Profiles
+    match /users/{userId} {
+      // A user can read their own profile. An admin can read any profile.
+      allow get: if isOwner(userId) || isRequestingUserAdmin();
+      // An admin can list all user profiles for the control panel.
+      allow list: if isRequestingUserAdmin();
+      // A new user can create their own profile document upon signup.
+      // We enforce that they cannot make themselves approved or admin.
       allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      // An admin can update any user profile (e.g., to approve them).
+      allow update: if isRequestingUserAdmin();
+      // Deletes are disallowed for now to prevent accidental data loss.
+      allow delete: if false;
+    }
+
+    // Rules for Match Data
+    match /matches/{matchId} {
+      // Only approved users can create, read, update, or delete match data that they own.
+      allow read, write: if isSignedIn() &&
+                           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isApproved == true &&
+                           request.resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() &&
+                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isApproved == true;
     }
   }
 }
