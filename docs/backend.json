@@ -120,16 +120,6 @@
         }
       },
       "required": ["email", "isApproved", "isAdmin"]
-    },
-    "AdminSetup": {
-      "title": "Admin Setup Flag",
-      "type": "object",
-      "description": "A document to indicate that the first admin user has been created.",
-      "properties": {
-        "admin_user_uid": { "type": "string", "description": "The UID of the first user, who is the admin." },
-        "setup_at": { "type": "string", "description": "Timestamp of when the admin was set up.", "format": "date-time" }
-      },
-      "required": ["admin_user_uid", "setup_at"]
     }
   },
   "auth": {
@@ -151,13 +141,6 @@
         "definition": {
           "schema": { "$ref": "#/entities/MatchState" },
           "description": "Stores the complete state for a single match."
-        }
-      },
-      {
-        "path": "/globals/admin_setup",
-        "definition": {
-          "schema": { "$ref": "#/entities/AdminSetup" },
-          "description": "Singleton document to track initial admin setup."
         }
       }
     ]

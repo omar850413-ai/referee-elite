@@ -24,12 +24,11 @@ service cloud.firestore {
       // An admin can list all user profiles for the control panel.
       allow list: if isRequestingUserAdmin();
       // A new user can create their own profile document upon signup.
-      // This rule handles two cases:
-      // 1. A normal user signing up (must not be admin/approved).
-      // 2. The very first user signing up (can become admin only if no admin is set up yet).
+      // - A normal user can create a profile if they set isAdmin and isApproved to false.
+      // - The designated admin user can create a profile for themselves, setting isAdmin and isApproved to true.
       allow create: if isOwner(userId) &&
                        ( (request.resource.data.isAdmin == false && request.resource.data.isApproved == false) ||
-                         (request.resource.data.isAdmin == true && request.resource.data.isApproved == true && !exists(/databases/$(database)/documents/globals/admin_setup)) );
+                         (request.resource.data.email == 'omar850413@gmail.com' && request.resource.data.isAdmin == true && request.resource.data.isApproved == true) );
       // An admin can update any user profile (e.g., to approve them).
       allow update: if isRequestingUserAdmin();
       // Deletes are disallowed for now to prevent accidental data loss.
@@ -44,19 +43,6 @@ service cloud.firestore {
                            request.resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() &&
                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isApproved == true;
-    }
-
-    // Rules for Initial Admin Setup
-    match /globals/{docId} {
-      // Any signed-in user can check if the admin is set up (needed for the transaction).
-      allow get: if isSignedIn();
-      // Only allow creation of the 'admin_setup' document, and only if it doesn't exist yet.
-      // This is the core of the "first user is admin" logic.
-      allow create: if docId == 'admin_setup' &&
-                       isSignedIn() &&
-                       !exists(/databases/$(database)/documents/globals/admin_setup);
-      // No one can update or delete this flag.
-      allow update, delete: if false;
     }
   }
 }
