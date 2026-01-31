@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { doc } from 'firebase/firestore';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 
@@ -24,7 +23,6 @@ import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls, UserProfile } from '@/
 import { formatTime } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { generateReport, ReportInput } from '@/ai/flows/generate-report-flow';
 
 
 const causalesAmarilla = [
@@ -100,10 +98,6 @@ export default function Home() {
   // PEGGI states
   const [peggiDecision, setPeggiDecision] = useState<'yes' | 'no' | null>(null);
   const [peggiDescription, setPeggiDescription] = useState('');
-
-  // Report Generation states
-  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-  const [generatedReportUrl, setGeneratedReportUrl] = useState<string | null>(null);
 
   const capturedTimeRef = useRef('00:00');
   
@@ -347,45 +341,11 @@ export default function Home() {
   };
 
   const handleGenerateReport = async () => {
-    if (events.length === 0) {
-      toast({
-        variant: 'destructive',
-        title: 'No hay eventos',
-        description: 'No se puede generar un informe sin eventos en la bitácora.',
-      });
-      return;
-    }
-  
-    setIsGeneratingReport(true);
-    setGeneratedReportUrl(null);
-  
-    try {
-      const reportInput: ReportInput = {
-        matchInfo,
-        teamNames,
-        scores,
-        fouls,
-        events,
-      };
-      const result = await generateReport(reportInput);
-      
-      if (result.imageUrl) {
-        setGeneratedReportUrl(result.imageUrl);
-        setModal('view-report');
-      } else {
-        throw new Error('La generación de la imagen no devolvió una URL.');
-      }
-  
-    } catch (error) {
-      console.error('Error generating report:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error al generar el informe',
-        description: 'Hubo un problema al contactar el servicio de IA. Inténtalo de nuevo.',
-      });
-    } finally {
-      setIsGeneratingReport(false);
-    }
+    toast({
+      variant: 'destructive',
+      title: 'Función Desactivada',
+      description: 'La generación de informes visuales está temporalmente desactivada debido a un problema técnico persistente que no se puede resolver en este momento.',
+    });
   };
 
   const timerButtonLabel = [
@@ -628,10 +588,9 @@ export default function Home() {
           </Button>
           <Button
             onClick={handleGenerateReport}
-            disabled={isGeneratingReport}
             className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
           >
-            {isGeneratingReport ? 'Generando Informe...' : '📄 Generar Informe Visual'}
+            📄 Generar Informe Visual
           </Button>
           <Button
             onClick={openNoteModal}
@@ -864,28 +823,6 @@ export default function Home() {
             <DialogFooter className="mt-4">
                 <Button onClick={handleSavePeggi} disabled={!peggiDecision} className="w-full shadow-lg">Guardar Análisis</Button>
             </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={modal === 'view-report'} onOpenChange={() => setModal(null)}>
-        <DialogContent className="max-w-lg">
-            <DialogHeader>
-                <DialogTitle className="text-center uppercase italic text-primary/90">Informe del Partido</DialogTitle>
-            </DialogHeader>
-            {generatedReportUrl ? (
-                <div className="mt-4 space-y-4">
-                    <div className="border rounded-lg overflow-hidden">
-                        <Image src={generatedReportUrl} alt="Informe del partido generado" width={1080} height={1920} style={{ width: '100%', height: 'auto' }} />
-                    </div>
-                    <a href={generatedReportUrl} download="informe-partido.svg" className="block w-full">
-                        <Button className="w-full">Descargar Informe</Button>
-                    </a>
-                </div>
-            ) : (
-                <div className="text-center p-8">
-                    <p>No se pudo generar el informe.</p>
-                </div>
-            )}
         </DialogContent>
       </Dialog>
 
