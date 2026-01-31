@@ -1,21 +1,15 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarInset,
-} from "@/components/ui/sidebar";
-import AppSidebar from "@/components/layout/AppSidebar";
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { Toaster } from '@/components/ui/toaster';
+import { FirebaseClientProvider } from '@/firebase';
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "Soy Asesor",
-  description: "Tu plataforma de asesoramiento.",
+  title: "Referee's Edge",
+  description:
+    'La herramienta definitiva para asesores de arbitraje de fútbol.',
 };
 
 export default function RootLayout({
@@ -24,20 +18,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark">
+    <html lang="es">
       <body className={inter.className}>
-        <SidebarProvider>
-          <Sidebar>
-            <AppSidebar />
-          </Sidebar>
-          <SidebarInset>
-            <div className="flex flex-col min-h-screen">
-              <Header />
-              <main className="flex-1 bg-muted/40">{children}</main>
-              <Footer />
-            </div>
-          </SidebarInset>
-        </SidebarProvider>
+        <FirebaseClientProvider>
+          <main>{children}</main>
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>

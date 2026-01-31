@@ -7,180 +7,114 @@
       "description": "Represents the overall state of a match, including scores, timer, events, and team names.",
       "properties": {
         "scores": {
-          "type": "string",
-          "description": "The match score; number of goals scored for each team. (Relationship: MatchState 1:1 Score)",
-          "format": "string"
+          "$ref": "#/entities/Scores"
         },
         "fouls": {
-          "type": "string",
-          "description": "The number of fouls commited for each team. (Relationship: MatchState 1:1 Fouls)",
-          "format": "string"
+          "$ref": "#/entities/Fouls"
         },
         "timer": {
-          "type": "string",
-          "description": "The match timer. (Relationship: MatchState 1:1 Timer)",
-          "format": "string"
+          "$ref": "#/entities/Timer"
         },
         "events": {
           "type": "array",
-          "description": "List of match events, like goals, cards, fouls, and notes. (Relationship: MatchState 1:N Event)",
+          "description": "List of match events, like goals, cards, fouls, and notes.",
           "items": {
-            "type": "string"
+            "$ref": "#/entities/Event"
           }
         },
         "teamNames": {
-          "type": "string",
-          "description": "Names of the teams. (Relationship: MatchState 1:1 TeamNames)",
-          "format": "string"
+          "$ref": "#/entities/TeamNames"
+        },
+        "matchInfo": {
+          "$ref": "#/entities/MatchInfo"
         }
       },
-      "required": []
+      "required": ["scores", "fouls", "timer", "events", "teamNames", "matchInfo"]
     },
-    "Score": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Score",
+    "Scores": {
+      "title": "Scores",
       "type": "object",
       "description": "Represents the score of the match",
       "properties": {
-        "home": {
-          "type": "number",
-          "description": "Score of the home team."
-        },
-        "away": {
-          "type": "number",
-          "description": "Score of the away team."
-        }
+        "home": { "type": "number", "description": "Score of the home team." },
+        "away": { "type": "number", "description": "Score of the away team." }
       },
-      "required": []
+      "required": ["home", "away"]
     },
     "Fouls": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Fouls",
       "type": "object",
       "description": "Represents the number of fouls committed for each team.",
       "properties": {
-        "home": {
-          "type": "number",
-          "description": "Number of fouls committed by the home team."
-        },
-        "away": {
-          "type": "number",
-          "description": "Number of fouls committed by the away team."
-        }
+        "home": { "type": "number", "description": "Number of fouls committed by the home team." },
+        "away": { "type": "number", "description": "Number of fouls committed by the away team." }
       },
-      "required": []
+      "required": ["home", "away"]
     },
     "Timer": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Timer",
       "type": "object",
       "description": "Represents the state of the game timer.",
       "properties": {
-        "isRunning": {
-          "type": "boolean",
-          "description": "Indicates whether the timer is currently running."
-        },
-        "totalPausedSeconds": {
-          "type": "number",
-          "description": "Total number of seconds the timer has been paused."
-        },
-        "startTime": {
-          "type": "number",
-          "description": "Timestamp of the last time the timer was started or resumed."
-        },
-        "period": {
+        "status": {
           "type": "string",
-          "description": "Current period of the match (e.g., PRE_MATCH, P1, HALF_TIME, P2, FULL_TIME)."
-        }
+          "description": "Current status of the match.",
+          "enum": ["NOT_STARTED", "FIRST_HALF", "HALF_TIME", "SECOND_HALF", "FINISHED"]
+        },
+        "startTime": { "type": "number", "description": "Timestamp of the last time the timer was started or resumed." },
+        "elapsedSeconds": { "type": "number", "description": "Total elapsed seconds in the current period." },
+        "isRunning": { "type": "boolean", "description": "Indicates whether the timer is currently running." }
       },
-      "required": []
+      "required": ["status", "startTime", "elapsedSeconds", "isRunning"]
     },
     "Event": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Event",
       "type": "object",
       "description": "Represents a single event that occurs during the match.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Event entity."
-        },
-        "type": {
-          "type": "string",
-          "description": "Type of event (e.g., goal, foul, yellow, red, note)."
-        },
-        "team": {
-          "type": "string",
-          "description": "Team associated with the event (if applicable)."
-        },
-        "time": {
-          "type": "number",
-          "description": "Time in seconds when the event occurred."
-        },
-        "jersey": {
-          "type": "number",
-          "description": "Jersey number of the player involved (if applicable)."
-        },
-        "reason": {
-          "type": "string",
-          "description": "Reason for the card or other event (if applicable)."
-        },
-        "text": {
-          "type": "string",
-          "description": "Text of the note (if applicable)."
-        }
+        "id": { "type": "number", "description": "Unique identifier for the Event entity (timestamp)." },
+        "time": { "type": "string", "description": "Formatted time when the event occurred (e.g., '45+2')." },
+        "category": { "type": "string", "description": "Category of the event (e.g., 'goals', 'cards', 'subs', 'notes', 'general')." },
+        "message": { "type": "string", "description": "Descriptive message for the event." }
       },
-      "required": [
-        "id"
-      ]
+      "required": ["id", "time", "category", "message"]
     },
     "TeamNames": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "TeamNames",
       "type": "object",
       "description": "Represents the names of the teams.",
       "properties": {
-        "home": {
-          "type": "string",
-          "description": "Name of the home team."
-        },
-        "away": {
-          "type": "string",
-          "description": "Name of the away team."
-        }
+        "home": { "type": "string", "description": "Name of the home team." },
+        "away": { "type": "string", "description": "Name of the away team." }
       },
-      "required": []
+      "required": ["home", "away"]
+    },
+    "MatchInfo": {
+      "title": "MatchInfo",
+      "type": "object",
+      "description": "General information about the match.",
+      "properties": {
+        "advisor": { "type": "string", "description": "Name of the match advisor." },
+        "league": { "type": "string", "description": "Name of the league or tournament." },
+        "round": { "type": "string", "description": "The matchday or round number." }
+      },
+      "required": ["advisor", "league", "round"]
     }
   },
   "auth": {
     "providers": [
-      "password",
       "anonymous"
     ]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/artifacts/{appId}/users/{userId}/match_control/current",
+        "path": "/matches/{matchId}",
         "definition": {
-          "entityName": "MatchState",
-          "schema": {
-            "$ref": "#/backend/entities/MatchState"
-          },
-          "description": "Stores the complete match state, including scores, timer, events, and team names.  The document ID is 'current', indicating the active match. Each user has their own isolated match state.",
-          "params": [
-            {
-              "name": "appId",
-              "description": "The ID of the application artifact."
-            },
-            {
-              "name": "userId",
-              "description": "The ID of the user, obtained from Firebase Authentication."
-            }
-          ]
+          "schema": { "$ref": "#/entities/MatchState" },
+          "description": "Stores the complete state for a single match."
         }
       }
-    ],
-    "reasoning": "This Firestore structure prioritizes authorization independence and data consistency for the Referee's Edge application. All data for a given match is stored within a single document to simplify data management and ensure atomic updates.\n\n*   **Authorization Independence:** There are no security rules that rely on `get()` calls. Authorization is based on the user's `uid` which implicitly owns the `match_control` document. The application ensures that each user only has access to their own match data.\n*   **QAPs Support:** `list` operations are secure because a user can only ever access their own `match_control` document. There is no need to filter or limit access based on content. The use of path-based ownership (`/artifacts/{appId}/users/{userId}/match_control/current`) ensures this."
+    ]
   }
 }
