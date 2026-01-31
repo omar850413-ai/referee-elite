@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, getDocs, collection, query, where, limit } from 'firebase/firestore';
+import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,33 +29,41 @@ export default function SignUpPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Create user profile in Firestore
+      // 2. Use a transaction to create the user profile and set the first admin
       const userDocRef = doc(firestore, 'users', user.uid);
-
-      // Check if an admin already exists
-      const usersRef = collection(firestore, 'users');
-      const q = query(usersRef, where('isAdmin', '==', true), limit(1));
-      const adminSnapshot = await getDocs(q);
+      const adminFlagRef = doc(firestore, 'globals', 'admin_setup');
       
-      let isAdmin = false;
-      let isApproved = false;
+      await runTransaction(firestore, async (transaction) => {
+        const adminFlagDoc = await transaction.get(adminFlagRef);
+        
+        let isAdmin = false;
+        let isApproved = false;
 
-      // If no admin exists, make this new user an admin and approve them
-      if (adminSnapshot.empty) {
-        isAdmin = true;
-        isApproved = true;
-      }
+        // If no admin flag exists, this is the first user.
+        if (!adminFlagDoc.exists()) {
+          isAdmin = true;
+          isApproved = true;
+          // Set the admin flag so this can't happen again.
+          transaction.set(adminFlagRef, { admin_user_uid: user.uid, setup_at: serverTimestamp() });
+        }
 
-      await setDoc(userDocRef, {
-        email: user.email,
-        isAdmin: isAdmin,
-        isApproved: isApproved,
+        // Create the user profile inside the transaction.
+        transaction.set(userDocRef, {
+          email: user.email,
+          isAdmin: isAdmin,
+          isApproved: isApproved,
+        });
       });
+
 
       // 3. Redirect to home (which will handle approval logic)
       router.push('/');
     } catch (err: any) {
-      setError(err.message);
+       if (err.code === 'permission-denied') {
+        setError('Error de permisos. Es posible que el primer administrador ya haya sido configurado.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setIsLoading(false);
     }
