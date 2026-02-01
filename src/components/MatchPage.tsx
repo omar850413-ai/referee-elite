@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { User } from 'firebase/auth';
-import { Whistle } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -219,7 +218,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [isRunning, elapsedSeconds]);
+  }, [isRunning]);
 
 
   const addEvent = (category: string, message: string, time: string) => {
@@ -524,7 +523,23 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                   }}
                   className="mt-4 w-11/12 mx-auto bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
                 >
-                  <span className="text-sm flex items-center justify-center gap-1.5"><Whistle size={14} /> FALTAS</span>
+                  <span className="text-sm flex items-center justify-center gap-1.5">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M11 6.5a2.5 2.5 0 0 1 5 0V10l-5 5H6l-3 3V11a3 3 0 0 1 3-3h5z" />
+                      <path d="M10 10a2 2 0 1 0 4 0" />
+                    </svg>
+                    FALTAS
+                  </span>
                   <span className="text-4xl font-black leading-none mt-1">{fouls.home}</span>
                 </Button>
               </div>
@@ -557,7 +572,23 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                   }}
                   className="mt-4 w-11/12 mx-auto bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
                 >
-                   <span className="text-sm flex items-center justify-center gap-1.5"><Whistle size={14} /> FALTAS</span>
+                   <span className="text-sm flex items-center justify-center gap-1.5">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M11 6.5a2.5 2.5 0 0 1 5 0V10l-5 5H6l-3 3V11a3 3 0 0 1 3-3h5z" />
+                      <path d="M10 10a2 2 0 1 0 4 0" />
+                    </svg>
+                    FALTAS
+                   </span>
                   <span className="text-4xl font-black leading-none mt-1">{fouls.away}</span>
                 </Button>
               </div>
