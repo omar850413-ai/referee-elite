@@ -512,7 +512,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                         setNewTeamName(teamNames.home);
                         setModal('edit-name');
                       }}
-                      className="text-sm font-black text-blue-900 uppercase mb-2 border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2 truncate"
+                      className="text-xl font-black text-blue-900 uppercase mb-2 border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2 truncate"
                     >
                       {teamNames.home}
                     </p>
@@ -525,12 +525,12 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                     e.stopPropagation();
                     addFoul('home');
                   }}
-                  className="cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-1 text-center w-16 mx-auto shadow-sm transition-colors flex flex-col items-center"
+                  className="cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-2 text-center w-20 mx-auto shadow-sm transition-colors flex flex-col items-center"
                 >
-                  <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
+                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
                     🚩 FALTAS
                   </span>
-                  <span className="text-2xl font-black leading-tight">{fouls.home}</span>
+                  <span className="text-3xl font-black leading-tight">{fouls.home}</span>
                 </button>
               </div>
 
@@ -547,7 +547,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                         setNewTeamName(teamNames.away);
                         setModal('edit-name');
                       }}
-                      className="text-sm font-black text-blue-900 uppercase mb-2 border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2 truncate"
+                      className="text-xl font-black text-blue-900 uppercase mb-2 border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2 truncate"
                     >
                       {teamNames.away}
                     </p>
@@ -560,12 +560,12 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                     e.stopPropagation();
                     addFoul('away');
                   }}
-                  className="cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-1 text-center w-16 mx-auto shadow-sm transition-colors flex flex-col items-center"
+                  className="cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-2 text-center w-20 mx-auto shadow-sm transition-colors flex flex-col items-center"
                 >
-                  <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
+                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
                     🚩 FALTAS
                   </span>
-                  <span className="text-2xl font-black leading-tight">{fouls.away}</span>
+                  <span className="text-3xl font-black leading-tight">{fouls.away}</span>
                 </button>
               </div>
             </div>
