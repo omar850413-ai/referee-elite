@@ -45,7 +45,7 @@ export default function PendingApprovalPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-100">
+    <div className="flex items-center justify-center min-h-screen bg-sky-100">
       <Card className="w-full max-w-md text-center">
         <CardHeader>
           <CardTitle>Cuenta Pendiente de Aprobación</CardTitle>

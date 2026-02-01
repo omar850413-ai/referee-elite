@@ -77,7 +77,7 @@ export default function AdminPage() {
 
   if (isUserLoading || isProfileLoading || !hasAdminRights) {
     return (
-       <div className="p-4 md:p-8 min-h-screen bg-slate-100">
+       <div className="p-4 md:p-8 min-h-screen bg-sky-100">
         <Skeleton className="h-10 w-48 mb-4" />
         <Card>
           <CardHeader>
@@ -100,7 +100,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 min-h-screen bg-slate-100">
+    <div className="p-4 md:p-8 min-h-screen bg-sky-100">
        <div className="flex justify-between items-center mb-4">
         <Link href="/" className="text-primary hover:underline">&larr; Volver a la App</Link>
         <Button onClick={handleLogout} variant="outline" size="sm">Cerrar Sesión</Button>

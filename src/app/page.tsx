@@ -440,7 +440,7 @@ export default function Home() {
 
   if (isUserLoading || isProfileLoading || !isApproved || !isStateLoaded) {
     return (
-      <div className="p-4 bg-slate-100 min-h-screen flex items-center justify-center">
+      <div className="p-4 bg-sky-100 min-h-screen flex items-center justify-center">
         <div className="max-w-md mx-auto space-y-4 w-full">
           <div className="flex items-center justify-center gap-3 border-b-4 border-primary/50 pb-2">
              <Logo />
@@ -471,7 +471,7 @@ export default function Home() {
   }
 
   return (
-    <div className="p-4 bg-slate-100">
+    <div className="p-4 bg-sky-100">
       <div className="max-w-md mx-auto space-y-4 pb-12">
         <div className="flex items-center justify-center gap-3 border-b-4 border-primary/50 pb-2">
           <Logo />
