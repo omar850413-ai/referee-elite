@@ -489,7 +489,7 @@ export default function Home() {
           <CardHeader className="rounded-t-lg p-6 text-center border-b">
             <div
               id="timer-display"
-              className="text-7xl font-mono font-black text-gray-800 tracking-tighter mb-2 bg-stone-200 rounded-2xl py-4 border-b-4 border-stone-300"
+              className="text-7xl font-mono font-black text-gray-800 tracking-tighter mb-2 bg-amber-100 rounded-2xl py-4 border-b-4 border-amber-200"
             >
               {formatTime(elapsedSeconds)}
             </div>
@@ -497,7 +497,7 @@ export default function Home() {
               <Button
                 onClick={handleTimerClick}
                 size="lg"
-                className="w-full font-black text-lg shadow-lg uppercase italic bg-slate-200 hover:bg-slate-300 text-slate-800"
+                className="w-full font-black text-lg shadow-lg uppercase italic bg-slate-800 hover:bg-slate-900 text-white"
                 disabled={matchState === 4}
               >
                 {timerButtonLabel}
