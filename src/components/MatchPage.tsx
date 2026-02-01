@@ -167,7 +167,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
       };
       try {
         // Only save if something meaningful has happened, not just time passing
-        if (!currentState.isRunning) {
+        if (!currentState.isRunning && currentState.events.length > 0) {
           localStorage.setItem('matchSession', JSON.stringify(currentState));
         }
       } catch (error) {
@@ -501,7 +501,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
             <div className="flex justify-between items-stretch gap-2">
               <div
                 onClick={openScoreEditor}
-                className="flex-1 cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between"
+                className="flex-1 cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between text-center"
                 title="Haz clic para corregir el marcador"
               >
                 <div>
@@ -513,12 +513,12 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                         setNewTeamName(teamNames.home);
                         setModal('edit-name');
                       }}
-                      className="text-sm font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2 truncate"
+                      className="text-xs font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2 truncate"
                     >
                       {teamNames.home}
                     </p>
                   </div>
-                  <div className="text-center text-5xl font-black text-gray-800 leading-none">
+                  <div className="text-center text-7xl font-black text-gray-800 leading-none py-2">
                     {scores.home}
                   </div>
                 </div>
@@ -540,7 +540,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
               </div>
               <div
                 onClick={openScoreEditor}
-                className="flex-1 cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between"
+                className="flex-1 cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between text-center"
                 title="Haz clic para corregir el marcador"
               >
                 <div>
@@ -552,12 +552,12 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                         setNewTeamName(teamNames.away);
                         setModal('edit-name');
                       }}
-                      className="text-sm font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2 truncate"
+                      className="text-xs font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2 truncate"
                     >
                       {teamNames.away}
                     </p>
                   </div>
-                  <div className="text-center text-5xl font-black text-gray-800 leading-none">
+                  <div className="text-center text-7xl font-black text-gray-800 leading-none py-2">
                     {scores.away}
                   </div>
                 </div>
