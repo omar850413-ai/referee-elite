@@ -193,20 +193,32 @@ export default function Home() {
 
   useEffect(() => {
     if (isRunning) {
+      // When the timer starts/resumes, we capture the starting point in time.
       const startTime = Date.now() - elapsedSeconds * 1000;
+      
       timerIntervalRef.current = setInterval(() => {
+        // Every second, we calculate the new total elapsed time from that fixed start point.
+        // This is accurate and does not depend on previous state within the interval.
         setElapsedSeconds((Date.now() - startTime) / 1000);
       }, 1000);
     } else {
+      // If the timer is stopped, we clear the interval.
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
     }
+
+    // The cleanup function runs when the component unmounts or when `isRunning` changes.
+    // It's crucial for preventing memory leaks.
     return () => {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
     };
+    // By only depending on `isRunning`, we ensure this effect only re-runs when the timer's
+    // play/pause state changes. The use of `elapsedSeconds` inside is safe because it's
+    // read only once when the interval is created. When the timer is paused and resumed,
+    // `isRunning` flips, causing the effect to re-run and capture the latest `elapsedSeconds`.
   }, [isRunning]);
 
   const addEvent = (category: string, message: string, time: string) => {
@@ -528,7 +540,7 @@ export default function Home() {
                     setNewTeamName(teamNames.home);
                     setModal('edit-name');
                   }}
-                  className="text-lg font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
+                  className="text-xl font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
                 >
                   {teamNames.home}
                 </p>
@@ -559,7 +571,7 @@ export default function Home() {
                     setNewTeamName(teamNames.away);
                     setModal('edit-name');
                   }}
-                  className="text-lg font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
+                  className="text-xl font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
                 >
                   {teamNames.away}
                 </p>
