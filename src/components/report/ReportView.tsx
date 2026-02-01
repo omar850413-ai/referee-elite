@@ -97,7 +97,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     }
     
     message = message
-      .replace(/⚽|🔄|📝|🔎/g, '')
+      .replace(/⚽|🔄|📝|🔎|🚩/g, '')
       .trim();
       
     if (event.category === 'subs') {
@@ -108,6 +108,8 @@ export function ReportView({ matchState }: ReportViewProps) {
         message = `Entra ${pIn || '?'} Sale ${pOut || '?'}`;
     } else if (event.category === 'goals') {
         message = message.replace('GOL', '').replace('PENAL', '(P)').replace('AUTOGOL', '(AG)').trim();
+    } else if (event.category === 'pegi') {
+        message = message.replace('JUGADAS PEGI:', '').trim();
     }
     
     return {
@@ -267,10 +269,10 @@ export function ReportView({ matchState }: ReportViewProps) {
 
           {/* Main Content */}
           <text x="200" y="210" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.home}</text>
-          <text x="200" y="320" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.home}</text>
+          <text x="200" y="340" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.home}</text>
 
           <text x="600" y="210" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.away}</text>
-          <text x="600" y="320" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.away}</text>
+          <text x="600" y="340" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.away}</text>
 
           {/* Event Columns */}
           {homeColumn}
@@ -294,7 +296,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                 <text x="400" y="95" textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE">JUGADAS PEGI</text>
                  <foreignObject x="50" y="120" width="700" height="60">
                   <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E9D5FF', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
-                    {pegiPlays.map(p => p.message.replace('🔎', '').trim()).join('; ')}
+                    {pegiPlays.map(p => p.message.replace(/🔎|JUGADAS PEGI: /g, '').trim()).join('; ')}
                   </p>
                 </foreignObject>
               </>
