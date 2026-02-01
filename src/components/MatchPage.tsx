@@ -290,7 +290,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
   const addFoul = (side: 'home' | 'away') => {
     if (matchState === 0) return;
     setFouls((prev) => ({ ...prev, [side]: prev[side] + 1 }));
-    addEvent('general', `Falta ${teamNames[side]}`, getSmartTime());
+    addEvent('general', `🚩 Falta ${teamNames[side]}`, getSmartTime());
   };
 
   const captureTimeAndTrigger = (type: string, side: 'home' | 'away') => {
@@ -496,68 +496,76 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
           </CardHeader>
 
           <CardContent className="p-6 flex flex-col gap-6">
-            <div className="flex justify-between items-start gap-4">
-              <div 
+            <div className="flex justify-between items-stretch gap-4">
+              <div
                 onClick={openScoreEditor}
-                className="flex-1 text-center cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col"
+                className="flex-1 text-center cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between"
                 title="Haz clic para corregir el marcador"
               >
-                <p
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentSide('home');
-                    setNewTeamName(teamNames.home);
-                    setModal('edit-name');
-                  }}
-                  className="text-4xl font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
-                >
-                  {teamNames.home}
-                </p>
-                <div className="text-8xl font-black text-gray-800 leading-none">
-                  {scores.home}
+                <div>
+                  <p
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentSide('home');
+                      setNewTeamName(teamNames.home);
+                      setModal('edit-name');
+                    }}
+                    className="text-2xl font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
+                  >
+                    {teamNames.home}
+                  </p>
+                  <div className="text-7xl font-black text-gray-800 leading-none">
+                    {scores.home}
+                  </div>
                 </div>
                 <div
                   onClick={(e) => {
                     e.stopPropagation();
                     addFoul('home');
                   }}
-                  className="mt-4 cursor-pointer bg-lime-100 border-2 border-lime-200 rounded-3xl p-2 text-center w-full shadow-sm hover:bg-lime-200 transition-colors"
+                  className="mt-3 cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-2xl p-1 text-center w-10/12 mx-auto shadow-sm transition-colors"
                 >
-                  <p className="text-xs font-bold text-lime-800 uppercase tracking-wider">Faltas</p>
-                  <p className="text-6xl font-black text-lime-950 leading-tight">{fouls.home}</p>
+                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
+                    🚩 FALTAS
+                  </p>
+                  <p className="text-3xl font-black leading-tight">{fouls.home}</p>
                 </div>
               </div>
               <div className="pt-8 text-3xl font-black text-gray-200 italic">
                 VS
               </div>
-              <div 
+              <div
                 onClick={openScoreEditor}
-                className="flex-1 text-center cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col"
+                className="flex-1 text-center cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between"
                 title="Haz clic para corregir el marcador"
               >
-                <p
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentSide('away');
-                    setNewTeamName(teamNames.away);
-                    setModal('edit-name');
-                  }}
-                  className="text-4xl font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
-                >
-                  {teamNames.away}
-                </p>
-                <div className="text-8xl font-black text-gray-800 leading-none">
-                  {scores.away}
+                <div>
+                  <p
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentSide('away');
+                      setNewTeamName(teamNames.away);
+                      setModal('edit-name');
+                    }}
+                    className="text-2xl font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
+                  >
+                    {teamNames.away}
+                  </p>
+                  <div className="text-7xl font-black text-gray-800 leading-none">
+                    {scores.away}
+                  </div>
                 </div>
                 <div
                   onClick={(e) => {
                     e.stopPropagation();
                     addFoul('away');
                   }}
-                  className="mt-4 cursor-pointer bg-lime-100 border-2 border-lime-200 rounded-3xl p-2 text-center w-full shadow-sm hover:bg-lime-200 transition-colors"
+                  className="mt-3 cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-2xl p-1 text-center w-10/12 mx-auto shadow-sm transition-colors"
                 >
-                  <p className="text-xs font-bold text-lime-800 uppercase tracking-wider">Faltas</p>
-                  <p className="text-6xl font-black text-lime-950 leading-tight">{fouls.away}</p>
+                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
+                    🚩 FALTAS
+                  </p>
+                  <p className="text-3xl font-black leading-tight">{fouls.away}</p>
                 </div>
               </div>
             </div>
@@ -627,7 +635,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
         </div>
 
         <div className="pt-2 space-y-3">
-           <Button
+          <Button
             onClick={openNoteModal}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
           >
@@ -640,7 +648,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
           >
             🏟️ Datos del Partido
           </Button>
-           <Button
+          <Button
             onClick={openPeggiModal}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
           >
