@@ -486,10 +486,10 @@ export default function Home() {
         </div>
 
         <Card>
-          <CardHeader className="bg-primary/5 rounded-t-lg p-6 text-center border-b">
+          <CardHeader className="rounded-t-lg p-6 text-center border-b">
             <div
               id="timer-display"
-              className="text-7xl font-mono font-black text-gray-800 tracking-tighter mb-2"
+              className="text-7xl font-mono font-black text-gray-800 tracking-tighter mb-2 bg-stone-100 rounded-2xl py-4 border-b-4 border-stone-200"
             >
               {formatTime(elapsedSeconds)}
             </div>
@@ -536,7 +536,7 @@ export default function Home() {
                 >
                   {teamNames.home}
                 </p>
-                <div className="text-8xl font-black text-primary/90 leading-none">
+                <div className="text-8xl font-black text-gray-800 leading-none">
                   {scores.home}
                 </div>
                 <div className="mt-6 bg-red-50 rounded-2xl p-3 border border-red-100">
@@ -567,7 +567,7 @@ export default function Home() {
                 >
                   {teamNames.away}
                 </p>
-                <div className="text-8xl font-black text-primary/90 leading-none">
+                <div className="text-8xl font-black text-gray-800 leading-none">
                   {scores.away}
                 </div>
                 <div className="mt-6 bg-red-50 rounded-2xl p-3 border border-red-100">
