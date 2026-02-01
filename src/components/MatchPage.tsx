@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { User } from 'firebase/auth';
+import { Whistle } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -172,6 +173,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
       }
     };
     
+    // Save state when the user is about to leave the page or switches tabs.
     window.addEventListener('beforeunload', saveState);
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
@@ -182,7 +184,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
     return () => {
       window.removeEventListener('beforeunload', saveState);
       document.removeEventListener('visibilitychange', saveState);
-      saveState();
+      saveState(); // Final save on component unmount
     };
   }, [isStateLoaded]);
 
@@ -217,7 +219,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [isRunning]);
+  }, [isRunning, elapsedSeconds]);
 
 
   const addEvent = (category: string, message: string, time: string) => {
@@ -234,6 +236,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
     if (matchState === 0) { // To 1st Half
       setMatchState(1);
       setIsRunning(true);
+      setElapsedSeconds(0);
       addEvent('general', '▶️ INICIO PARTIDO', '00:00');
     } else if (matchState === 1) { // To Half Time
       addEvent('general', `⏹️ FIN 1T`, getSmartTime());
@@ -243,6 +246,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
     } else if (matchState === 2) { // To 2nd Half
       setMatchState(3);
       setIsRunning(true);
+      setElapsedSeconds(45*60);
       addEvent('general', '▶️ INICIO 2T', '45:00');
     } else if (matchState === 3) { // To Full Time
       addEvent('general', `🏁 FIN PARTIDO`, getSmartTime());
@@ -287,7 +291,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
   const addFoul = (side: 'home' | 'away') => {
     if (matchState === 0) return;
     setFouls((prev) => ({ ...prev, [side]: prev[side] + 1 }));
-    addEvent('general', `🚩 Falta ${teamNames[side]}`, getSmartTime());
+    addEvent('general', `Falta ${teamNames[side]}`, getSmartTime());
   };
 
   const captureTimeAndTrigger = (type: string, side: 'home' | 'away') => {
@@ -506,7 +510,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                     setNewTeamName(teamNames.home);
                     setModal('edit-name');
                   }}
-                  className="text-xl font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
+                  className="text-4xl font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
                 >
                   {teamNames.home}
                 </p>
@@ -518,9 +522,9 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                     e.stopPropagation();
                     addFoul('home');
                   }}
-                  className="mt-6 w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
+                  className="mt-4 w-11/12 mx-auto bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
                 >
-                  <span className="text-sm">🚩 FALTAS</span>
+                  <span className="text-sm flex items-center justify-center gap-1.5"><Whistle size={14} /> FALTAS</span>
                   <span className="text-4xl font-black leading-none mt-1">{fouls.home}</span>
                 </Button>
               </div>
@@ -539,7 +543,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                     setNewTeamName(teamNames.away);
                     setModal('edit-name');
                   }}
-                  className="text-xl font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
+                  className="text-4xl font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
                 >
                   {teamNames.away}
                 </p>
@@ -551,9 +555,9 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                     e.stopPropagation();
                     addFoul('away');
                   }}
-                  className="mt-6 w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
+                  className="mt-4 w-11/12 mx-auto bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
                 >
-                  <span className="text-sm">🚩 FALTAS</span>
+                   <span className="text-sm flex items-center justify-center gap-1.5"><Whistle size={14} /> FALTAS</span>
                   <span className="text-4xl font-black leading-none mt-1">{fouls.away}</span>
                 </Button>
               </div>
@@ -624,7 +628,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
         </div>
 
         <div className="pt-2 space-y-3">
-          <Button
+           <Button
             onClick={openNoteModal}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
           >
