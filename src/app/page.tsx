@@ -483,7 +483,7 @@ export default function Home() {
         </div>
 
         <Card>
-          <CardHeader className="rounded-t-lg p-6 text-center border-b">
+          <CardHeader className="rounded-t-lg p-6 text-center border-b bg-sky-100">
             <div
               id="timer-display"
               className="text-7xl font-mono font-black text-gray-800 tracking-tighter mb-2 bg-amber-100 rounded-2xl py-4 border-b-4 border-amber-200"
@@ -536,11 +536,11 @@ export default function Home() {
                 <div className="text-8xl font-black text-gray-800 leading-none">
                   {scores.home}
                 </div>
-                <div className="mt-6 bg-red-50 rounded-2xl p-3 border border-red-100">
-                  <p className="text-[9px] font-black text-red-400 uppercase mb-1">
+                <div className="mt-6 bg-lime-50 rounded-2xl p-3 border border-lime-200">
+                  <p className="text-[9px] font-black text-lime-600 uppercase mb-1">
                     Faltas
                   </p>
-                  <div className="text-4xl font-black text-red-600 leading-none">
+                  <div className="text-4xl font-black text-lime-800 leading-none">
                     {fouls.home}
                   </div>
                 </div>
@@ -567,11 +567,11 @@ export default function Home() {
                 <div className="text-8xl font-black text-gray-800 leading-none">
                   {scores.away}
                 </div>
-                <div className="mt-6 bg-red-50 rounded-2xl p-3 border border-red-100">
-                  <p className="text-[9px] font-black text-red-400 uppercase mb-1">
+                <div className="mt-6 bg-lime-50 rounded-2xl p-3 border border-lime-200">
+                  <p className="text-[9px] font-black text-lime-600 uppercase mb-1">
                     Faltas
                   </p>
-                  <div className="text-4xl font-black text-red-600 leading-none">
+                  <div className="text-4xl font-black text-lime-800 leading-none">
                     {fouls.away}
                   </div>
                 </div>
