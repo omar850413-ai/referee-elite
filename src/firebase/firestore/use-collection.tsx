@@ -37,6 +37,44 @@ export interface InternalQuery extends Query<DocumentData> {
   }
 }
 
+// Helper for deep object comparison
+function isDeepEqual(a: any, b: any): boolean {
+  if (a === b) return true;
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    if (a.constructor !== b.constructor) return false;
+
+    let length, i, keys;
+    if (Array.isArray(a)) {
+      length = a.length;
+      if (length != b.length) return false;
+      for (i = length; i-- > 0;) {
+        if (!isDeepEqual(a[i], b[i])) return false;
+      }
+      return true;
+    }
+
+    if (a.constructor === RegExp) return a.source === b.source && a.flags === b.flags;
+    if (a.valueOf !== Object.prototype.valueOf) return a.valueOf() === b.valueOf();
+    if (a.toString !== Object.prototype.toString) return a.toString() === b.toString();
+
+    keys = Object.keys(a);
+    length = keys.length;
+    if (length !== Object.keys(b).length) return false;
+
+    for (i = length; i-- > 0;) {
+      if (!Object.prototype.hasOwnProperty.call(b, keys[i])) return false;
+    }
+
+    for (i = length; i-- > 0;) {
+      const key = keys[i];
+      if (!isDeepEqual(a[key], b[key])) return false;
+    }
+
+    return true;
+  }
+  return a !== a && b !== b;
+}
+
 /**
  * React hook to subscribe to a Firestore collection or query in real-time.
  * Handles nullable references/queries.
@@ -52,7 +90,7 @@ export interface InternalQuery extends Query<DocumentData> {
  * @returns {UseCollectionResult<T>} Object with data, isLoading, error.
  */
 export function useCollection<T = any>(
-    memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
+    memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>))  | null | undefined,
 ): UseCollectionResult<T> {
   type ResultItemType = WithId<T>;
   type StateDataType = ResultItemType[] | null;
@@ -81,10 +119,8 @@ export function useCollection<T = any>(
           id: doc.id
         }));
         
-        // By passing a function to setData, we can compare with the previous state
-        // to prevent unnecessary re-renders if the data hasn't actually changed.
         setData(currentData => {
-          if (currentData && JSON.stringify(currentData) === JSON.stringify(newResults)) {
+          if (isDeepEqual(currentData, newResults)) {
             return currentData; // Return the old state to prevent re-render
           }
           return newResults; // Return the new state
@@ -116,8 +152,6 @@ export function useCollection<T = any>(
 
     return () => unsubscribe();
   }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
-  if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
-    throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
-  }
+  
   return { data, isLoading, error };
 }

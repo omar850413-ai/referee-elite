@@ -24,6 +24,45 @@ export interface UseDocResult<T> {
   error: FirestoreError | Error | null; // Error object, or null.
 }
 
+// Helper for deep object comparison
+function isDeepEqual(a: any, b: any): boolean {
+  if (a === b) return true;
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    if (a.constructor !== b.constructor) return false;
+
+    let length, i, keys;
+    if (Array.isArray(a)) {
+      length = a.length;
+      if (length != b.length) return false;
+      for (i = length; i-- > 0;) {
+        if (!isDeepEqual(a[i], b[i])) return false;
+      }
+      return true;
+    }
+
+    if (a.constructor === RegExp) return a.source === b.source && a.flags === b.flags;
+    if (a.valueOf !== Object.prototype.valueOf) return a.valueOf() === b.valueOf();
+    if (a.toString !== Object.prototype.toString) return a.toString() === b.toString();
+
+    keys = Object.keys(a);
+    length = keys.length;
+    if (length !== Object.keys(b).length) return false;
+
+    for (i = length; i-- > 0;) {
+      if (!Object.prototype.hasOwnProperty.call(b, keys[i])) return false;
+    }
+
+    for (i = length; i-- > 0;) {
+      const key = keys[i];
+      if (!isDeepEqual(a[key], b[key])) return false;
+    }
+
+    return true;
+  }
+  return a !== a && b !== b;
+}
+
+
 /**
  * React hook to subscribe to a single Firestore document in real-time.
  * Handles nullable references.
@@ -64,10 +103,8 @@ export function useDoc<T = any>(
       (snapshot: DocumentSnapshot<DocumentData>) => {
         if (snapshot.exists()) {
           const newDoc = { ...(snapshot.data() as T), id: snapshot.id };
-          // By passing a function to setData, we can compare with the previous state
-          // to prevent unnecessary re-renders if the data hasn't actually changed.
           setData(currentDoc => {
-            if (currentDoc && JSON.stringify(currentDoc) === JSON.stringify(newDoc)) {
+            if (isDeepEqual(currentDoc, newDoc)) {
               return currentDoc; // Return the old state to prevent re-render
             }
             return newDoc; // Return the new state
