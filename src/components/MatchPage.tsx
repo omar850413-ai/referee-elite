@@ -290,7 +290,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
   const addFoul = (side: 'home' | 'away') => {
     if (matchState === 0) return;
     setFouls((prev) => ({ ...prev, [side]: prev[side] + 1 }));
-    addEvent('general', `🚩 Falta ${teamNames[side]}`, getSmartTime());
+    addEvent('general', `Falta ${teamNames[side]}`, getSmartTime());
   };
 
   const captureTimeAndTrigger = (type: string, side: 'home' | 'away') => {
@@ -516,18 +516,16 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                 <div className="text-8xl font-black text-gray-800 leading-none">
                   {scores.home}
                 </div>
-                <Button
+                <div
                   onClick={(e) => {
                     e.stopPropagation();
                     addFoul('home');
                   }}
-                  className="mt-4 w-11/12 mx-auto bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
+                  className="mt-4 cursor-pointer bg-lime-100 border-2 border-lime-200 rounded-3xl p-2 text-center w-full shadow-sm hover:bg-lime-200 transition-colors"
                 >
-                  <span className="text-sm flex items-center justify-center gap-1.5">
-                    🚩 FALTAS
-                  </span>
-                  <span className="text-4xl font-black leading-none mt-1">{fouls.home}</span>
-                </Button>
+                  <p className="text-xs font-bold text-lime-800 uppercase tracking-wider">Faltas</p>
+                  <p className="text-6xl font-black text-lime-950 leading-tight">{fouls.home}</p>
+                </div>
               </div>
               <div className="pt-8 text-3xl font-black text-gray-200 italic">
                 VS
@@ -551,18 +549,16 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                 <div className="text-8xl font-black text-gray-800 leading-none">
                   {scores.away}
                 </div>
-                <Button
+                <div
                   onClick={(e) => {
                     e.stopPropagation();
                     addFoul('away');
                   }}
-                  className="mt-4 w-11/12 mx-auto bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
+                  className="mt-4 cursor-pointer bg-lime-100 border-2 border-lime-200 rounded-3xl p-2 text-center w-full shadow-sm hover:bg-lime-200 transition-colors"
                 >
-                   <span className="text-sm flex items-center justify-center gap-1.5">
-                    🚩 FALTAS
-                   </span>
-                  <span className="text-4xl font-black leading-none mt-1">{fouls.away}</span>
-                </Button>
+                  <p className="text-xs font-bold text-lime-800 uppercase tracking-wider">Faltas</p>
+                  <p className="text-6xl font-black text-lime-950 leading-tight">{fouls.away}</p>
+                </div>
               </div>
             </div>
           </CardContent>
