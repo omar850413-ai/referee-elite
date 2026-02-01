@@ -529,7 +529,7 @@ export default function Home() {
                     setNewTeamName(teamNames.home);
                     setModal('edit-name');
                   }}
-                  className="text-xs font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
+                  className="text-base font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
                 >
                   {teamNames.home}
                 </p>
@@ -560,7 +560,7 @@ export default function Home() {
                     setNewTeamName(teamNames.away);
                     setModal('edit-name');
                   }}
-                  className="text-xs font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
+                  className="text-base font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
                 >
                   {teamNames.away}
                 </p>
