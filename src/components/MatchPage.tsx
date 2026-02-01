@@ -74,21 +74,30 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
     place: '',
     date: '',
   });
-  
-  // Create a ref to hold all state for efficient saving
-  const stateRef = useRef<any>();
-  stateRef.current = {
-      isStateLoaded,
+
+  const stateRef = useRef({
+    matchState,
+    isRunning,
+    elapsedSeconds,
+    scores,
+    fouls,
+    teamNames,
+    events,
+    matchInfo,
+  });
+
+  useEffect(() => {
+    stateRef.current = {
       matchState,
-      elapsedSeconds,
       isRunning,
+      elapsedSeconds,
       scores,
       fouls,
       teamNames,
       events,
       matchInfo,
-  };
-
+    };
+  }, [matchState, isRunning, elapsedSeconds, scores, fouls, teamNames, events, matchInfo]);
 
   const [modal, setModal] = useState<string | null>(null);
   const [currentSide, setCurrentSide] = useState<'home' | 'away'>('home');
@@ -115,7 +124,6 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
 
   const capturedTimeRef = useRef('00:00');
   
-  // Load state from localStorage on initial client-side mount
   useEffect(() => {
     try {
       const savedStateJSON = localStorage.getItem('matchSession');
@@ -128,14 +136,18 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
         setTeamNames(savedState.teamNames ?? { home: 'LOCAL', away: 'VISITA' });
         setEvents(savedState.events ?? []);
         setMatchInfo(savedState.matchInfo ?? { advisor: '', league: '', round: '', place: '', date: '' });
-        setIsRunning(savedState.isRunning ?? false);
-
+        
+        const lastUpdated = savedState.lastUpdated;
+        const wasRunning = savedState.isRunning ?? false;
         let totalElapsed = savedState.elapsedSeconds ?? 0;
-        if (savedState.isRunning && savedState.lastUpdated) {
-          const offlineSeconds = (Date.now() - savedState.lastUpdated) / 1000;
+        
+        if (wasRunning && lastUpdated) {
+          const offlineSeconds = (Date.now() - lastUpdated) / 1000;
           totalElapsed += offlineSeconds;
         }
+
         setElapsedSeconds(totalElapsed);
+        setIsRunning(wasRunning);
       }
     } catch (error) {
       console.error("Failed to load state from localStorage", error);
@@ -145,39 +157,34 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
     }
   }, []);
 
-  // Save state to localStorage more efficiently
   useEffect(() => {
-    const saveState = () => {
-      // Use the ref to get the latest state without causing re-renders
-      const currentState = stateRef.current;
-      if (!currentState.isStateLoaded) return;
+    if (!isStateLoaded) return;
 
-      const matchSession = {
-        ...currentState,
+    const saveState = () => {
+      const currentState = {
+        ...stateRef.current,
         lastUpdated: Date.now(),
       };
-      
       try {
-        localStorage.setItem('matchSession', JSON.stringify(matchSession));
+        localStorage.setItem('matchSession', JSON.stringify(currentState));
       } catch (error) {
         console.error("Failed to save state to localStorage", error);
       }
     };
     
-    // Save state when user leaves the page or switches tabs
     window.addEventListener('beforeunload', saveState);
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') {
-            saveState();
-        }
+      if (document.visibilityState === 'hidden') {
+        saveState();
+      }
     });
 
     return () => {
       window.removeEventListener('beforeunload', saveState);
       document.removeEventListener('visibilitychange', saveState);
-      saveState(); // Save one last time on unmount
+      saveState();
     };
-  }, []); // Empty dependency array means this setup runs only once
+  }, [isStateLoaded]);
 
   const getSmartTime = () => {
     const totalSeconds = Math.floor(elapsedSeconds);
@@ -211,6 +218,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
       }
     };
   }, [isRunning]);
+
 
   const addEvent = (category: string, message: string, time: string) => {
     const newEvent: MatchEvent = {
@@ -488,7 +496,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
             <div className="flex justify-between items-start gap-4">
               <div 
                 onClick={openScoreEditor}
-                className="flex-1 text-center cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors"
+                className="flex-1 text-center cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col"
                 title="Haz clic para corregir el marcador"
               >
                 <p
@@ -505,21 +513,23 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                 <div className="text-8xl font-black text-gray-800 leading-none">
                   {scores.home}
                 </div>
-                <div className="mt-6 bg-lime-50 rounded-2xl p-3 border border-lime-200">
-                  <p className="text-[9px] font-black text-lime-600 uppercase mb-1">
-                    Faltas
-                  </p>
-                  <div className="text-4xl font-black text-lime-800 leading-none">
-                    {fouls.home}
-                  </div>
-                </div>
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addFoul('home');
+                  }}
+                  className="mt-6 w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
+                >
+                  <span className="text-sm">🚩 FALTAS</span>
+                  <span className="text-4xl font-black leading-none mt-1">{fouls.home}</span>
+                </Button>
               </div>
               <div className="pt-8 text-3xl font-black text-gray-200 italic">
                 VS
               </div>
               <div 
                 onClick={openScoreEditor}
-                className="flex-1 text-center cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors"
+                className="flex-1 text-center cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col"
                 title="Haz clic para corregir el marcador"
               >
                 <p
@@ -536,14 +546,16 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                 <div className="text-8xl font-black text-gray-800 leading-none">
                   {scores.away}
                 </div>
-                <div className="mt-6 bg-lime-50 rounded-2xl p-3 border border-lime-200">
-                  <p className="text-[9px] font-black text-lime-600 uppercase mb-1">
-                    Faltas
-                  </p>
-                  <div className="text-4xl font-black text-lime-800 leading-none">
-                    {fouls.away}
-                  </div>
-                </div>
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addFoul('away');
+                  }}
+                  className="mt-6 w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
+                >
+                  <span className="text-sm">🚩 FALTAS</span>
+                  <span className="text-4xl font-black leading-none mt-1">{fouls.away}</span>
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -551,34 +563,18 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
 
         {/* QUICK ACTION BUTTONS */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-2">
-            <Button
-              onClick={() => captureTimeAndTrigger('goal', 'home')}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white py-6 rounded-3xl font-black shadow-lg uppercase text-[11px] italic leading-tight"
-            >
-              ⚽ GOL {teamNames.home}
-            </Button>
-            <Button
-              onClick={() => addFoul('home')}
-              className="bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-bold uppercase text-[10px] italic"
-            >
-              🚩 Falta {teamNames.home}
-            </Button>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Button
-              onClick={() => captureTimeAndTrigger('goal', 'away')}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white py-6 rounded-3xl font-black shadow-lg uppercase text-[11px] italic leading-tight"
-            >
-              ⚽ GOL {teamNames.away}
-            </Button>
-            <Button
-              onClick={() => addFoul('away')}
-              className="bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-bold uppercase text-[10px] italic"
-            >
-              🚩 Falta {teamNames.away}
-            </Button>
-          </div>
+          <Button
+            onClick={() => captureTimeAndTrigger('goal', 'home')}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white py-6 rounded-3xl font-black shadow-lg uppercase text-[11px] italic leading-tight"
+          >
+            ⚽ GOL {teamNames.home}
+          </Button>
+          <Button
+            onClick={() => captureTimeAndTrigger('goal', 'away')}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white py-6 rounded-3xl font-black shadow-lg uppercase text-[11px] italic leading-tight"
+          >
+            ⚽ GOL {teamNames.away}
+          </Button>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
