@@ -78,29 +78,42 @@ export function ReportView({ matchState }: ReportViewProps) {
 
 
   const parseEvent = (event: MatchEvent) => {
-    let message = event.message
-      .replace(/(\(|\))|(\s?-\s?.+)/g, '') // remove team name and causal
-      .replace(/🟨|🟥|⚽|🔄|📝/g, '')
-      .replace('GOL', '')
-      .replace('PENAL', '(P)')
-      .replace('AUTOGOL', '(AG)')
-      .replace('Cambio:', '')
-      .trim();
-
     const time = event.time;
-    const parts = message.split(' ').filter(p => p.trim() !== '');
+    const teamNameRegex = new RegExp(`\\s\\((${teamNames.home}|${teamNames.away})\\)`);
+    let message = event.message.replace(teamNameRegex, '').trim();
 
+    if (event.category === 'cards') {
+        const symbol = message.includes('🟨') ? '🟨' : '🟥';
+        message = message.replace(symbol, '').trim();
+        const parts = message.split(' - ');
+        const target = parts[0]?.trim() || '';
+        const causal = parts.slice(1).join(' - ').trim();
+
+        return {
+            isCard: true,
+            targetInfo: `${target} min ${time}`,
+            causal: causal || null,
+        };
+    }
+    
+    message = message
+      .replace(/⚽|🔄|📝|🔎/g, '')
+      .trim();
+      
     if (event.category === 'subs') {
-      const pIn = parts.find(p => p.startsWith('↑'))?.replace('↑', '#');
-      const pOut = parts.find(p => p.startsWith('↓'))?.replace('↓', '#');
-      return `Entra ${pIn || '?'} Sale ${pOut || '?'} min ${time}`;
+        message = message.replace('Cambio:', '').trim();
+        const parts = message.split(' ');
+        const pIn = parts.find(p => p.startsWith('↑'))?.replace('↑', '#');
+        const pOut = parts.find(p => p.startsWith('↓'))?.replace('↓', '#');
+        message = `Entra ${pIn || '?'} Sale ${pOut || '?'}`;
+    } else if (event.category === 'goals') {
+        message = message.replace('GOL', '').replace('PENAL', '(P)').replace('AUTOGOL', '(AG)').trim();
     }
-    if (event.category === 'goals' || event.category === 'cards') {
-      const player = parts.find(p => p.startsWith('#'));
-      const type = parts.filter(p => !p.startsWith('#')).join(' ');
-      return `${player || ''} ${type} min ${time}`;
-    }
-    return `${message} min ${time}`;
+    
+    return {
+        isCard: false,
+        text: `${message} min ${time}`,
+    };
   };
 
   const renderEventList = (title: string, items: MatchEvent[], x: number, y: number, textColor: string, titleColor: string) => {
@@ -113,16 +126,46 @@ export function ReportView({ matchState }: ReportViewProps) {
       </text>
     );
 
-    let currentY = y + 35;
+    let currentY = y + 40; // Increased spacing after title
     items.forEach((item, index) => {
-      elements.push(
-        <text key={index} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
-          {parseEvent(item)}
-        </text>
-      );
-      currentY += 25;
+      const parsed = parseEvent(item);
+      if (parsed.isCard && parsed.causal) {
+        // Card with causal
+        elements.push(
+          <text key={`${index}-target`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
+            {parsed.targetInfo}
+          </text>
+        );
+        currentY += 22; // Space for causal below
+
+        elements.push(
+          <foreignObject key={`${index}-causal`} x={x - 175} y={currentY - 15} width="350" height="40">
+            <p xmlns="http://www.w3.org/1999/xhtml" style={{
+              color: '#A1A1AA', // muted gray
+              fontSize: '14px',
+              fontStyle: 'italic',
+              whiteSpace: 'normal',
+              textAlign: 'center',
+              lineHeight: 1.2,
+              margin: 0,
+            }}>
+              {parsed.causal}
+            </p>
+          </foreignObject>
+        );
+        currentY += 28; // Extra space after causal
+      } else {
+        // Goal, sub, or card without causal
+        const textToShow = parsed.isCard ? parsed.targetInfo : parsed.text;
+        elements.push(
+          <text key={index} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
+            {textToShow}
+          </text>
+        );
+        currentY += 28; // Standard spacing
+      }
     });
-    return { elements, endY: currentY + 20 };
+    return { elements, endY: currentY };
   };
 
   let yHome = 400;
@@ -220,11 +263,11 @@ export function ReportView({ matchState }: ReportViewProps) {
           </text>
 
           {/* Main Content */}
-          <text x="200" y="180" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.home}</text>
-          <text x="200" y="300" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.home}</text>
+          <text x="200" y="210" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.home}</text>
+          <text x="200" y="320" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.home}</text>
 
-          <text x="600" y="180" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.away}</text>
-          <text x="600" y="300" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.away}</text>
+          <text x="600" y="210" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.away}</text>
+          <text x="600" y="320" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.away}</text>
 
           {/* Event Columns */}
           {homeColumn}
@@ -245,9 +288,9 @@ export function ReportView({ matchState }: ReportViewProps) {
             )}
             {peggiPlays.length > 0 && (
               <>
-                <text x="400" y="95" textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA">JUGADAS PEGGI</text>
+                <text x="400" y="95" textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE">JUGADAS PEGGI</text>
                  <foreignObject x="50" y="120" width="700" height="60">
-                  <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E2E8F0', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
+                  <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E9D5FF', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
                     {peggiPlays.map(p => p.message.replace('🔎', '').trim()).join('; ')}
                   </p>
                 </foreignObject>
