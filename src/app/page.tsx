@@ -158,7 +158,7 @@ export default function Home() {
     } catch (error) {
       console.error("Failed to save state to localStorage", error);
     }
-  }, [isStateLoaded, matchState, elapsedSeconds, isRunning, scores, fouls, teamNames, events, matchInfo]);
+  }, [isStateLoaded, matchState, isRunning, scores, fouls, teamNames, events, matchInfo]);
 
   useEffect(() => {
     // Wait until both user and profile loading are complete
