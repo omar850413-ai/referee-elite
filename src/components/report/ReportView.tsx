@@ -255,10 +255,13 @@ export function ReportView({ matchState }: ReportViewProps) {
           {awayBg && <image href={awayBg} data-ai-hint="gopher animal" x="200" y="150" width="800" height="800" opacity="0.05" />}
 
           {/* Header */}
-          <text x="400" y="80" textAnchor="middle" fill="white" fontSize="24" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <text x="400" y="60" textAnchor="middle" fill="white" fontSize="24" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {`${matchInfo.league || 'TORNEO'} - JORNADA ${matchInfo.round || 'N/A'}`}
           </text>
-          <text x="400" y="110" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16">
+          <text x="400" y="90" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16">
+            {`${matchInfo.place || 'Lugar no especificado'} | ${matchInfo.date || 'Fecha no especificada'}`}
+          </text>
+           <text x="400" y="120" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16">
             Asesor: {matchInfo.advisor || 'No especificado'}
           </text>
 

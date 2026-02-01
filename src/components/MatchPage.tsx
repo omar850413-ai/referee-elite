@@ -71,6 +71,8 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
     advisor: '',
     league: '',
     round: '',
+    place: '',
+    date: '',
   });
   
   // Create a ref to hold all state for efficient saving
@@ -125,7 +127,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
         setFouls(savedState.fouls ?? { home: 0, away: 0 });
         setTeamNames(savedState.teamNames ?? { home: 'LOCAL', away: 'VISITA' });
         setEvents(savedState.events ?? []);
-        setMatchInfo(savedState.matchInfo ?? { advisor: '', league: '', round: '' });
+        setMatchInfo(savedState.matchInfo ?? { advisor: '', league: '', round: '', place: '', date: '' });
         setIsRunning(savedState.isRunning ?? false);
 
         let totalElapsed = savedState.elapsedSeconds ?? 0;
@@ -265,7 +267,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
       setFouls({ home: 0, away: 0 });
       setTeamNames({ home: 'LOCAL', away: 'VISITA' });
       setEvents([]);
-      setMatchInfo({ advisor: '', league: '', round: '' });
+      setMatchInfo({ advisor: '', league: '', round: '', place: '', date: '' });
       setModal(null);
       try {
         localStorage.removeItem('matchSession');
@@ -627,29 +629,29 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
 
         <div className="pt-2 space-y-3">
           <Button
+            onClick={openNoteModal}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
+          >
+            📝 Anotación de Asesor
+          </Button>
+          <Button
             onClick={() => setModal('info')}
             variant="outline"
             className="w-full bg-white text-primary/90 py-4 rounded-2xl font-black border-2 border-primary/5 uppercase text-xs shadow-sm italic"
           >
             🏟️ Datos del Partido
           </Button>
-          <Button
-            onClick={handleGenerateReport}
-            className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
-          >
-            Generar Informe
-          </Button>
-          <Button
-            onClick={openNoteModal}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
-          >
-            📝 Nota Asesor
-          </Button>
            <Button
             onClick={openPeggiModal}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
           >
             🔎 Jugada PEGGI
+          </Button>
+          <Button
+            onClick={handleGenerateReport}
+            className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
+          >
+            Generar Informe
           </Button>
           <Button
             onClick={triggerFullReset}
@@ -792,6 +794,8 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
             <Input value={matchInfo.advisor} onChange={e => setMatchInfo({...matchInfo, advisor: e.target.value})} placeholder="Nombre Asesor" />
             <Input value={matchInfo.league} onChange={e => setMatchInfo({...matchInfo, league: e.target.value})} placeholder="Torneo / Liga" />
             <Input type="number" value={matchInfo.round} onChange={e => setMatchInfo({...matchInfo, round: e.target.value})} placeholder="Jornada" />
+            <Input value={matchInfo.place} onChange={e => setMatchInfo({...matchInfo, place: e.target.value})} placeholder="Lugar" />
+            <Input value={matchInfo.date} onChange={e => setMatchInfo({...matchInfo, date: e.target.value})} placeholder="Fecha" />
           </div>
           <Button onClick={() => setModal(null)} className="w-full mt-6 shadow-lg">Guardar Datos</Button>
         </DialogContent>

@@ -96,9 +96,11 @@
       "properties": {
         "advisor": { "type": "string", "description": "Name of the match advisor." },
         "league": { "type": "string", "description": "Name of the league or tournament." },
-        "round": { "type": "string", "description": "The matchday or round number." }
+        "round": { "type": "string", "description": "The matchday or round number." },
+        "place": { "type": "string", "description": "Venue or location of the match." },
+        "date": { "type": "string", "description": "Date of the match." }
       },
-      "required": ["advisor", "league", "round"]
+      "required": ["advisor", "league", "round", "place", "date"]
     },
     "UserProfile": {
       "title": "User Profile",

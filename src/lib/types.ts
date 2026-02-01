@@ -31,6 +31,8 @@ export interface MatchInfo {
   advisor: string;
   league: string;
   round: string;
+  place: string;
+  date: string;
 }
 
 export interface MatchState {
