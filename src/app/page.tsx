@@ -670,7 +670,7 @@ export default function Home() {
             onClick={handleGenerateReport}
             className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
           >
-            📄 Generar Informe Visual
+            Generar Informe
           </Button>
           <Button
             onClick={openNoteModal}
