@@ -24,6 +24,7 @@ import { formatTime } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { ReportView } from '@/components/report/ReportView';
+import { Logo } from '@/components/ui/Logo';
 
 
 const causalesAmarilla = [
@@ -442,9 +443,7 @@ export default function Home() {
       <div className="p-4 bg-slate-100 min-h-screen flex items-center justify-center">
         <div className="max-w-md mx-auto space-y-4 w-full">
           <div className="flex items-center justify-center gap-3 border-b-4 border-primary/50 pb-2">
-             <h1 className="text-2xl font-black text-center text-primary-foreground bg-primary/90 px-3 rounded-md uppercase italic tracking-tighter">
-              Asesor Pro
-            </h1>
+             <Logo />
           </div>
           <Card>
             <CardHeader>
@@ -475,9 +474,7 @@ export default function Home() {
     <div className="p-4 bg-slate-100">
       <div className="max-w-md mx-auto space-y-4 pb-12">
         <div className="flex items-center justify-center gap-3 border-b-4 border-primary/50 pb-2">
-          <h1 className="text-2xl font-black text-center text-primary-foreground bg-primary/90 px-3 rounded-md uppercase italic tracking-tighter">
-            Asesor Pro
-          </h1>
+          <Logo />
           {isAdmin && (
             <Link href="/admin">
               <Button variant="outline" size="sm">Panel de Control</Button>
