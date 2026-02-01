@@ -74,7 +74,7 @@ export function ReportView({ matchState }: ReportViewProps) {
   const awaySubs = awayEvents.filter(e => e.category === 'subs');
 
   const notes = events.filter(e => e.category === 'notes');
-  const peggiPlays = events.filter(e => e.category === 'peggi');
+  const pegiPlays = events.filter(e => e.category === 'pegi');
 
 
   const parseEvent = (event: MatchEvent) => {
@@ -289,12 +289,12 @@ export function ReportView({ matchState }: ReportViewProps) {
                 </foreignObject>
               </>
             )}
-            {peggiPlays.length > 0 && (
+            {pegiPlays.length > 0 && (
               <>
-                <text x="400" y="95" textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE">JUGADAS PEGGI</text>
+                <text x="400" y="95" textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE">JUGADAS PEGI</text>
                  <foreignObject x="50" y="120" width="700" height="60">
                   <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E9D5FF', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
-                    {peggiPlays.map(p => p.message.replace('🔎', '').trim()).join('; ')}
+                    {pegiPlays.map(p => p.message.replace('🔎', '').trim()).join('; ')}
                   </p>
                 </foreignObject>
               </>

@@ -116,8 +116,8 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
   const [editEventMsg, setEditEventMsg] = useState('');
   const [editEventTime, setEditEventTime] = useState('');
   
-  const [peggiDecision, setPeggiDecision] = useState<'yes' | 'no' | null>(null);
-  const [peggiDescription, setPeggiDescription] = useState('');
+  const [pegiDecision, setPegiDecision] = useState<'yes' | 'no' | null>(null);
+  const [pegiDescription, setPegiDescription] = useState('');
   
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [manualScores, setManualScores] = useState<Scores>({ home: 0, away: 0 });
@@ -393,29 +393,29 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
     setModal(null);
   }
 
-  const openPeggiModal = () => {
+  const openPegiModal = () => {
     if (matchState === 0) return;
     capturedTimeRef.current = getSmartTime();
-    setPeggiDecision(null);
-    setPeggiDescription('');
-    setModal('peggi');
+    setPegiDecision(null);
+    setPegiDescription('');
+    setModal('pegi');
   };
 
-  const handleSavePeggi = () => {
-    if (!peggiDecision) return;
-    if (peggiDecision === 'yes' && !peggiDescription.trim()) {
-      alert('Por favor, ingresa una descripción para la jugada PEGGI.');
+  const handleSavePegi = () => {
+    if (!pegiDecision) return;
+    if (pegiDecision === 'yes' && !pegiDescription.trim()) {
+      alert('Por favor, ingresa una descripción para la jugada PEGI.');
       return;
     }
 
     let message = '';
-    if (peggiDecision === 'yes') {
-      message = `🔎 PEGGI: Sí - ${peggiDescription.trim()}`;
+    if (pegiDecision === 'yes') {
+      message = `🔎 PEGI: Sí - ${pegiDescription.trim()}`;
     } else {
-      message = '🔎 PEGGI: No';
+      message = '🔎 PEGI: No';
     }
 
-    addEvent('peggi', message, capturedTimeRef.current);
+    addEvent('pegi', message, capturedTimeRef.current);
     setModal(null);
   };
 
@@ -498,36 +498,34 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
           </CardHeader>
 
           <CardContent className="p-6 flex flex-col gap-6">
-            <div className="flex justify-between items-stretch gap-2">
-              <div
+            <div className="grid grid-cols-2 gap-4">
+               <div
                 onClick={openScoreEditor}
-                className="flex-1 cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between text-center"
+                className="cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between text-center space-y-4"
                 title="Haz clic para corregir el marcador"
               >
                 <div>
-                  <div className="text-center">
-                    <p
+                  <p
                       onClick={(e) => {
                         e.stopPropagation();
                         setCurrentSide('home');
                         setNewTeamName(teamNames.home);
                         setModal('edit-name');
                       }}
-                      className="text-xs font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2 truncate"
+                      className="text-sm font-black text-blue-900 uppercase mb-2 border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2 truncate"
                     >
                       {teamNames.home}
                     </p>
-                  </div>
                   <div className="text-center text-7xl font-black text-gray-800 leading-none py-2">
                     {scores.home}
                   </div>
                 </div>
-                <button
+                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     addFoul('home');
                   }}
-                  className="mt-3 cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-1 text-center w-16 mx-auto shadow-sm transition-colors flex flex-col items-center"
+                  className="cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-1 text-center w-16 mx-auto shadow-sm transition-colors flex flex-col items-center"
                 >
                   <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
                     🚩 FALTAS
@@ -535,16 +533,13 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                   <span className="text-2xl font-black leading-tight">{fouls.home}</span>
                 </button>
               </div>
-              <div className="pt-8 text-3xl font-black text-gray-200 italic">
-                VS
-              </div>
-              <div
+
+               <div
                 onClick={openScoreEditor}
-                className="flex-1 cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between text-center"
+                className="cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between text-center space-y-4"
                 title="Haz clic para corregir el marcador"
               >
                 <div>
-                  <div className="text-center">
                     <p
                       onClick={(e) => {
                         e.stopPropagation();
@@ -552,11 +547,10 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                         setNewTeamName(teamNames.away);
                         setModal('edit-name');
                       }}
-                      className="text-xs font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2 truncate"
+                      className="text-sm font-black text-blue-900 uppercase mb-2 border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2 truncate"
                     >
                       {teamNames.away}
                     </p>
-                  </div>
                   <div className="text-center text-7xl font-black text-gray-800 leading-none py-2">
                     {scores.away}
                   </div>
@@ -566,7 +560,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                     e.stopPropagation();
                     addFoul('away');
                   }}
-                  className="mt-3 cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-1 text-center w-16 mx-auto shadow-sm transition-colors flex flex-col items-center"
+                  className="cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-1 text-center w-16 mx-auto shadow-sm transition-colors flex flex-col items-center"
                 >
                   <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
                     🚩 FALTAS
@@ -655,10 +649,10 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
             🏟️ Datos del Partido
           </Button>
           <Button
-            onClick={openPeggiModal}
+            onClick={openPegiModal}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
           >
-            🔎 Jugada PEGGI
+            🔎 JUGADAS PEGI
           </Button>
           <Button
             onClick={handleGenerateReport}
@@ -856,36 +850,36 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
         </DialogContent>
       </Dialog>
       
-      <Dialog open={modal === 'peggi'} onOpenChange={() => setModal(null)}>
+      <Dialog open={modal === 'pegi'} onOpenChange={() => setModal(null)}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle className="text-center uppercase italic text-purple-600">Análisis PEGGI</DialogTitle>
+                <DialogTitle className="text-center uppercase italic text-purple-600">Análisis PEGI</DialogTitle>
                 <DialogDescription className="text-center pt-2">
-                    ¿La jugada es un incidente claro y obvio que el árbitro omitió o erró? (PEGGI)
+                    ¿La jugada es un incidente claro y obvio que el árbitro omitió o erró? (PEGI)
                 </DialogDescription>
             </DialogHeader>
-            <RadioGroup value={peggiDecision ?? undefined} onValueChange={(value: 'yes' | 'no') => setPeggiDecision(value)} className="my-4 grid grid-cols-2 gap-4">
+            <RadioGroup value={pegiDecision ?? undefined} onValueChange={(value: 'yes' | 'no') => setPegiDecision(value)} className="my-4 grid grid-cols-2 gap-4">
                 <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="peggi-yes" />
-                    <Label htmlFor="peggi-yes" className="text-2xl font-black text-emerald-600">SÍ</Label>
+                    <RadioGroupItem value="yes" id="pegi-yes" />
+                    <Label htmlFor="pegi-yes" className="text-2xl font-black text-emerald-600">SÍ</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="peggi-no" />
-                    <Label htmlFor="peggi-no" className="text-2xl font-black text-red-600">NO</Label>
+                    <RadioGroupItem value="no" id="pegi-no" />
+                    <Label htmlFor="pegi-no" className="text-2xl font-black text-red-600">NO</Label>
                 </div>
             </RadioGroup>
 
-            {peggiDecision === 'yes' && (
+            {pegiDecision === 'yes' && (
                 <Textarea 
-                    value={peggiDescription}
-                    onChange={e => setPeggiDescription(e.target.value)}
+                    value={pegiDescription}
+                    onChange={e => setPegiDescription(e.target.value)}
                     placeholder="Describe brevemente la jugada..."
                     className="mt-2"
                 />
             )}
             
             <DialogFooter className="mt-4">
-                <Button onClick={handleSavePeggi} disabled={!peggiDecision} className="w-full shadow-lg">Guardar Análisis</Button>
+                <Button onClick={handleSavePegi} disabled={!pegiDecision} className="w-full shadow-lg">Guardar Análisis</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
