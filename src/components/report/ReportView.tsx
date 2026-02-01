@@ -170,7 +170,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     return { elements, endY: currentY };
   };
 
-  let yHome = 400;
+  let yHome = 450;
   const homeColumn = [];
 
   const homeGoalsSection = renderEventList('Anotadores', homeGoals, 200, yHome, '#E2E8F0', '#FFFFFF');
@@ -198,7 +198,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     </text>
   );
 
-  let yAway = 400;
+  let yAway = 450;
   const awayColumn = [];
 
   const awayGoalsSection = renderEventList('Anotadores', awayGoals, 600, yAway, '#E2E8F0', '#FFFFFF');
@@ -268,11 +268,11 @@ export function ReportView({ matchState }: ReportViewProps) {
           </text>
 
           {/* Main Content */}
-          <text x="200" y="210" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.home}</text>
-          <text x="200" y="340" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.home}</text>
+          <text x="200" y="200" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.home}</text>
+          <text x="200" y="350" fontFamily="Inter, sans-serif" fontSize="180" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.home}</text>
 
-          <text x="600" y="210" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.away}</text>
-          <text x="600" y="340" fontFamily="Inter, sans-serif" fontSize="150" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.away}</text>
+          <text x="600" y="200" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.away}</text>
+          <text x="600" y="350" fontFamily="Inter, sans-serif" fontSize="180" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.away}</text>
 
           {/* Event Columns */}
           {homeColumn}
