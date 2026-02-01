@@ -76,11 +76,20 @@ export function useCollection<T = any>(
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
-        const results: ResultItemType[] = [];
-        for (const doc of snapshot.docs) {
-          results.push({ ...(doc.data() as T), id: doc.id });
-        }
-        setData(results);
+        const newResults: ResultItemType[] = snapshot.docs.map(doc => ({
+          ...(doc.data() as T),
+          id: doc.id
+        }));
+        
+        // By passing a function to setData, we can compare with the previous state
+        // to prevent unnecessary re-renders if the data hasn't actually changed.
+        setData(currentData => {
+          if (currentData && JSON.stringify(currentData) === JSON.stringify(newResults)) {
+            return currentData; // Return the old state to prevent re-render
+          }
+          return newResults; // Return the new state
+        });
+        
         setError(null);
         setIsLoading(false);
       },
