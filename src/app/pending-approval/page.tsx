@@ -33,11 +33,12 @@ export default function PendingApprovalPage() {
       return;
     }
 
-    // If the user profile exists and is approved, force a hard redirect to home.
-    if (userProfile?.isApproved) {
-      window.location.href = '/';
+    // If the user profile exists and is approved, or if the user is the super admin, navigate to home.
+    const isSuperAdmin = user.email === 'omar850413@gmail.com';
+    if (userProfile?.isApproved || isSuperAdmin) {
+      router.push('/');
     }
-  }, [user, userProfile, isUserLoading, isProfileLoading]);
+  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
   const handleLogout = async () => {
     await signOut(auth);
