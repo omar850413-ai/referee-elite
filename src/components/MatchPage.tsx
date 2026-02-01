@@ -167,7 +167,9 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
       };
       try {
         // Only save if something meaningful has happened, not just time passing
-        localStorage.setItem('matchSession', JSON.stringify(currentState));
+        if (!currentState.isRunning) {
+          localStorage.setItem('matchSession', JSON.stringify(currentState));
+        }
       } catch (error) {
         console.error("Failed to save state to localStorage", error);
       }
@@ -511,12 +513,12 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                         setNewTeamName(teamNames.home);
                         setModal('edit-name');
                       }}
-                      className="text-lg font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2 truncate"
+                      className="text-sm font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2 truncate"
                     >
                       {teamNames.home}
                     </p>
                   </div>
-                  <div className="text-left text-6xl font-black text-gray-800 leading-none pl-4">
+                  <div className="text-center text-5xl font-black text-gray-800 leading-none">
                     {scores.home}
                   </div>
                 </div>
@@ -525,7 +527,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                     e.stopPropagation();
                     addFoul('home');
                   }}
-                  className="mt-3 cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-1 text-center w-20 mx-auto shadow-sm transition-colors flex flex-col items-center"
+                  className="mt-3 cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-1 text-center w-16 mx-auto shadow-sm transition-colors flex flex-col items-center"
                 >
                   <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
                     🚩 FALTAS
@@ -550,12 +552,12 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                         setNewTeamName(teamNames.away);
                         setModal('edit-name');
                       }}
-                      className="text-lg font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2 truncate"
+                      className="text-sm font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2 truncate"
                     >
                       {teamNames.away}
                     </p>
                   </div>
-                  <div className="text-right text-6xl font-black text-gray-800 leading-none pr-4">
+                  <div className="text-center text-5xl font-black text-gray-800 leading-none">
                     {scores.away}
                   </div>
                 </div>
@@ -564,7 +566,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                     e.stopPropagation();
                     addFoul('away');
                   }}
-                  className="mt-3 cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-1 text-center w-20 mx-auto shadow-sm transition-colors flex flex-col items-center"
+                  className="mt-3 cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-1 text-center w-16 mx-auto shadow-sm transition-colors flex flex-col items-center"
                 >
                   <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
                     🚩 FALTAS
