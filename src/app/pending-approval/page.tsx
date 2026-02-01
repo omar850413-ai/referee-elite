@@ -22,20 +22,17 @@ export default function PendingApprovalPage() {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   useEffect(() => {
-    // Don't do anything while auth or profile data is loading
     if (isUserLoading || isProfileLoading) {
       return;
     }
     
-    // If there's no user, send to login
     if (!user) {
       router.push('/login');
       return;
     }
 
-    // If the user profile exists and is approved, or if the user is the super admin, navigate to home.
     const isSuperAdmin = user.email === 'omar850413@gmail.com';
-    if (userProfile?.isApproved || isSuperAdmin) {
+    if ((userProfile && userProfile.isApproved) || isSuperAdmin) {
       router.push('/');
     }
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);

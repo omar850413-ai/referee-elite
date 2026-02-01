@@ -161,8 +161,10 @@ export default function Home() {
   }, [isStateLoaded, matchState, elapsedSeconds, isRunning, scores, fouls, teamNames, events, matchInfo]);
 
   useEffect(() => {
+    // Wait until both user and profile loading are complete
     if (isUserLoading || isProfileLoading) return;
 
+    // If there's no user object, redirect to login
     if (!user) {
       router.push('/login');
       return;
@@ -170,10 +172,18 @@ export default function Home() {
 
     const isSuperAdmin = user.email === 'omar850413@gmail.com';
 
+    // If we have a profile and it's not approved (and not super admin), redirect
     if (!isSuperAdmin && !userProfile?.isApproved) {
       router.push('/pending-approval');
       return;
     }
+    
+    // If there's a user but no profile document found, also redirect
+    // (This can happen briefly after signup before the doc is created)
+    if (!userProfile && !isSuperAdmin) {
+       router.push('/pending-approval');
+    }
+
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
   const getSmartTime = () => {
@@ -193,32 +203,20 @@ export default function Home() {
 
   useEffect(() => {
     if (isRunning) {
-      // When the timer starts/resumes, we capture the starting point in time.
       const startTime = Date.now() - elapsedSeconds * 1000;
-      
       timerIntervalRef.current = setInterval(() => {
-        // Every second, we calculate the new total elapsed time from that fixed start point.
-        // This is accurate and does not depend on previous state within the interval.
         setElapsedSeconds((Date.now() - startTime) / 1000);
       }, 1000);
     } else {
-      // If the timer is stopped, we clear the interval.
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
     }
-
-    // The cleanup function runs when the component unmounts or when `isRunning` changes.
-    // It's crucial for preventing memory leaks.
     return () => {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
     };
-    // By only depending on `isRunning`, we ensure this effect only re-runs when the timer's
-    // play/pause state changes. The use of `elapsedSeconds` inside is safe because it's
-    // read only once when the interval is created. When the timer is paused and resumed,
-    // `isRunning` flips, causing the effect to re-run and capture the latest `elapsedSeconds`.
   }, [isRunning]);
 
   const addEvent = (category: string, message: string, time: string) => {
