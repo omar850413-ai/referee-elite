@@ -166,13 +166,13 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
         lastUpdated: Date.now(),
       };
       try {
+        // Only save if something meaningful has happened, not just time passing
         localStorage.setItem('matchSession', JSON.stringify(currentState));
       } catch (error) {
         console.error("Failed to save state to localStorage", error);
       }
     };
     
-    // Save state when the user is about to leave the page or switches tabs.
     window.addEventListener('beforeunload', saveState);
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
@@ -183,7 +183,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
     return () => {
       window.removeEventListener('beforeunload', saveState);
       document.removeEventListener('visibilitychange', saveState);
-      saveState(); // Final save on component unmount
+      saveState();
     };
   }, [isStateLoaded]);
 
@@ -496,77 +496,81 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
           </CardHeader>
 
           <CardContent className="p-6 flex flex-col gap-6">
-            <div className="flex justify-between items-stretch gap-4">
+            <div className="flex justify-between items-stretch gap-2">
               <div
                 onClick={openScoreEditor}
-                className="flex-1 text-center cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between"
+                className="flex-1 cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between"
                 title="Haz clic para corregir el marcador"
               >
                 <div>
-                  <p
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentSide('home');
-                      setNewTeamName(teamNames.home);
-                      setModal('edit-name');
-                    }}
-                    className="text-2xl font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
-                  >
-                    {teamNames.home}
-                  </p>
-                  <div className="text-7xl font-black text-gray-800 leading-none">
+                  <div className="text-center">
+                    <p
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentSide('home');
+                        setNewTeamName(teamNames.home);
+                        setModal('edit-name');
+                      }}
+                      className="text-lg font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2 truncate"
+                    >
+                      {teamNames.home}
+                    </p>
+                  </div>
+                  <div className="text-left text-6xl font-black text-gray-800 leading-none pl-4">
                     {scores.home}
                   </div>
                 </div>
-                <div
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     addFoul('home');
                   }}
-                  className="mt-3 cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-2xl p-1 text-center w-10/12 mx-auto shadow-sm transition-colors"
+                  className="mt-3 cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-1 text-center w-20 mx-auto shadow-sm transition-colors flex flex-col items-center"
                 >
-                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
+                  <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
                     🚩 FALTAS
-                  </p>
-                  <p className="text-3xl font-black leading-tight">{fouls.home}</p>
-                </div>
+                  </span>
+                  <span className="text-2xl font-black leading-tight">{fouls.home}</span>
+                </button>
               </div>
               <div className="pt-8 text-3xl font-black text-gray-200 italic">
                 VS
               </div>
               <div
                 onClick={openScoreEditor}
-                className="flex-1 text-center cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between"
+                className="flex-1 cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between"
                 title="Haz clic para corregir el marcador"
               >
                 <div>
-                  <p
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentSide('away');
-                      setNewTeamName(teamNames.away);
-                      setModal('edit-name');
-                    }}
-                    className="text-2xl font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
-                  >
-                    {teamNames.away}
-                  </p>
-                  <div className="text-7xl font-black text-gray-800 leading-none">
+                  <div className="text-center">
+                    <p
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentSide('away');
+                        setNewTeamName(teamNames.away);
+                        setModal('edit-name');
+                      }}
+                      className="text-lg font-black text-primary/80 uppercase mb-2 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2 truncate"
+                    >
+                      {teamNames.away}
+                    </p>
+                  </div>
+                  <div className="text-right text-6xl font-black text-gray-800 leading-none pr-4">
                     {scores.away}
                   </div>
                 </div>
-                <div
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     addFoul('away');
                   }}
-                  className="mt-3 cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-2xl p-1 text-center w-10/12 mx-auto shadow-sm transition-colors"
+                  className="mt-3 cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-1 text-center w-20 mx-auto shadow-sm transition-colors flex flex-col items-center"
                 >
-                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
+                  <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
                     🚩 FALTAS
-                  </p>
-                  <p className="text-3xl font-black leading-tight">{fouls.away}</p>
-                </div>
+                  </span>
+                  <span className="text-2xl font-black leading-tight">{fouls.away}</span>
+                </button>
               </div>
             </div>
           </CardContent>
