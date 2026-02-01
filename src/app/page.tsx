@@ -195,8 +195,7 @@ export default function Home() {
     if (isRunning) {
       const startTime = Date.now() - elapsedSeconds * 1000;
       timerIntervalRef.current = setInterval(() => {
-        const newElapsedSeconds = (Date.now() - startTime) / 1000;
-        setElapsedSeconds(newElapsedSeconds);
+        setElapsedSeconds((Date.now() - startTime) / 1000);
       }, 1000);
     } else {
       if (timerIntervalRef.current) {
@@ -208,7 +207,7 @@ export default function Home() {
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [isRunning, elapsedSeconds]); // Re-added elapsedSeconds to handle resume correctly
+  }, [isRunning]);
 
   const addEvent = (category: string, message: string, time: string) => {
     const newEvent: MatchEvent = {
@@ -529,7 +528,7 @@ export default function Home() {
                     setNewTeamName(teamNames.home);
                     setModal('edit-name');
                   }}
-                  className="text-base font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
+                  className="text-lg font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
                 >
                   {teamNames.home}
                 </p>
@@ -560,7 +559,7 @@ export default function Home() {
                     setNewTeamName(teamNames.away);
                     setModal('edit-name');
                   }}
-                  className="text-base font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
+                  className="text-lg font-black text-primary/80 uppercase mb-3 border-b-2 border-dashed border-primary/20 inline-block cursor-pointer px-2"
                 >
                   {teamNames.away}
                 </p>
