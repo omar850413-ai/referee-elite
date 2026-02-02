@@ -506,9 +506,9 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
 
           <CardContent className="p-6 flex flex-col gap-6">
             <div className="grid grid-cols-2 gap-4">
-               <div
+              <div
                 onClick={openScoreEditor}
-                className="cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between text-center space-y-4"
+                className="cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between text-center space-y-2"
                 title="Haz clic para corregir el marcador"
               >
                 <div>
@@ -529,16 +529,16 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                 </div>
                  <Button
                     onClick={(e) => { e.stopPropagation(); addFoul('home'); }}
-                    className="mt-4 w-24 h-24 mx-auto bg-slate-800 hover:bg-slate-900 text-white rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center justify-center p-2 shadow-md"
+                    className="mt-2 w-28 mx-auto bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
                   >
-                    <span className="text-4xl">🚩</span>
-                    <span className="text-2xl font-black leading-none mt-1">{fouls.home}</span>
+                    <span className="text-sm flex items-center justify-center gap-1.5">🚩 FALTAS</span>
+                    <span className="text-4xl font-black leading-none mt-1">{fouls.home}</span>
                   </Button>
               </div>
 
-               <div
+              <div
                 onClick={openScoreEditor}
-                className="cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between text-center space-y-4"
+                className="cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between text-center space-y-2"
                 title="Haz clic para corregir el marcador"
               >
                 <div>
@@ -559,10 +559,10 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                 </div>
                 <Button
                     onClick={(e) => { e.stopPropagation(); addFoul('away'); }}
-                    className="mt-4 w-24 h-24 mx-auto bg-slate-800 hover:bg-slate-900 text-white rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center justify-center p-2 shadow-md"
+                    className="mt-2 w-28 mx-auto bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
                   >
-                    <span className="text-4xl">🚩</span>
-                    <span className="text-2xl font-black leading-none mt-1">{fouls.away}</span>
+                    <span className="text-sm flex items-center justify-center gap-1.5">🚩 FALTAS</span>
+                    <span className="text-4xl font-black leading-none mt-1">{fouls.away}</span>
                   </Button>
               </div>
             </div>
