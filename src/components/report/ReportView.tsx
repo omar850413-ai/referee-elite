@@ -155,7 +155,7 @@ export function ReportView({ matchState }: ReportViewProps) {
             </p>
           </foreignObject>
         );
-        currentY += 28; // Extra space after causal
+        currentY += 32; // Extra space after causal
       } else {
         // Goal, sub, or card without causal
         const textToShow = parsed.isCard ? parsed.targetInfo : parsed.text;
@@ -164,64 +164,80 @@ export function ReportView({ matchState }: ReportViewProps) {
             {textToShow}
           </text>
         );
-        currentY += 28; // Standard spacing
+        currentY += 30; // Standard spacing
       }
     });
     return { elements, endY: currentY };
   };
 
-  let yHome = 450;
   const homeColumn = [];
+  let yHome = 520;
 
   const homeGoalsSection = renderEventList('Anotadores', homeGoals, 200, yHome, '#E2E8F0', '#FFFFFF');
-  homeColumn.push(...homeGoalsSection.elements);
-  yHome = homeGoalsSection.endY;
+  if (homeGoals.length > 0) {
+    homeColumn.push(...homeGoalsSection.elements);
+    yHome = homeGoalsSection.endY + 40;
+  }
 
   const homeYellowsSection = renderEventList('Amonestaciones', homeYellows, 200, yHome, '#E2E8F0', '#FFFFFF');
-  homeColumn.push(...homeYellowsSection.elements);
-  yHome = homeYellowsSection.endY;
+  if (homeYellows.length > 0) {
+    homeColumn.push(...homeYellowsSection.elements);
+    yHome = homeYellowsSection.endY + 40;
+  }
 
   const homeRedsSection = renderEventList('Expulsiones', homeReds, 200, yHome, '#E2E8F0', '#FFFFFF');
-  homeColumn.push(...homeRedsSection.elements);
-  yHome = homeRedsSection.endY;
+   if (homeReds.length > 0) {
+    homeColumn.push(...homeRedsSection.elements);
+    yHome = homeRedsSection.endY + 40;
+  }
 
   const homeSubsSection = renderEventList('Sustituciones', homeSubs, 200, yHome, '#E2E8F0', '#FFFFFF');
-  homeColumn.push(...homeSubsSection.elements);
-  yHome = homeSubsSection.endY;
-
+   if (homeSubs.length > 0) {
+    homeColumn.push(...homeSubsSection.elements);
+    yHome = homeSubsSection.endY + 40;
+  }
+  
   homeColumn.push(
     <text key="home-fouls-title" x={200} y={yHome} fontSize="22" fontFamily="Inter, sans-serif" fontWeight="900" fill="#FFFFFF" textAnchor='middle'>
-      Faltas
+      Faltas Cometidas
     </text>,
-    <text key="home-fouls-count" x={200} y={yHome + 35} fontSize="16" fontFamily="Inter, sans-serif" fill="#E2E8F0" textAnchor='middle'>
+    <text key="home-fouls-count" x={200} y={yHome + 35} fontSize="18" fontFamily="Inter, sans-serif" fontWeight="700" fill="#E2E8F0" textAnchor='middle'>
       Total: {fouls.home}
     </text>
   );
 
-  let yAway = 450;
   const awayColumn = [];
+  let yAway = 520;
 
   const awayGoalsSection = renderEventList('Anotadores', awayGoals, 600, yAway, '#E2E8F0', '#FFFFFF');
-  awayColumn.push(...awayGoalsSection.elements);
-  yAway = awayGoalsSection.endY;
-
+  if (awayGoals.length > 0) {
+    awayColumn.push(...awayGoalsSection.elements);
+    yAway = awayGoalsSection.endY + 40;
+  }
+  
   const awayYellowsSection = renderEventList('Amonestaciones', awayYellows, 600, yAway, '#E2E8F0', '#FFFFFF');
-  awayColumn.push(...awayYellowsSection.elements);
-  yAway = awayYellowsSection.endY;
+  if (awayYellows.length > 0) {
+    awayColumn.push(...awayYellowsSection.elements);
+    yAway = awayYellowsSection.endY + 40;
+  }
 
   const awayRedsSection = renderEventList('Expulsiones', awayReds, 600, yAway, '#E2E8F0', '#FFFFFF');
-  awayColumn.push(...awayRedsSection.elements);
-  yAway = awayRedsSection.endY;
-
+  if (awayReds.length > 0) {
+    awayColumn.push(...awayRedsSection.elements);
+    yAway = awayRedsSection.endY + 40;
+  }
+  
   const awaySubsSection = renderEventList('Sustituciones', awaySubs, 600, yAway, '#E2E8F0', '#FFFFFF');
-  awayColumn.push(...awaySubsSection.elements);
-  yAway = awaySubsSection.endY;
+  if (awaySubs.length > 0) {
+    awayColumn.push(...awaySubsSection.elements);
+    yAway = awaySubsSection.endY + 40;
+  }
 
   awayColumn.push(
     <text key="away-fouls-title" x={600} y={yAway} fontSize="22" fontFamily="Inter, sans-serif" fontWeight="900" fill="#FFFFFF" textAnchor='middle'>
-      Faltas
+      Faltas Cometidas
     </text>,
-    <text key="away-fouls-count" x={600} y={yAway + 35} fontSize="16" fontFamily="Inter, sans-serif" fill="#E2E8F0" textAnchor='middle'>
+    <text key="away-fouls-count" x={600} y={yAway + 35} fontSize="18" fontWeight="700" fill="#E2E8F0" textAnchor='middle'>
       Total: {fouls.away}
     </text>
   );
@@ -232,20 +248,23 @@ export function ReportView({ matchState }: ReportViewProps) {
       <div className="bg-slate-900 p-2 md:p-4 rounded-lg border border-slate-700 aspect-[2/3] overflow-auto">
         <svg ref={svgRef} viewBox="0 0 800 1200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
           <defs>
-            <linearGradient id="localGradient" x1="0" y1="0.5" x2="1" y2="0.5">
-              <stop offset="0%" stopColor="#059669" />
-              <stop offset="100%" stopColor="#10B981" stopOpacity="0" />
+            <linearGradient id="orangeScoreGradient" x1="0.5" y1="0" x2="0.5" y2="1">
+              <stop offset="0%" stopColor="#F97316" />
+              <stop offset="100%" stopColor="#EA580C" />
             </linearGradient>
-            <linearGradient id="awayGradient" x1="0" y1="0.5" x2="1" y2="0.5">
-              <stop offset="0%" stopColor="#3B82F6" stopOpacity="0" />
-              <stop offset="100%" stopColor="#2563EB" />
+            <linearGradient id="turquoiseScoreGradient" x1="0.5" y1="0" x2="0.5" y2="1">
+              <stop offset="0%" stopColor="#14B8A6" />
+              <stop offset="100%" stopColor="#0D9488" />
             </linearGradient>
             <filter id="glow">
-              <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
+              <feGaussianBlur stdDeviation="5" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
+            </filter>
+            <filter id="text-shadow" x="-0.1" y="-0.1" width="1.2" height="1.2">
+              <feDropShadow dx="3" dy="3" stdDeviation="3" floodColor="rgba(0,0,0,0.3)" />
             </filter>
           </defs>
 
@@ -268,22 +287,27 @@ export function ReportView({ matchState }: ReportViewProps) {
           </text>
 
           {/* Main Content */}
-          <text x="200" y="200" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.home}</text>
-          <text x="200" y="350" fontFamily="Inter, sans-serif" fontSize="180" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.home}</text>
+          <text x="200" y="190" fontFamily="Inter, sans-serif" fontSize="56" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.home}</text>
+          <text x="200" y="380" fontFamily="Inter, sans-serif" fontSize="280" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
 
-          <text x="600" y="200" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="white" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.away}</text>
-          <text x="600" y="350" fontFamily="Inter, sans-serif" fontSize="180" fontWeight="900" fill="white" textAnchor="middle" filter="url(#glow)">{scores.away}</text>
+          <text x="600" y="190" fontFamily="Inter, sans-serif" fontSize="56" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.away}</text>
+          <text x="600" y="380" fontFamily="Inter, sans-serif" fontSize="280" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
+          
+          <rect x="350" y="440" width="100" height="40" rx="20" fill="rgba(0,0,0,0.3)" />
+          <text x="400" y="468" textAnchor="middle" fill="white" fontSize="24" fontWeight="700">
+            {`${scores.home} - ${scores.away}`}
+          </text>
 
           {/* Event Columns */}
           {homeColumn}
           {awayColumn}
 
           {/* Footer */}
-          <rect y="1000" width="800" height="200" fill="rgba(0,0,0,0.2)" />
-          <g transform="translate(0, 1020)">
+          <rect y="1020" width="800" height="180" fill="rgba(0,0,0,0.2)" />
+          <g transform="translate(0, 1040)">
             {notes.length > 0 && (
               <>
-                <text x="400" y="0" textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA">ANOTACIONES DEL ASESOR</text>
+                <text x="400" y="0" textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA" style={{textTransform: 'uppercase'}}>Anotaciones del Asesor</text>
                  <foreignObject x="50" y="25" width="700" height="60">
                   <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E2E8F0', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
                     {notes.map(n => n.message.replace('📝', '').trim()).join('; ')}
@@ -293,8 +317,8 @@ export function ReportView({ matchState }: ReportViewProps) {
             )}
             {pegiPlays.length > 0 && (
               <>
-                <text x="400" y="95" textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE">JUGADAS PEGI</text>
-                 <foreignObject x="50" y="120" width="700" height="60">
+                <text x="400" y={notes.length > 0 ? "95" : "0"} textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE" style={{textTransform: 'uppercase'}}>Jugadas PEGI</text>
+                 <foreignObject x="50" y={notes.length > 0 ? "120" : "25"} width="700" height="60">
                   <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E9D5FF', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
                     {pegiPlays.map(p => p.message.replace(/🔎|JUGADAS PEGI: /g, '').trim()).join('; ')}
                   </p>
