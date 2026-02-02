@@ -1,18 +1,38 @@
-<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1a3a5a;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#0d1b2a;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-  
-  <circle cx="100" cy="100" r="90" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="bg_grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1B263B" />
+            <stop offset="100%" stop-color="#0D1B2A" />
+        </linearGradient>
+        <linearGradient id="ap_blue_grad" x1="0.5" y1="0" x2="0.5" y2="1">
+            <stop offset="0%" stop-color="#4B8AD7"/>
+            <stop offset="100%" stop-color="#1E40AF"/>
+        </linearGradient>
+        <linearGradient id="s_silver_grad" x1="0.5" y1="0" x2="0.5" y2="1">
+            <stop offset="0%" stop-color="#E5E7EB"/>
+            <stop offset="100%" stop-color="#9CA3AF"/>
+        </linearGradient>
+        <linearGradient id="s_highlight_grad" x1="0.5" y1="0" x2="0.5" y2="1">
+            <stop offset="0%" stop-color="white" stop-opacity="0.7"/>
+            <stop offset="100%" stop-color="white" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="logo_shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="8" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.4"/>
+        </filter>
+    </defs>
 
-  <path d="M60 140 L100 50 L140 140" fill="none" stroke="#1a3a5a" stroke-width="12" stroke-linejoin="round"/>
-  
-  <path d="M110 95 Q160 95 160 120 Q160 145 110 145 L110 160" fill="none" stroke="#2a5a8a" stroke-width="12" stroke-linecap="round"/>
+    <!-- Background -->
+    <rect width="512" height="512" rx="90" fill="url(#bg_grad)"/>
 
-  <path d="M80 110 Q100 80 120 110 T160 110" fill="none" stroke="#7a9ab0" stroke-width="12" stroke-linecap="round" style="mix-blend-mode: multiply;"/>
-  
-  <line x1="80" y1="115" x2="120" y2="115" stroke="#1a3a5a" stroke-width="12" />
+    <!-- Main Logo Group with Shadow -->
+    <g filter="url(#logo_shadow)">
+        <!-- AP Blue Shape -->
+        <path d="M125 412 L225 100 L270 100 C370 100 410 160 410 256 C410 352 370 412 270 412 L180 412 L180 372 L270 372 C340 372 370 322 370 256 C370 190 340 140 270 140 L245 140 L155 412 H125Z" fill="url(#ap_blue_grad)"/>
+
+        <!-- S Silver Shape -->
+        <path d="M360 187 C360 147 330 112 285 112 C240 112 210 147 210 187 C210 227 240 242 262 257 C284 272 250 287 250 327 C250 367 280 402 325 402 C370 402 400 367 400 327" stroke="url(#s_silver_grad)" stroke-width="60" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        
+        <!-- S Highlight -->
+        <path d="M360 187 C360 147 330 112 285 112 C240 112 210 147 210 187 C210 227 240 242 262 257 C284 272 250 287 250 327 C250 367 280 402 325 402 C370 402 400 367 400 327" stroke="url(#s_highlight_grad)" stroke-width="25" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </g>
 </svg>
