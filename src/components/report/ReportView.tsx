@@ -249,12 +249,12 @@ export function ReportView({ matchState }: ReportViewProps) {
         <svg ref={svgRef} viewBox="0 0 800 1200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
           <defs>
             <linearGradient id="orangeScoreGradient" x1="0.5" y1="0" x2="0.5" y2="1">
-              <stop offset="0%" stopColor="#F97316" />
-              <stop offset="100%" stopColor="#EA580C" />
+              <stop offset="0%" stopColor="#FDBA74" />
+              <stop offset="100%" stopColor="#FB923C" />
             </linearGradient>
             <linearGradient id="turquoiseScoreGradient" x1="0.5" y1="0" x2="0.5" y2="1">
-              <stop offset="0%" stopColor="#14B8A6" />
-              <stop offset="100%" stopColor="#0D9488" />
+              <stop offset="0%" stopColor="#22D3EE" />
+              <stop offset="100%" stopColor="#06B6D4" />
             </linearGradient>
             <filter id="glow">
               <feGaussianBlur stdDeviation="5" result="coloredBlur" />
@@ -288,10 +288,10 @@ export function ReportView({ matchState }: ReportViewProps) {
 
           {/* Main Content */}
           <text x="200" y="190" fontFamily="Inter, sans-serif" fontSize="56" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.home}</text>
-          <text x="200" y="380" fontFamily="Inter, sans-serif" fontSize="280" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
+          <text x="200" y="380" fontFamily="Inter, sans-serif" fontSize="240" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
 
           <text x="600" y="190" fontFamily="Inter, sans-serif" fontSize="56" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.away}</text>
-          <text x="600" y="380" fontFamily="Inter, sans-serif" fontSize="280" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
+          <text x="600" y="380" fontFamily="Inter, sans-serif" fontSize="240" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
           
           <rect x="350" y="440" width="100" height="40" rx="20" fill="rgba(0,0,0,0.3)" />
           <text x="400" y="468" textAnchor="middle" fill="white" fontSize="24" fontWeight="700">
