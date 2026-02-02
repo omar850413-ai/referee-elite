@@ -1,22 +1,18 @@
 <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="200" height="200" fill="#000080"/> <rect x="20" y="20" width="70" height="110" fill="#FFD700" rx="10" ry="10"/>
-  <rect x="40" y="40" width="70" height="110" fill="#FF4500" rx="10" ry="10"/>
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a3a5a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d1b2a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <circle cx="100" cy="100" r="90" fill="white" stroke="#e0e0e0" stroke-width="1"/>
 
-  <text x="100" y="100" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="#333" dominant-baseline="middle" text-anchor="middle">O</text>
-  <text x="130" y="130" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="#333" dominant-baseline="middle" text-anchor="middle">S</text>
+  <path d="M60 140 L100 50 L140 140" fill="none" stroke="#1a3a5a" stroke-width="12" stroke-linejoin="round"/>
+  
+  <path d="M110 95 Q160 95 160 120 Q160 145 110 145 L110 160" fill="none" stroke="#2a5a8a" stroke-width="12" stroke-linecap="round"/>
 
-  <style>
-    .card-yellow {
-      fill: #FFD700; /* Gold */
-    }
-    .card-red {
-      fill: #FF4500; /* Orange Red */
-    }
-    .letters {
-      font-family: 'Arial', sans-serif;
-      font-size: 80px;
-      font-weight: bold;
-      fill: #333;
-    }
-  </style>
+  <path d="M80 110 Q100 80 120 110 T160 110" fill="none" stroke="#7a9ab0" stroke-width="12" stroke-linecap="round" style="mix-blend-mode: multiply;"/>
+  
+  <line x1="80" y1="115" x2="120" y2="115" stroke="#1a3a5a" stroke-width="12" />
 </svg>
