@@ -10,6 +10,10 @@ export const metadata: Metadata = {
   title: 'Asesor Pro',
   description:
     'La herramienta definitiva para asesores de arbitraje de fútbol.',
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export default function RootLayout({
