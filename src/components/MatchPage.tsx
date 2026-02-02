@@ -24,11 +24,18 @@ import { ReportView } from '@/components/report/ReportView';
 import { Logo } from '@/components/ui/Logo';
 
 const causalesAmarilla = [
-  'Conducta antideportiva',
-  'Desaprobar con palabras',
-  'Infracción persistente',
-  'Retardar reanudación',
-  'No respetar distancia',
+  'Por provocar a un adversario',
+  'Por evitar un SPA',
+  'Por dar una patada de forma Temeraria',
+  'Por una zancadilla de forma Temeraria',
+  'Por hacer una entrada de forma Temeraria',
+  'Por dar un golpe de manera Temeraria',
+  'Por desaprobar con palabras o acciones',
+  'Por retardar la reanudacion de juego',
+  'Por simular una falta',
+  'Por infringir persistententemente las reglas de juego',
+  'Por quitarse la camiseta en un festejo',
+  'Entrar o volver a entrar al terreno de juego',
 ];
 const causalesRoja = [
   'Juego brusco grave',
@@ -410,9 +417,9 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
 
     let message = '';
     if (pegiDecision === 'yes') {
-      message = `🔎 PEGI: Sí - ${pegiDescription.trim()}`;
+      message = `🔎 JUGADAS PEGI: Sí - ${pegiDescription.trim()}`;
     } else {
-      message = '🔎 PEGI: No';
+      message = '🔎 JUGADAS PEGI: No';
     }
 
     addEvent('pegi', message, capturedTimeRef.current);
@@ -512,26 +519,21 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                         setNewTeamName(teamNames.home);
                         setModal('edit-name');
                       }}
-                      className="text-xl font-black text-blue-900 uppercase mb-2 border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2 truncate"
+                      className="text-2xl font-black text-blue-900 uppercase mb-2 border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2 truncate"
                     >
                       {teamNames.home}
                     </p>
-                  <div className="text-center text-7xl font-black text-gray-800 leading-none py-2">
+                  <div className="text-center text-8xl font-black text-gray-800 leading-none py-2">
                     {scores.home}
                   </div>
                 </div>
-                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    addFoul('home');
-                  }}
-                  className="cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-2 text-center w-20 mx-auto shadow-sm transition-colors flex flex-col items-center"
-                >
-                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
-                    🚩 FALTAS
-                  </span>
-                  <span className="text-3xl font-black leading-tight">{fouls.home}</span>
-                </button>
+                 <Button
+                    onClick={(e) => { e.stopPropagation(); addFoul('home'); }}
+                    className="mt-4 w-24 h-24 mx-auto bg-slate-800 hover:bg-slate-900 text-white rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center justify-center p-2 shadow-md"
+                  >
+                    <span className="text-4xl">🚩</span>
+                    <span className="text-2xl font-black leading-none mt-1">{fouls.home}</span>
+                  </Button>
               </div>
 
                <div
@@ -547,26 +549,21 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                         setNewTeamName(teamNames.away);
                         setModal('edit-name');
                       }}
-                      className="text-xl font-black text-blue-900 uppercase mb-2 border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2 truncate"
+                      className="text-2xl font-black text-blue-900 uppercase mb-2 border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2 truncate"
                     >
                       {teamNames.away}
                     </p>
-                  <div className="text-center text-7xl font-black text-gray-800 leading-none py-2">
+                  <div className="text-center text-8xl font-black text-gray-800 leading-none py-2">
                     {scores.away}
                   </div>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    addFoul('away');
-                  }}
-                  className="cursor-pointer bg-slate-800 hover:bg-slate-900 text-white rounded-xl p-2 text-center w-20 mx-auto shadow-sm transition-colors flex flex-col items-center"
-                >
-                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-center gap-1">
-                    🚩 FALTAS
-                  </span>
-                  <span className="text-3xl font-black leading-tight">{fouls.away}</span>
-                </button>
+                <Button
+                    onClick={(e) => { e.stopPropagation(); addFoul('away'); }}
+                    className="mt-4 w-24 h-24 mx-auto bg-slate-800 hover:bg-slate-900 text-white rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center justify-center p-2 shadow-md"
+                  >
+                    <span className="text-4xl">🚩</span>
+                    <span className="text-2xl font-black leading-none mt-1">{fouls.away}</span>
+                  </Button>
               </div>
             </div>
           </CardContent>
