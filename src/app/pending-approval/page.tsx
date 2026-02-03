@@ -22,19 +22,35 @@ export default function PendingApprovalPage() {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   useEffect(() => {
-    if (isUserLoading || isProfileLoading) {
-      return;
-    }
-    
-    if (!user) {
-      router.push('/login');
-      return;
-    }
+    const handleApproval = async () => {
+      if (isUserLoading || isProfileLoading) {
+        return;
+      }
+      
+      if (!user) {
+        router.push('/login');
+        return;
+      }
 
-    const isSuperAdmin = user.email === 'omar850413@gmail.com';
-    if ((userProfile && userProfile.isApproved) || isSuperAdmin) {
-      router.push('/');
-    }
+      const isSuperAdmin = user.email === 'omar850413@gmail.com';
+      if ((userProfile && userProfile.isApproved) || isSuperAdmin) {
+        console.log('User approved. Forcing token refresh before redirecting...');
+        try {
+          // Force a refresh of the user's ID token.
+          // This ensures the security rules will see the updated user status.
+          await user.getIdToken(true);
+          console.log('Token refreshed successfully.');
+          router.push('/');
+        } catch (error) {
+          console.error("Error refreshing token:", error);
+          // Still redirect, but log the error. The user might need to
+          // manually log out and back in if permissions issues persist.
+          router.push('/');
+        }
+      }
+    };
+    
+    handleApproval();
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
   const handleLogout = async () => {
