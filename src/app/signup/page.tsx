@@ -41,6 +41,10 @@ export default function SignUpPage() {
         await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // Generate and store session ID
+      const sessionId = `${Date.now()}-${Math.random()}`;
+      localStorage.setItem('sessionId', sessionId);
+
       // 2. Create the user profile document in Firestore
       const userDocRef = doc(firestore, 'users', user.uid);
 
@@ -50,6 +54,7 @@ export default function SignUpPage() {
         email: user.email,
         isAdmin: isSigningUpAsAdmin,
         isApproved: isSigningUpAsAdmin, // Admin is auto-approved
+        sessionId: sessionId,
       });
 
       // 3. Redirect intelligently based on role

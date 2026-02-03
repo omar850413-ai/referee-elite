@@ -2,7 +2,8 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
 import { UserProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from '@/components/ui/Logo';
@@ -13,6 +14,7 @@ export default function Home() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const auth = useAuth();
 
   const userProfileRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -41,6 +43,23 @@ export default function Home() {
        router.push('/pending-approval');
     }
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+  
+  React.useEffect(() => {
+    if (isUserLoading || isProfileLoading || !userProfile) {
+      return;
+    }
+
+    const localSessionId = localStorage.getItem('sessionId');
+    
+    // If a session ID exists in Firestore and it differs from the local one, log out.
+    if (userProfile.sessionId && localSessionId !== userProfile.sessionId) {
+      console.warn('Stale session detected. Logging out from this device.');
+      signOut(auth).then(() => {
+        localStorage.removeItem('sessionId');
+        router.push('/login');
+      });
+    }
+  }, [userProfile, isUserLoading, isProfileLoading, auth, router]);
 
   const isSuperAdmin = user?.email === 'omar850413@gmail.com';
   // A user is considered "ready" if they are the super admin, or if their profile has loaded and is approved.

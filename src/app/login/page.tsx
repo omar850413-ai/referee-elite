@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useAuth } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { useAuth, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -18,13 +19,24 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Generate and store session ID
+      const sessionId = `${Date.now()}-${Math.random()}`;
+      localStorage.setItem('sessionId', sessionId);
+
+      // Update Firestore with the new session ID
+      const userDocRef = doc(firestore, 'users', user.uid);
+      await updateDoc(userDocRef, { sessionId });
+
       router.push('/');
     } catch (err: any) {
       setError(err.message);

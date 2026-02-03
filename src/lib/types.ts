@@ -48,4 +48,5 @@ export interface UserProfile {
   email: string;
   isApproved: boolean;
   isAdmin: boolean;
+  sessionId?: string;
 }

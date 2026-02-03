@@ -38,6 +38,7 @@ export default function PendingApprovalPage() {
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
   const handleLogout = async () => {
+    localStorage.removeItem('sessionId');
     await signOut(auth);
     router.push('/login');
   };

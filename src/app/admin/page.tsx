@@ -68,6 +68,7 @@ export default function AdminPage() {
   };
   
   const handleLogout = async () => {
+    localStorage.removeItem('sessionId');
     await signOut(auth);
     router.push('/login');
   };

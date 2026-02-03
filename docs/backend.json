@@ -119,6 +119,10 @@
         "isAdmin": {
           "type": "boolean",
           "description": "Indicates if the user has administrative privileges."
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "A unique token to identify the current active session and prevent multi-device login."
         }
       },
       "required": ["email", "isApproved", "isAdmin"]
