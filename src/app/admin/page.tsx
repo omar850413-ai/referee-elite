@@ -3,13 +3,24 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
-import { collection, doc, updateDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useAuth, useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { UserProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 type UserWithId = UserProfile & { id: string };
 
@@ -77,6 +88,19 @@ export default function AdminPage() {
       });
   };
   
+  const handleDeleteUser = (userId: string) => {
+    const userDocRef = doc(firestore, 'users', userId);
+    deleteDoc(userDocRef)
+      .catch((error) => {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        alert('Hubo un error al eliminar el usuario.');
+      });
+  };
+
   const handleLogout = async () => {
     localStorage.removeItem('sessionId');
     await signOut(auth);
@@ -142,12 +166,35 @@ export default function AdminPage() {
                       {isTargetSuperAdmin && <Badge className="ml-2 bg-amber-500 text-white">Super Admin</Badge>}
                     </div>
                     {canManage && (
-                       <div>
+                       <div className="flex gap-2">
                         {u.isApproved ? (
                           <Button variant="destructive" size="sm" onClick={() => handleBlockUser(u.id)}>Bloquear</Button>
                         ) : (
                           <Button size="sm" onClick={() => handleApproveUser(u.id)}>Aprobar</Button>
                         )}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">Eliminar</Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción eliminará el perfil del usuario permanentemente y no se puede deshacer.
+                                El usuario perderá el acceso.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction 
+                                className="bg-destructive hover:bg-destructive/90"
+                                onClick={() => handleDeleteUser(u.id)}
+                              >
+                                Sí, eliminar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     )}
                   </div>

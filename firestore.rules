@@ -43,8 +43,8 @@ service cloud.firestore {
       // An admin can update any user profile (e.g., to approve them). The super admin can update their own.
       allow update: if isRequestingUserAdmin();
 
-      // Deletes are disallowed for now to prevent accidental data loss.
-      allow delete: if false;
+      // An admin can delete any user.
+      allow delete: if isRequestingUserAdmin();
     }
 
     // Rules for Match Data
