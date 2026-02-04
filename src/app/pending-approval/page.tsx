@@ -55,6 +55,7 @@ export default function PendingApprovalPage() {
 
   const handleLogout = async () => {
     localStorage.removeItem('sessionId');
+    localStorage.removeItem('matchSession');
     await signOut(auth);
     router.push('/login');
   };

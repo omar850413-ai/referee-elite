@@ -446,6 +446,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
   
   const handleLogout = async () => {
     localStorage.removeItem('sessionId');
+    localStorage.removeItem('matchSession');
     await signOut(auth);
     router.push('/login');
   };
