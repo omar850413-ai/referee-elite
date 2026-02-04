@@ -37,8 +37,11 @@ export default function SignUpPage() {
 
     try {
       // 1. Create user in Firebase Auth
-      const userCredential =
-        await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
       const user = userCredential.user;
 
       // Generate and store session ID
@@ -57,14 +60,14 @@ export default function SignUpPage() {
         sessionId: sessionId,
       };
 
-      await setDoc(userDocRef, profileData).catch(err => {
-            const permissionError = new FirestorePermissionError({
-                path: userDocRef.path,
-                operation: 'create',
-                requestResourceData: profileData
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            throw err;
+      await setDoc(userDocRef, profileData).catch((err) => {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'create',
+          requestResourceData: profileData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw err;
       });
 
       // 3. Redirect intelligently based on role
@@ -74,10 +77,15 @@ export default function SignUpPage() {
         router.push('/pending-approval'); // New users go to pending page
       }
     } catch (err: any) {
-      if (err.code === 'permission-denied') {
+      if (err.code === 'auth/email-already-in-use') {
+        setError(
+          'Este correo ya está registrado. Por favor, inicia sesión para reactivar tu cuenta.'
+        );
+      } else if (err.code === 'permission-denied') {
         setError('Error de permisos. No se pudo crear el perfil de usuario.');
       } else {
-        setError(err.message);
+        console.error('Sign up error:', err);
+        setError('Ocurrió un error inesperado. Por favor, inténtalo de nuevo.');
       }
     } finally {
       setIsLoading(false);

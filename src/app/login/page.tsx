@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
   const firestore = useFirestore();
+  const adminEmail = 'omar850413@gmail.com';
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,23 +32,52 @@ export default function LoginPage() {
 
       const sessionId = `${Date.now()}-${Math.random()}`;
       localStorage.setItem('sessionId', sessionId);
-
       const userDocRef = doc(firestore, 'users', user.uid);
-      const sessionData = { sessionId };
-      
-      await updateDoc(userDocRef, sessionData).catch(err => {
-        const permissionError = new FirestorePermissionError({
-            path: userDocRef.path,
-            operation: 'update',
-            requestResourceData: sessionData
+
+      // Check if user profile exists
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        // Profile exists, just update the session ID
+        const sessionData = { sessionId };
+        await updateDoc(userDocRef, sessionData).catch(err => {
+            const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'update',
+                requestResourceData: sessionData
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            throw err;
         });
-        errorEmitter.emit('permission-error', permissionError);
-        throw err;
-      });
+      } else {
+        // Profile does not exist: this is a re-activated user. 
+        // Create a new profile with default non-approved, non-admin status.
+        const isSuperAdmin = user.email === adminEmail;
+        const profileData = {
+          email: user.email,
+          isAdmin: isSuperAdmin,
+          isApproved: isSuperAdmin,
+          sessionId: sessionId,
+        };
+        await setDoc(userDocRef, profileData).catch(err => {
+            const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'create',
+                requestResourceData: profileData
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            throw err;
+        });
+      }
 
       router.push('/');
     } catch (err: any) {
-      setError(err.message);
+      if (err.code && err.code.startsWith('auth/')) {
+        setError('Correo o contraseña incorrectos. Por favor, inténtalo de nuevo.');
+      } else {
+        console.error('Login Error:', err);
+        setError('Ocurrió un error inesperado al iniciar sesión.');
+      }
     } finally {
       setIsLoading(false);
     }
