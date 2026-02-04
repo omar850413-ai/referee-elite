@@ -1,10 +1,10 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
@@ -29,6 +30,15 @@ export default function SignUpPage() {
   const firestore = useFirestore();
 
   const adminEmail = 'omar850413@gmail.com';
+  
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    // If the user is already logged in, redirect them to the home page.
+    if (user && !isUserLoading) {
+      router.push('/');
+    }
+  }, [user, isUserLoading, router]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +102,36 @@ export default function SignUpPage() {
     }
   };
 
+  // While checking user auth state, show a loading screen.
+  // Also, if the user is logged in, this will show until the redirect happens.
+  if (isUserLoading || user) {
+     return (
+      <div className="flex items-center justify-center min-h-screen bg-sky-100">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center space-y-4">
+             <Skeleton className="h-8 w-48 mx-auto" />
+             <Skeleton className="h-4 w-64 mx-auto" />
+          </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                 <Skeleton className="h-4 w-24" />
+                 <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                 <Skeleton className="h-4 w-24" />
+                 <Skeleton className="h-10 w-full" />
+              </div>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4">
+              <Skeleton className="h-10 w-full" />
+               <Skeleton className="h-4 w-48" />
+            </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  // Only show signup page if user is not logged in.
   return (
     <div className="flex items-center justify-center min-h-screen bg-sky-100">
       <Card className="w-full max-w-md">
