@@ -30,6 +30,33 @@ interface MatchPageProps {
   userProfile: UserProfile | null;
 }
 
+const causalesAmarilla = [
+  'Conducta antideportiva',
+  'Desaprobar con palabras o acciones',
+  'Infringir persistentemente las Reglas',
+  'Retardar la reanudación del juego',
+  'No respetar la distancia reglamentaria',
+  'Entrar o salir del terreno sin permiso',
+];
+
+const causalesRoja = [
+  'Juego brusco grave',
+  'Conducta violenta',
+  'Escupir a un adversario o a otra persona',
+  'Impedir un gol con la mano (no guardameta)',
+  'Malograr oportunidad manifiesta de gol',
+  'Lenguaje ofensivo, insultante o humillante',
+  'Recibir una segunda amonestación',
+];
+
+const causalesStaff = [
+  'Conducta antideportiva',
+  'Desaprobar con palabras o acciones',
+  'Protestar decisiones arbitrales',
+  'Entrar al terreno de juego sin permiso',
+  'Retardar la reanudación del juego',
+];
+
 export default function MatchPage({ user, userProfile }: MatchPageProps) {
   const { toast } = useToast();
   const router = useRouter();
