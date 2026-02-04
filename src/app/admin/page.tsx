@@ -154,9 +154,9 @@ export default function AdminPage() {
                 const isTargetSuperAdmin = u.email === 'omar850413@gmail.com';
 
                 return (
-                  <div key={u.id} className="flex justify-between items-center p-4 border rounded-lg bg-white shadow-sm">
-                    <div className='flex items-center gap-2'>
-                      <p className="font-semibold">{u.email}</p>
+                  <div key={u.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border rounded-lg bg-white shadow-sm gap-4">
+                    <div className='flex items-center gap-2 flex-wrap'>
+                      <p className="font-semibold break-all">{u.email}</p>
                       {u.isApproved ? (
                         <Badge variant="default" className="bg-emerald-500">Aprobado</Badge>
                       ) : (
@@ -166,7 +166,7 @@ export default function AdminPage() {
                       {isTargetSuperAdmin && <Badge className="ml-2 bg-amber-500 text-white">Super Admin</Badge>}
                     </div>
                     {canManage && (
-                       <div className="flex gap-2">
+                       <div className="flex gap-2 flex-shrink-0">
                         {u.isApproved ? (
                           <Button variant="destructive" size="sm" onClick={() => handleBlockUser(u.id)}>Bloquear</Button>
                         ) : (
@@ -180,8 +180,7 @@ export default function AdminPage() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Esta acción eliminará el perfil del usuario permanentemente y no se puede deshacer.
-                                El usuario perderá el acceso.
+                                Esta acción eliminará el perfil del usuario permanentemente. Si el usuario inicia sesión de nuevo, deberá ser aprobado otra vez.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
