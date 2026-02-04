@@ -3,8 +3,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, signOut } from 'firebase/auth';
-import { useAuth } from '@/firebase';
+import { DocumentReference, updateDoc, setDoc } from 'firebase/firestore';
 
+import { useAuth, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,15 +20,18 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls, UserProfile, Timer } from '@/lib/types';
+import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls, UserProfile, Timer, MatchState } from '@/lib/types';
 import { formatTime } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ReportView } from '@/components/report/ReportView';
 import { Logo } from '@/components/ui/Logo';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 interface MatchPageProps {
   user: User;
   userProfile: UserProfile | null;
+  matchDocRef: DocumentReference;
 }
 
 const causalesAmarilla = [
@@ -57,61 +61,20 @@ const causalesStaff = [
   'Retardar la reanudación del juego',
 ];
 
-export default function MatchPage({ user, userProfile }: MatchPageProps) {
+export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageProps) {
   const { toast } = useToast();
   const router = useRouter();
   const auth = useAuth();
+  
+  const { data: matchState, isLoading: isMatchLoading } = useDoc<MatchState>(matchDocRef);
 
-  const [isStateLoaded, setIsStateLoaded] = useState(false);
-  const [matchState, setMatchState] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [displaySeconds, setDisplaySeconds] = useState(0);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [scores, setScores] = useState<Scores>({ home: 0, away: 0 });
-  const [fouls, setFouls] = useState<Fouls>({ home: 0, away: 0 });
-  const [teamNames, setTeamNames] = useState<TeamNames>({
-    home: 'LOCAL',
-    away: 'VISITA',
-  });
-  const [events, setEvents] = useState<MatchEvent[]>([]);
-  const [matchInfo, setMatchInfo] = useState<MatchInfo>({
-    advisor: '',
-    league: '',
-    round: '',
-    place: '',
-    date: '',
-  });
-
-  const stateRef = useRef({
-    matchState,
-    isRunning,
-    elapsedSeconds,
-    scores,
-    fouls,
-    teamNames,
-    events,
-    matchInfo,
-  });
-
-  useEffect(() => {
-    stateRef.current = {
-      matchState,
-      isRunning,
-      elapsedSeconds,
-      scores,
-      fouls,
-      teamNames,
-      events,
-      matchInfo,
-    };
-  }, [matchState, isRunning, elapsedSeconds, scores, fouls, teamNames, events, matchInfo]);
-
+  // Modal and temporary input states
   const [modal, setModal] = useState<string | null>(null);
   const [currentSide, setCurrentSide] = useState<'home' | 'away'>('home');
-  const [currentCardType, setCurrentCardType] = useState<'amarilla' | 'roja'>(
-    'amarilla'
-  );
+  const [currentCardType, setCurrentCardType] = useState<'amarilla' | 'roja'>('amarilla');
   const [currentCardTarget, setCurrentCardTarget] = useState('jugador');
   const [currentStaffRole, setCurrentStaffRole] = useState('');
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
@@ -131,92 +94,46 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
   const [manualScores, setManualScores] = useState<Scores>({ home: 0, away: 0 });
 
   const capturedTimeRef = useRef('00:00');
-  
-  useEffect(() => {
-    try {
-      const savedStateJSON = localStorage.getItem('matchSession');
-      if (savedStateJSON) {
-        const savedState = JSON.parse(savedStateJSON);
 
-        setMatchState(savedState.matchState ?? 0);
-        setScores(savedState.scores ?? { home: 0, away: 0 });
-        setFouls(savedState.fouls ?? { home: 0, away: 0 });
-        setTeamNames(savedState.teamNames ?? { home: 'LOCAL', away: 'VISITA' });
-        setEvents(savedState.events ?? []);
-        setMatchInfo(savedState.matchInfo ?? { advisor: '', league: '', round: '', place: '', date: '' });
-        
-        const lastUpdated = savedState.lastUpdated;
-        const wasRunning = savedState.isRunning ?? false;
-        let totalElapsed = savedState.elapsedSeconds ?? 0;
-        
-        if (wasRunning && lastUpdated) {
-          const offlineSeconds = (Date.now() - lastUpdated) / 1000;
-          totalElapsed += offlineSeconds;
-        }
-
-        setElapsedSeconds(totalElapsed);
-        setIsRunning(wasRunning);
-      }
-    } catch (error) {
-      console.error("Failed to load state from localStorage", error);
-      localStorage.removeItem('matchSession');
-    } finally {
-      setIsStateLoaded(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isStateLoaded) return;
-
-    const saveState = () => {
-      const currentState = {
-        ...stateRef.current,
-        lastUpdated: Date.now(),
-      };
-      try {
-        // Only save if something meaningful has happened, not just time passing
-        if (!currentState.isRunning && currentState.events.length > 0) {
-          localStorage.setItem('matchSession', JSON.stringify(currentState));
-        }
-      } catch (error) {
-        console.error("Failed to save state to localStorage", error);
-      }
-    };
-    
-    window.addEventListener('beforeunload', saveState);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
-        saveState();
-      }
-    });
-
-    return () => {
-      window.removeEventListener('beforeunload', saveState);
-      document.removeEventListener('visibilitychange', saveState);
-      saveState();
-    };
-  }, [isStateLoaded]);
-
-  const getSmartTime = () => {
-    const totalSeconds = Math.floor(elapsedSeconds);
-    let mins = Math.floor(totalSeconds / 60);
-    let secs = totalSeconds % 60;
-    if (matchState === 1 && mins >= 45) {
-      return `45+${mins - 45}:${secs.toString().padStart(2, '0')}`;
-    }
-    if (matchState === 3 && mins >= 90) {
-      return `90+${mins - 90}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${mins.toString().padStart(2, '0')}:${secs
-      .toString()
-      .padStart(2, '0')}`;
+  // --- Firestore update helper ---
+  const updateMatch = (data: Partial<MatchState>) => {
+    return updateDoc(matchDocRef, data)
+      .catch((error) => {
+        const permissionError = new FirestorePermissionError({
+          path: matchDocRef.path,
+          operation: 'update',
+          requestResourceData: data,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({
+          variant: "destructive",
+          title: "Error de Sincronización",
+          description: "No se pudieron guardar los cambios. Revisa tu conexión.",
+        });
+      });
   };
 
+  // --- Timer Sync Logic ---
   useEffect(() => {
-    if (isRunning) {
-      const startTime = Date.now() - elapsedSeconds * 1000;
+    if (!matchState) return;
+    const { timer } = matchState;
+    let totalElapsed = timer.elapsedSeconds;
+    
+    // If the timer was running, calculate time passed since last update
+    if (timer.isRunning && timer.startTime > 0) {
+      const serverTimeOffset = 0; // Assume client and server time are roughly in sync
+      const timeSinceLastStart = (Date.now() - timer.startTime + serverTimeOffset) / 1000;
+      totalElapsed += timeSinceLastStart;
+    }
+    setDisplaySeconds(totalElapsed);
+  }, [matchState]);
+
+  useEffect(() => {
+    if (matchState?.timer.isRunning) {
+      // Recalculate start time based on current display seconds to keep it smooth
+      const internalStartTime = Date.now() - displaySeconds * 1000;
       timerIntervalRef.current = setInterval(() => {
-        setElapsedSeconds((Date.now() - startTime) / 1000);
+        setDisplaySeconds((Date.now() - internalStartTime) / 1000);
       }, 1000);
     } else {
       if (timerIntervalRef.current) {
@@ -228,101 +145,137 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [isRunning]);
+  }, [matchState?.timer.isRunning, displaySeconds]);
+
+
+  const getSmartTime = () => {
+    if (!matchState) return '00:00';
+
+    const totalSeconds = Math.floor(displaySeconds);
+    const { status } = matchState.timer;
+    const minutes = Math.floor(totalSeconds / 60);
+
+    if (status === 'FIRST_HALF' && minutes >= 45) {
+      return `45+${minutes - 45 + 1}`; // 45:xx is 45+1
+    }
+    if (status === 'SECOND_HALF' || status === 'FINISHED') {
+      if (totalSeconds >= 45 * 60) {
+        const gameMinute = 45 + Math.floor((totalSeconds - 45 * 60) / 60);
+        if (gameMinute >= 90) {
+          return `90+${gameMinute - 90 + 1}`;
+        }
+      }
+    }
+    return formatTime(totalSeconds);
+  };
 
 
   const addEvent = (category: string, message: string, time: string) => {
-    const newEvent: MatchEvent = {
-      id: Date.now(),
-      time,
-      category,
-      message,
-    };
-    setEvents((prev) => [newEvent, ...prev]);
+    const newEvent: MatchEvent = { id: Date.now(), time, category, message };
+    const updatedEvents = [newEvent, ...(matchState?.events ?? [])];
+    updateMatch({ events: updatedEvents });
   };
-
+  
   const handleTimerClick = () => {
-    if (matchState === 0) { // To 1st Half
-      setMatchState(1);
-      setIsRunning(true);
-      setElapsedSeconds(0);
-      addEvent('general', '▶️ INICIO PARTIDO', '00:00');
-    } else if (matchState === 1) { // To Half Time
-      addEvent('general', `⏹️ FIN 1T`, getSmartTime());
-      setIsRunning(false);
-      setMatchState(2);
-      setElapsedSeconds(45 * 60);
-    } else if (matchState === 2) { // To 2nd Half
-      setMatchState(3);
-      setIsRunning(true);
-      setElapsedSeconds(45*60);
-      addEvent('general', '▶️ INICIO 2T', '45:00');
-    } else if (matchState === 3) { // To Full Time
-      addEvent('general', `🏁 FIN PARTIDO`, getSmartTime());
-      setIsRunning(false);
-      setMatchState(4);
+    if (!matchState) return;
+
+    const time = getSmartTime();
+    const { status } = matchState.timer;
+    let newTimerState: Partial<Timer> = {};
+    let newEventMessage = '';
+    
+    const now = Date.now();
+    const currentElapsed = displaySeconds;
+
+    switch (status) {
+      case 'NOT_STARTED':
+        newTimerState = { status: 'FIRST_HALF', isRunning: true, elapsedSeconds: 0, startTime: now };
+        newEventMessage = '▶️ INICIO PARTIDO';
+        break;
+      case 'FIRST_HALF':
+        newTimerState = { status: 'HALF_TIME', isRunning: false, elapsedSeconds: currentElapsed, startTime: 0 };
+        newEventMessage = `⏹️ FIN 1T`;
+        break;
+      case 'HALF_TIME':
+        newTimerState = { status: 'SECOND_HALF', isRunning: true, elapsedSeconds: currentElapsed, startTime: now };
+        newEventMessage = '▶️ INICIO 2T';
+        break;
+      case 'SECOND_HALF':
+        newTimerState = { status: 'FINISHED', isRunning: false, elapsedSeconds: currentElapsed, startTime: 0 };
+        newEventMessage = `🏁 FIN PARTIDO`;
+        break;
+      default:
+        return;
     }
+
+    const newEvent: MatchEvent = { id: now, category: 'general', message: newEventMessage, time };
+    updateMatch({
+      timer: { ...matchState.timer, ...newTimerState },
+      events: [newEvent, ...matchState.events],
+    });
   };
 
   const triggerResetCrono = () => setModal('reset-crono-confirm');
 
   const handleResetCrono = () => {
-    setIsRunning(false);
-    if (matchState <= 2) {
-      setElapsedSeconds(0);
-      setMatchState(0);
-    } else {
-      setElapsedSeconds(45 * 60);
-      setMatchState(2);
+    if (!matchState) return;
+    const { status } = matchState.timer;
+    let newTimerState: Partial<Timer> = { isRunning: false, startTime: 0 };
+
+    if (status === 'NOT_STARTED' || status === 'FIRST_HALF' || status === 'HALF_TIME') {
+      newTimerState = { ...newTimerState, status: 'NOT_STARTED', elapsedSeconds: 0 };
+    } else { // SECOND_HALF or FINISHED
+      newTimerState = { ...newTimerState, status: 'HALF_TIME', elapsedSeconds: 45 * 60 };
     }
+    updateMatch({ timer: { ...matchState.timer, ...newTimerState } });
     setModal(null);
   };
   
   const triggerFullReset = () => setModal('reset-full-confirm');
 
   const handleFullReset = () => {
-      setIsRunning(false);
-      setMatchState(0);
-      setElapsedSeconds(0);
-      setScores({ home: 0, away: 0 });
-      setFouls({ home: 0, away: 0 });
-      setTeamNames({ home: 'LOCAL', away: 'VISITA' });
-      setEvents([]);
-      setMatchInfo({ advisor: '', league: '', round: '', place: '', date: '' });
+      const initialState: MatchState = {
+        scores: { home: 0, away: 0 },
+        fouls: { home: 0, away: 0 },
+        teamNames: { home: 'LOCAL', away: 'VISITA' },
+        events: [],
+        matchInfo: { advisor: userProfile?.email || '', league: '', round: '', place: '', date: '' },
+        timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
+      };
+      setDoc(matchDocRef, initialState).catch((error) => {
+        // Handle potential permission error on reset
+      });
       setModal(null);
-      try {
-        localStorage.removeItem('matchSession');
-      } catch (error) {
-        console.error("Failed to clear session from localStorage", error);
-      }
   };
 
   const addFoul = (side: 'home' | 'away') => {
-    if (matchState === 0) return;
-    setFouls((prev) => ({ ...prev, [side]: prev[side] + 1 }));
-    addEvent('general', `🚩 Falta ${teamNames[side]}`, getSmartTime());
+    if (!matchState || matchState.timer.status === 'NOT_STARTED') return;
+    const newFoulsCount = (matchState.fouls[side] ?? 0) + 1;
+    addEvent('general', `🚩 Falta ${matchState.teamNames[side]}`, getSmartTime());
+    updateMatch({ fouls: { ...matchState.fouls, [side]: newFoulsCount }});
   };
 
   const captureTimeAndTrigger = (type: string, side: 'home' | 'away') => {
-    if (matchState === 0) return;
+    if (matchState?.timer.status === 'NOT_STARTED') return;
     capturedTimeRef.current = getSmartTime();
     setCurrentSide(side);
     setModal(type);
   };
 
   const registerGoal = (type: string) => {
+    if (!matchState) return;
     const n = playerNumber || 'S/N';
-    if (type === 'AUTOGOL') {
-      const otherSide = currentSide === 'home' ? 'away' : 'home';
-      setScores((prev) => ({ ...prev, [otherSide]: prev[otherSide] + 1 }));
-    } else {
-      setScores((prev) => ({ ...prev, [currentSide]: prev[currentSide] + 1 }));
-    }
-    addEvent(
-      'goals',
-      `⚽ ${type} #${n} (${teamNames[currentSide]})`,
-      capturedTimeRef.current
-    );
+    const otherSide = currentSide === 'home' ? 'away' : 'home';
+    const sideToScore = type === 'AUTOGOL' ? otherSide : currentSide;
+    
+    const newScores = {
+        ...matchState.scores,
+        [sideToScore]: (matchState.scores[sideToScore] ?? 0) + 1,
+    };
+    
+    addEvent('goals', `⚽ ${type} #${n} (${matchState.teamNames[currentSide]})`, capturedTimeRef.current);
+    updateMatch({ scores: newScores });
+    
     setPlayerNumber('');
     setModal(null);
   };
@@ -330,18 +283,14 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
   const registerSub = () => {
     const i = playerIn || '?';
     const o = playerOut || '?';
-    addEvent(
-      'subs',
-      `🔄 Cambio (${teamNames[currentSide]}): ↑#${i} ↓#${o}`,
-      capturedTimeRef.current
-    );
+    addEvent('subs', `🔄 Cambio (${matchState?.teamNames[currentSide]}): ↑#${i} ↓#${o}`, capturedTimeRef.current);
     setPlayerIn('');
     setPlayerOut('');
     setModal(null);
   };
 
   const openCardSubMenu = (side: 'home' | 'away', type: 'amarilla' | 'roja') => {
-    if (matchState === 0) return;
+    if (matchState?.timer.status === 'NOT_STARTED') return;
     capturedTimeRef.current = getSmartTime();
     setCurrentSide(side);
     setCurrentCardType(type);
@@ -365,7 +314,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
     const p = playerNumber || 'S/N';
     const symbol = currentCardType === 'amarilla' ? '🟨' : '🟥';
     const target = currentCardTarget === 'jugador' ? `#${p}` : currentStaffRole;
-    const message = `${symbol} ${target} (${teamNames[currentSide]}) - ${causal}`;
+    const message = `${symbol} ${target} (${matchState?.teamNames[currentSide]}) - ${causal}`;
     addEvent('cards', message, capturedTimeRef.current);
     setPlayerNumber('');
     setModal(null);
@@ -392,17 +341,21 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
   }
 
   const saveEventEdit = () => {
-    setEvents(events.map(e => e.id === editingEventId ? {...e, message: editEventMsg, time: editEventTime} : e));
+    if (!matchState) return;
+    const updatedEvents = matchState.events.map(e => e.id === editingEventId ? {...e, message: editEventMsg, time: editEventTime} : e);
+    updateMatch({ events: updatedEvents });
     setModal(null);
   }
 
   const deleteEvent = () => {
-    setEvents(events.filter(e => e.id !== editingEventId));
+    if (!matchState) return;
+    const updatedEvents = matchState.events.filter(e => e.id !== editingEventId);
+    updateMatch({ events: updatedEvents });
     setModal(null);
   }
 
   const openPegiModal = () => {
-    if (matchState === 0) return;
+    if (matchState?.timer.status === 'NOT_STARTED') return;
     capturedTimeRef.current = getSmartTime();
     setPegiDecision(null);
     setPegiDescription('');
@@ -415,20 +368,13 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
       alert('Por favor, ingresa una descripción para la jugada PEGI.');
       return;
     }
-
-    let message = '';
-    if (pegiDecision === 'yes') {
-      message = `🔎 JUGADAS PEGI: Sí - ${pegiDescription.trim()}`;
-    } else {
-      message = '🔎 JUGADAS PEGI: No';
-    }
-
+    const message = pegiDecision === 'yes' ? `🔎 JUGADAS PEGI: Sí - ${pegiDescription.trim()}` : '🔎 JUGADAS PEGI: No';
     addEvent('pegi', message, capturedTimeRef.current);
     setModal(null);
   };
 
   const handleGenerateReport = () => {
-    if (events.length === 0) {
+    if (!matchState || matchState.events.length === 0) {
       toast({
         title: 'No hay datos suficientes',
         description: 'Aún no han ocurrido eventos para generar un informe.',
@@ -440,28 +386,63 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
   };
 
   const openScoreEditor = () => {
-    setManualScores(scores);
+    setManualScores(matchState?.scores ?? { home: 0, away: 0 });
     setModal('edit-score');
   };
   
   const handleLogout = async () => {
     localStorage.removeItem('sessionId');
-    localStorage.removeItem('matchSession');
     await signOut(auth);
     router.push('/login');
   };
 
-  const timerButtonLabel = [
-    'Iniciar Partido',
-    'Fin 1er Tiempo',
-    'Iniciar 2do Tiempo',
-    'Fin Partido',
-    'Finalizado',
-  ][matchState];
+  if (isMatchLoading || !matchState) {
+     return (
+      <div className="p-4 bg-sky-100 min-h-screen flex items-center justify-center">
+        <div className="max-w-md mx-auto space-y-4 w-full">
+          <Skeleton className="h-12 w-full" />
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-16 w-full mb-2" />
+              <Skeleton className="h-10 w-full" />
+            </CardHeader>
+            <CardContent className="p-6 flex flex-col gap-6">
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-20 mx-auto" />
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-20 mx-auto" />
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const { scores, fouls, teamNames, events, matchInfo, timer } = matchState;
+  const matchStatus = timer.status;
+  const timerButtonLabel = {
+    'NOT_STARTED': 'Iniciar Partido',
+    'FIRST_HALF': 'Fin 1er Tiempo',
+    'HALF_TIME': 'Iniciar 2do Tiempo',
+    'SECOND_HALF': 'Fin Partido',
+    'FINISHED': 'Finalizado',
+  }[matchStatus];
   const periodIndicator = `Status: ${
-    ['Sin iniciar', '1T Corriendo', 'Descanso', '2T Corriendo', 'Finalizado'][
-      matchState
-    ]
+    {
+      'NOT_STARTED': 'Sin iniciar',
+      'FIRST_HALF': '1T Corriendo',
+      'HALF_TIME': 'Descanso',
+      'SECOND_HALF': '2T Corriendo',
+      'FINISHED': 'Finalizado',
+    }[matchStatus]
   }`;
 
   const isSuperAdmin = user?.email === 'omar850413@gmail.com';
@@ -485,14 +466,14 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
               id="timer-display"
               className="text-7xl font-mono font-black text-gray-800 tracking-tighter mb-2 bg-amber-100 rounded-2xl py-4 border-b-4 border-amber-200"
             >
-              {formatTime(elapsedSeconds)}
+              {formatTime(displaySeconds)}
             </div>
             <div className="flex flex-col gap-2">
               <Button
                 onClick={handleTimerClick}
                 size="lg"
                 className="w-full font-black text-lg shadow-lg uppercase italic bg-slate-800 hover:bg-slate-900 text-white"
-                disabled={matchState === 4}
+                disabled={matchStatus === 'FINISHED'}
               >
                 {timerButtonLabel}
               </Button>
@@ -500,7 +481,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
                 <div className="text-[10px] font-black text-primary/80 uppercase tracking-widest italic">
                   {periodIndicator}
                 </div>
-                {matchState > 0 && (
+                {matchStatus !== 'NOT_STARTED' && (
                   <button
                     onClick={triggerResetCrono}
                     className="text-[10px] font-black text-red-500 uppercase italic underline bg-transparent border-none cursor-pointer"
@@ -813,13 +794,13 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
             <DialogTitle className="text-center uppercase italic text-primary/90">Ficha Técnica</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-4">
-            <Input value={matchInfo.advisor} onChange={e => setMatchInfo({...matchInfo, advisor: e.target.value})} placeholder="Nombre Asesor" />
-            <Input value={matchInfo.league} onChange={e => setMatchInfo({...matchInfo, league: e.target.value})} placeholder="Torneo / Liga" />
-            <Input type="number" value={matchInfo.round} onChange={e => setMatchInfo({...matchInfo, round: e.target.value})} placeholder="Jornada" />
-            <Input value={matchInfo.place} onChange={e => setMatchInfo({...matchInfo, place: e.target.value})} placeholder="Lugar" />
-            <Input value={matchInfo.date} onChange={e => setMatchInfo({...matchInfo, date: e.target.value})} placeholder="Fecha" />
+            <Input value={matchInfo.advisor} onChange={e => updateMatch({matchInfo: {...matchInfo, advisor: e.target.value}})} placeholder="Nombre Asesor" />
+            <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value}})} placeholder="Torneo / Liga" />
+            <Input type="number" value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value}})} placeholder="Jornada" />
+            <Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value}})} placeholder="Lugar" />
+            <Input value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} placeholder="Fecha" />
           </div>
-          <Button onClick={() => setModal(null)} className="w-full mt-6 shadow-lg">Guardar Datos</Button>
+          <Button onClick={() => setModal(null)} className="w-full mt-6 shadow-lg">Cerrar</Button>
         </DialogContent>
       </Dialog>
 
@@ -839,7 +820,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
             <DialogTitle className="text-center uppercase italic text-gray-400">Editar Nombre</DialogTitle>
           </DialogHeader>
           <Input value={newTeamName} onChange={e => setNewTeamName(e.target.value)} className="w-full text-center text-2xl font-black border-2 p-4 rounded-2xl uppercase h-auto my-4" maxLength={15} />
-          <Button onClick={() => { teamNames[currentSide] = newTeamName; setModal(null); }} className="w-full shadow-lg">Actualizar</Button>
+          <Button onClick={() => { updateMatch({ teamNames: { ...teamNames, [currentSide]: newTeamName }}); setModal(null); }} className="w-full shadow-lg">Actualizar</Button>
         </DialogContent>
       </Dialog>
 
@@ -901,21 +882,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
       
       <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
         <DialogContent className="max-w-4xl p-4 md:p-6">
-          <ReportView
-            matchState={{
-              scores,
-              fouls,
-              teamNames,
-              events,
-              matchInfo,
-              timer: { 
-                status: ['NOT_STARTED', 'FIRST_HALF', 'HALF_TIME', 'SECOND_HALF', 'FINISHED'][matchState] as Timer['status'], 
-                elapsedSeconds, 
-                isRunning, 
-                startTime: 0 
-              },
-            }}
-          />
+          <ReportView matchState={matchState} />
         </DialogContent>
       </Dialog>
       
@@ -951,7 +918,7 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
           </div>
           <Button onClick={() => {
             addEvent('general', `✏️ Marcador corregido a ${manualScores.home} - ${manualScores.away}`, getSmartTime());
-            setScores(manualScores);
+            updateMatch({ scores: manualScores });
             setModal(null);
           }} className="w-full shadow-lg">Actualizar Marcador</Button>
         </DialogContent>

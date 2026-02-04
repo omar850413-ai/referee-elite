@@ -1,10 +1,10 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, DocumentReference } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
-import { UserProfile } from '@/lib/types';
+import { UserProfile, MatchState } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from '@/components/ui/Logo';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -17,12 +17,44 @@ export default function Home() {
   const auth = useAuth();
 
   const [hasTokenBeenRefreshed, setHasTokenBeenRefreshed] = useState(false);
+  const [matchDocRef, setMatchDocRef] = useState<DocumentReference | null>(null);
 
   const userProfileRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
     [user, firestore]
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  
+  // Effect to prepare the match document reference
+  useEffect(() => {
+    if (!user || !firestore || !userProfile) return;
+
+    // Use a predictable ID for the match document, tied to the user
+    const ref = doc(firestore, 'matches', user.uid);
+
+    getDoc(ref).then(docSnap => {
+      if (!docSnap.exists()) {
+        const advisorName = userProfile.email || '';
+        // Document doesn't exist, create it with initial state
+        const initialState: MatchState = {
+            scores: { home: 0, away: 0 },
+            fouls: { home: 0, away: 0 },
+            teamNames: { home: 'LOCAL', away: 'VISITA' },
+            events: [],
+            matchInfo: { advisor: advisorName, league: '', round: '', place: '', date: '' },
+            timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
+        };
+        // Use setDoc to create the new match document
+        setDoc(ref, initialState).then(() => {
+          setMatchDocRef(ref);
+        }).catch(err => console.error("Error creating match document:", err));
+      } else {
+        // Document already exists, just set the reference
+        setMatchDocRef(ref);
+      }
+    });
+
+  }, [user, firestore, userProfile]);
 
   // This combined effect handles all session state logic: auth, approval, token freshness, and multi-device logout.
   React.useEffect(() => {
@@ -46,6 +78,7 @@ export default function Home() {
       console.warn('Stale session detected. Logging out from this device.');
       signOut(auth).then(() => {
         localStorage.removeItem('sessionId');
+        localStorage.removeItem('matchSession'); // Also clear old match data
         router.push('/login');
       });
       return; // Stop further execution
@@ -84,8 +117,8 @@ export default function Home() {
   // A user is considered "ready" if they are the super admin, or if their profile is approved AND their token has been refreshed.
   const isReady = (isSuperAdmin || (userProfile?.isApproved ?? false)) && hasTokenBeenRefreshed;
 
-  // Show loading skeleton if the user/profile is loading OR if they are not yet fully ready (e.g., token is refreshing).
-  if (isUserLoading || isProfileLoading || !isReady) {
+  // Show loading skeleton if the user/profile is loading OR if they are not yet fully ready (e.g., token is refreshing) OR match doc not ready.
+  if (isUserLoading || isProfileLoading || !isReady || !matchDocRef) {
     return (
       <div className="p-4 bg-sky-100 min-h-screen flex items-center justify-center">
         <div className="max-w-md mx-auto space-y-4 w-full">
@@ -118,6 +151,6 @@ export default function Home() {
   }
 
   // Once loading is complete and user is ready, render the actual match page.
-  // We can be sure user is non-null here because of the checks above.
-  return <MatchPage user={user!} userProfile={userProfile} />;
+  // We can be sure user and matchDocRef are non-null here because of the checks above.
+  return <MatchPage user={user!} userProfile={userProfile} matchDocRef={matchDocRef!} />;
 }
