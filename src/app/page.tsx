@@ -93,14 +93,17 @@ export default function Home() {
     
     // 4. For approved users (or super admin), ensure their auth token is fresh.
     // This is crucial for security rules to recognize their approved status correctly.
+    // It will attempt to refresh, but if it fails (e.g., offline), it will
+    // proceed with the cached token, allowing offline startup.
     if ((isSuperAdmin || isApproved) && !hasTokenBeenRefreshed) {
       user.getIdToken(true).then(() => {
         console.log('Auth token has been refreshed to ensure up-to-date permissions.');
         setHasTokenBeenRefreshed(true); // Mark as refreshed for this app session.
       }).catch(error => {
-        console.error("Failed to refresh auth token:", error);
-        // Optional: Handle error, e.g., by signing out.
-        signOut(auth);
+        console.warn("Could not refresh token (likely offline). Proceeding with cached token.");
+        // We still mark as "refreshed" to allow the app to proceed.
+        // Firebase will use the cached user data which is sufficient for offline use.
+        setHasTokenBeenRefreshed(true);
       });
     }
   }, [
