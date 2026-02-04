@@ -1,7 +1,9 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { User } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { User, signOut } from 'firebase/auth';
+import { useAuth } from '@/firebase';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,36 +25,6 @@ import { useToast } from '@/hooks/use-toast';
 import { ReportView } from '@/components/report/ReportView';
 import { Logo } from '@/components/ui/Logo';
 
-const causalesAmarilla = [
-  'Por provocar a un adversario',
-  'Por evitar un SPA',
-  'Por dar una patada de forma Temeraria',
-  'Por una zancadilla de forma Temeraria',
-  'Por hacer una entrada de forma Temeraria',
-  'Por dar un golpe de manera Temeraria',
-  'Por desaprobar con palabras o acciones',
-  'Por retardar la reanudacion de juego',
-  'Por simular una falta',
-  'Por infringir persistententemente las reglas de juego',
-  'Por quitarse la camiseta en un festejo',
-  'Entrar o volver a entrar al terreno de juego',
-];
-const causalesRoja = [
-  'Juego brusco grave',
-  'Conducta violenta',
-  'Escupir',
-  'Mano (DOGSO)',
-  'Falta (DOGSO)',
-  'Lenguaje ofensivo',
-];
-const causalesStaff = [
-  'Protestar airadamente',
-  'Entrar al terreno',
-  'Gritar al árbitro',
-  'Abandono área técnica',
-  'Faltar al respeto',
-];
-
 interface MatchPageProps {
   user: User;
   userProfile: UserProfile | null;
@@ -60,6 +32,8 @@ interface MatchPageProps {
 
 export default function MatchPage({ user, userProfile }: MatchPageProps) {
   const { toast } = useToast();
+  const router = useRouter();
+  const auth = useAuth();
 
   const [isStateLoaded, setIsStateLoaded] = useState(false);
   const [matchState, setMatchState] = useState(0);
@@ -442,6 +416,12 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
     setManualScores(scores);
     setModal('edit-score');
   };
+  
+  const handleLogout = async () => {
+    localStorage.removeItem('sessionId');
+    await signOut(auth);
+    router.push('/login');
+  };
 
   const timerButtonLabel = [
     'Iniciar Partido',
@@ -690,6 +670,16 @@ export default function MatchPage({ user, userProfile }: MatchPageProps) {
 
         <div className="text-center mt-8">
           <p className="text-xs text-gray-400 font-light">by Omar Saldaña</p>
+        </div>
+
+        <div className="pt-4">
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="w-full bg-white/60"
+          >
+            Cerrar Sesión
+          </Button>
         </div>
       </div>
 
