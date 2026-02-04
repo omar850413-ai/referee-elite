@@ -72,7 +72,11 @@ export default function LoginPage() {
 
       router.push('/');
     } catch (err: any) {
-      if (err.code && err.code.startsWith('auth/')) {
+      if (err.code === 'permission-denied') {
+        // This is a Firestore security rule error. The detailed error is already
+        // handled by the FirebaseErrorListener. We just show a generic message here.
+        setError('Error de permisos al actualizar la sesión. Contacta al administrador.');
+      } else if (err.code && err.code.startsWith('auth/')) {
         setError('Correo o contraseña incorrectos. Por favor, inténtalo de nuevo.');
       } else {
         console.error('Login Error:', err);

@@ -40,8 +40,12 @@ service cloud.firestore {
                       // ... BUT if they are NOT the super admin, they CANNOT set isAdmin or isApproved to true.
                       (isSuperAdmin() || (request.resource.data.isAdmin == false && request.resource.data.isApproved == false));
 
-      // An admin can update any user profile (e.g., to approve them). The super admin can update their own.
-      allow update: if isRequestingUserAdmin();
+      // An admin can update any user profile (e.g., to approve them). 
+      // A user can update their OWN profile, but cannot change their isAdmin or isApproved status.
+      allow update: if isRequestingUserAdmin() || 
+                      (isOwner(userId) && 
+                       request.resource.data.isAdmin == resource.data.isAdmin &&
+                       request.resource.data.isApproved == resource.data.isApproved);
 
       // An admin can delete any user.
       allow delete: if isRequestingUserAdmin();
