@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -16,56 +16,75 @@ export default function Home() {
   const firestore = useFirestore();
   const auth = useAuth();
 
+  const [hasTokenBeenRefreshed, setHasTokenBeenRefreshed] = useState(false);
+
   const userProfileRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
     [user, firestore]
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
-  
-  React.useEffect(() => {
-    if (isUserLoading || isProfileLoading) return;
 
+  // This combined effect handles all session state logic: auth, approval, token freshness, and multi-device logout.
+  React.useEffect(() => {
+    // Wait until we have all the necessary information
+    if (isUserLoading || isProfileLoading) {
+      return;
+    }
+
+    // 1. If no user is logged in, redirect to login page.
     if (!user) {
       router.push('/login');
       return;
     }
 
     const isSuperAdmin = user.email === 'omar850413@gmail.com';
+    const isApproved = userProfile?.isApproved === true;
 
-    // Redirect to pending approval ONLY if we have a profile and it's explicitly not approved.
-    if (!isSuperAdmin && userProfile && !userProfile.isApproved) {
-      router.push('/pending-approval');
-      return;
-    }
-    
-    // Also handle the case where a non-admin user somehow has no profile doc at all
-    if (!isSuperAdmin && !userProfile) {
-       router.push('/pending-approval');
-    }
-  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
-  
-  React.useEffect(() => {
-    if (isUserLoading || isProfileLoading || !userProfile) {
-      return;
-    }
-
+    // 2. Multi-device logout check. If session ID doesn't match, log this device out.
     const localSessionId = localStorage.getItem('sessionId');
-    
-    // If a session ID exists in Firestore and it differs from the local one, log out.
-    if (userProfile.sessionId && localSessionId !== userProfile.sessionId) {
+    if (userProfile?.sessionId && localSessionId !== userProfile.sessionId) {
       console.warn('Stale session detected. Logging out from this device.');
       signOut(auth).then(() => {
         localStorage.removeItem('sessionId');
         router.push('/login');
       });
+      return; // Stop further execution
     }
-  }, [userProfile, isUserLoading, isProfileLoading, auth, router]);
+
+    // 3. Handle unapproved users.
+    if (!isSuperAdmin && !isApproved) {
+      // This covers both users with `isApproved: false` and users without a profile document yet.
+      router.push('/pending-approval');
+      return;
+    }
+    
+    // 4. For approved users (or super admin), ensure their auth token is fresh.
+    // This is crucial for security rules to recognize their approved status correctly.
+    if ((isSuperAdmin || isApproved) && !hasTokenBeenRefreshed) {
+      user.getIdToken(true).then(() => {
+        console.log('Auth token has been refreshed to ensure up-to-date permissions.');
+        setHasTokenBeenRefreshed(true); // Mark as refreshed for this app session.
+      }).catch(error => {
+        console.error("Failed to refresh auth token:", error);
+        // Optional: Handle error, e.g., by signing out.
+        signOut(auth);
+      });
+    }
+  }, [
+    user, 
+    userProfile, 
+    isUserLoading, 
+    isProfileLoading, 
+    hasTokenBeenRefreshed, 
+    auth, 
+    router
+  ]);
 
   const isSuperAdmin = user?.email === 'omar850413@gmail.com';
-  // A user is considered "ready" if they are the super admin, or if their profile has loaded and is approved.
-  const isReady = isSuperAdmin || (userProfile?.isApproved ?? false);
-  
-  // Show loading skeleton if user/profile is loading OR if they are not yet approved/ready.
+  // A user is considered "ready" if they are the super admin, or if their profile is approved AND their token has been refreshed.
+  const isReady = (isSuperAdmin || (userProfile?.isApproved ?? false)) && hasTokenBeenRefreshed;
+
+  // Show loading skeleton if the user/profile is loading OR if they are not yet fully ready (e.g., token is refreshing).
   if (isUserLoading || isProfileLoading || !isReady) {
     return (
       <div className="p-4 bg-sky-100 min-h-screen flex items-center justify-center">
@@ -98,7 +117,7 @@ export default function Home() {
     );
   }
 
-  // Once loading is complete and user is approved, render the actual match page.
-  // We can be sure user is non-null here because of the earlier check.
+  // Once loading is complete and user is ready, render the actual match page.
+  // We can be sure user is non-null here because of the checks above.
   return <MatchPage user={user!} userProfile={userProfile} />;
 }
