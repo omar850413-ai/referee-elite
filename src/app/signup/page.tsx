@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -50,11 +50,21 @@ export default function SignUpPage() {
 
       const isSigningUpAsAdmin = user.email === adminEmail;
 
-      await setDoc(userDocRef, {
+      const profileData = {
         email: user.email,
         isAdmin: isSigningUpAsAdmin,
         isApproved: isSigningUpAsAdmin, // Admin is auto-approved
         sessionId: sessionId,
+      };
+
+      await setDoc(userDocRef, profileData).catch(err => {
+            const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'create',
+                requestResourceData: profileData
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            throw err;
       });
 
       // 3. Redirect intelligently based on role

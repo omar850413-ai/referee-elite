@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
 import { collection, doc, updateDoc } from 'firebase/firestore';
-import { useAuth, useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useAuth, useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -47,24 +47,34 @@ export default function AdminPage() {
     }
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
-  const handleApproveUser = async (userId: string) => {
+  const handleApproveUser = (userId: string) => {
     const userDocRef = doc(firestore, 'users', userId);
-    try {
-      await updateDoc(userDocRef, { isApproved: true });
-    } catch (error) {
-      console.error('Error approving user:', error);
-      alert('Hubo un error al aprobar el usuario.');
-    }
+    const updateData = { isApproved: true };
+    updateDoc(userDocRef, updateData)
+      .catch((error) => {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'update',
+          requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        alert('Hubo un error al aprobar el usuario.');
+      });
   };
 
-  const handleBlockUser = async (userId: string) => {
+  const handleBlockUser = (userId: string) => {
     const userDocRef = doc(firestore, 'users', userId);
-    try {
-      await updateDoc(userDocRef, { isApproved: false });
-    } catch (error) {
-      console.error('Error blocking user:', error);
-      alert('Hubo un error al bloquear el usuario.');
-    }
+    const updateData = { isApproved: false };
+    updateDoc(userDocRef, updateData)
+      .catch((error) => {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'update',
+          requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        alert('Hubo un error al bloquear el usuario.');
+      });
   };
   
   const handleLogout = async () => {

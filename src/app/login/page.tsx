@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -29,13 +29,21 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Generate and store session ID
       const sessionId = `${Date.now()}-${Math.random()}`;
       localStorage.setItem('sessionId', sessionId);
 
-      // Update Firestore with the new session ID
       const userDocRef = doc(firestore, 'users', user.uid);
-      await updateDoc(userDocRef, { sessionId });
+      const sessionData = { sessionId };
+      
+      await updateDoc(userDocRef, sessionData).catch(err => {
+        const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'update',
+            requestResourceData: sessionData
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw err;
+      });
 
       router.push('/');
     } catch (err: any) {
