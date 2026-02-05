@@ -159,7 +159,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const getSmartTime = () => {
     if (!matchState) return '00:00';
 
-    const totalSeconds = Math.floor(displaySeconds);
+    const totalSeconds = displaySeconds;
     const { status, firstHalfEndSeconds } = matchState.timer;
 
     if (status === 'NOT_STARTED') {
@@ -180,21 +180,22 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     
     if (status === 'SECOND_HALF' || status === 'FINISHED') {
         const firstHalfDuration = firstHalfEndSeconds ?? 2700;
-        const secondHalfSeconds = totalSeconds - firstHalfDuration;
-        const gameMinute = 45 + Math.floor(secondHalfSeconds / 60);
+        const secondHalfSeconds = Math.max(0, totalSeconds - firstHalfDuration);
+        const gameTimeSeconds = (45 * 60) + secondHalfSeconds;
+        const gameMinute = Math.floor(gameTimeSeconds / 60);
         
         if (gameMinute >= 90) {
-            const regulationSecondHalfSeconds = 45 * 60;
-            const extraTimeSeconds = secondHalfSeconds - regulationSecondHalfSeconds;
+            const regulationTimeInSeconds = 90 * 60;
+            const extraTimeSeconds = gameTimeSeconds - regulationTimeInSeconds;
             const extraMinutes = Math.floor(extraTimeSeconds / 60) + 1;
             return `90+${extraMinutes}`;
         }
         
-        return formatTime(45 * 60 + secondHalfSeconds);
+        return formatTime(gameTimeSeconds);
     }
 
     return formatTime(totalSeconds);
-};
+  };
 
 
   const addEvent = (category: string, message: string, time: string, side?: 'home' | 'away') => {
@@ -273,7 +274,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           startTime: 0,
           elapsedSeconds: 0,
           isRunning: false,
-          firstHalfEndSeconds: undefined,
         };
       } else { // SECOND_HALF or FINISHED
         newTimerState = {
