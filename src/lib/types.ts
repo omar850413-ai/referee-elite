@@ -26,6 +26,7 @@ export interface MatchEvent {
   time: string;
   category: string;
   message: string;
+  side?: 'home' | 'away';
 }
 
 export interface MatchInfo {

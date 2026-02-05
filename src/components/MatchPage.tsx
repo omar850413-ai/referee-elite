@@ -129,55 +129,44 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     const totalSeconds = Math.floor(displaySeconds);
     const { status, firstHalfEndSeconds } = matchState.timer;
 
-    // NOT_STARTED or FIRST_HALF
     if (status === 'NOT_STARTED' || status === 'FIRST_HALF') {
-        const minutes = Math.floor(totalSeconds / 60);
-        if (minutes >= 45) {
-            // For 45:xx, show 45+1, for 46:xx show 45+2
-            return `45+${minutes - 44}`;
-        }
-        return formatTime(totalSeconds);
+      const minutes = Math.floor(totalSeconds / 60);
+      if (minutes >= 45) {
+        return `45+${minutes - 44}`;
+      }
+      return formatTime(totalSeconds);
     }
     
-    // For HALF_TIME, SECOND_HALF, FINISHED, we need the duration of the first half.
-    // Use the stored value, or default to 45 minutes if somehow not present.
     const firstHalfDuration = firstHalfEndSeconds ?? 45 * 60;
 
-    // HALF_TIME: Display the final time of the first half
-    if(status === 'HALF_TIME') {
-        const minutes = Math.floor(firstHalfDuration / 60);
-         if (minutes >= 45) {
-            return `45+${minutes - 44}`;
-        }
-        return formatTime(firstHalfDuration);
+    if (status === 'HALF_TIME') {
+      const minutes = Math.floor(firstHalfDuration / 60);
+      if (minutes >= 45) {
+        return `45+${minutes - 44}`;
+      }
+      return formatTime(firstHalfDuration);
     }
 
-    // SECOND_HALF or FINISHED
     if (status === 'SECOND_HALF' || status === 'FINISHED') {
-        const secondHalfRunTime = totalSeconds - firstHalfDuration;
-        
-        // Calculate the effective game minute (45 + minutes into second half)
-        const gameMinute = 45 + Math.floor(secondHalfRunTime / 60);
+      const secondHalfRunTime = totalSeconds - firstHalfDuration;
+      const gameMinute = 45 + Math.floor(secondHalfRunTime / 60);
 
-        if (gameMinute >= 90) {
-            // For 90:xx, show 90+1, for 91:xx show 90+2
-            return `90+${gameMinute - 89}`;
-        }
-        
-        // Regular time in second half
-        const displayMinute = gameMinute;
-        const displaySecondInMinute = Math.floor(secondHalfRunTime % 60);
-        
-        return `${String(displayMinute).padStart(2, '0')}:${String(displaySecondInMinute).padStart(2, '0')}`;
+      if (gameMinute >= 90) {
+        return `90+${gameMinute - 89}`;
+      }
+      
+      const displayMinute = gameMinute;
+      const displaySecondInMinute = Math.floor(secondHalfRunTime % 60);
+      
+      return `${String(displayMinute).padStart(2, '0')}:${String(displaySecondInMinute).padStart(2, '0')}`;
     }
 
-    // Fallback for any unexpected state
     return formatTime(totalSeconds);
   };
 
 
-  const addEvent = (category: string, message: string, time: string) => {
-    const newEvent: MatchEvent = { id: Date.now(), time, category, message };
+  const addEvent = (category: string, message: string, time: string, side?: 'home' | 'away') => {
+    const newEvent: MatchEvent = { id: Date.now(), time, category, message, side };
     const updatedEvents = [newEvent, ...(matchState?.events ?? [])];
     updateMatch({ events: updatedEvents });
   };
@@ -257,7 +246,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const addFoul = (side: 'home' | 'away') => {
     if (!matchState || matchState.timer.status === 'NOT_STARTED') return;
     const newFoulsCount = (matchState.fouls[side] ?? 0) + 1;
-    addEvent('general', `🚩 Falta ${matchState.teamNames[side]}`, getSmartTime());
+    addEvent('general', `🚩 Falta ${matchState.teamNames[side]}`, getSmartTime(), side);
     updateMatch({ fouls: { ...matchState.fouls, [side]: newFoulsCount }});
   };
 
@@ -279,7 +268,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         [sideToScore]: (matchState.scores[sideToScore] ?? 0) + 1,
     };
     
-    addEvent('goals', `⚽ ${type} #${n} (${matchState.teamNames[currentSide]})`, capturedTimeRef.current);
+    addEvent('goals', `⚽ ${type} #${n} (${matchState.teamNames[currentSide]})`, capturedTimeRef.current, currentSide);
     updateMatch({ scores: newScores });
     
     setPlayerNumber('');
@@ -289,7 +278,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const registerSub = () => {
     const i = playerIn || '?';
     const o = playerOut || '?';
-    addEvent('subs', `🔄 Cambio (${matchState?.teamNames[currentSide]}): ↑#${i} ↓#${o}`, capturedTimeRef.current);
+    addEvent('subs', `🔄 Cambio (${matchState?.teamNames[currentSide]}): ↑#${i} ↓#${o}`, capturedTimeRef.current, currentSide);
     setPlayerIn('');
     setPlayerOut('');
     setModal(null);
@@ -321,7 +310,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     const symbol = currentCardType === 'amarilla' ? '🟨' : '🟥';
     const target = currentCardTarget === 'jugador' ? `#${p}` : currentStaffRole;
     const message = `${symbol} ${target} (${matchState?.teamNames[currentSide]}) - ${causal}`;
-    addEvent('cards', message, capturedTimeRef.current);
+    addEvent('cards', message, capturedTimeRef.current, currentSide);
     setPlayerNumber('');
     setModal(null);
   };

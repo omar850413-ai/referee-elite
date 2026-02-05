@@ -58,19 +58,47 @@ export function ReportView({ matchState }: ReportViewProps) {
     };
   };
 
-  const homeEvents = events.filter(e => e.message.toLowerCase().includes(`(${teamNames.home.toLowerCase()})`));
-  const awayEvents = events.filter(e => e.message.toLowerCase().includes(`(${teamNames.away.toLowerCase()})`));
-  const pegiPlays = events.filter(e => e.category === 'pegi');
+  const homeEvents: MatchEvent[] = [];
+  const awayEvents: MatchEvent[] = [];
+  const otherEvents: MatchEvent[] = [];
+  const pegiPlays: MatchEvent[] = [];
 
-  const assignedEventIds = new Set([
-    ...homeEvents.map(e => e.id),
-    ...awayEvents.map(e => e.id),
-    ...pegiPlays.map(e => e.id)
-  ]);
+  events.forEach(e => {
+      // New events have a 'side' property for robust categorization
+      if (e.side === 'home') {
+          homeEvents.push(e);
+          return;
+      }
+      if (e.side === 'away') {
+          awayEvents.push(e);
+          return;
+      }
 
-  // Any event not assigned to a team column or PEGI is an "other" event.
-  // This catches general notes, timer events, and edited events that no longer match a team.
-  const otherEvents = events.filter(e => !assignedEventIds.has(e.id));
+      // For backward compatibility, check message content for older events
+      // that don't have the 'side' property.
+      if (e.side === undefined) {
+          const teamSpecificCategories = ['goals', 'cards', 'subs', 'general'];
+          if (teamSpecificCategories.includes(e.category)) {
+              if (e.message.toLowerCase().includes(`(${teamNames.home.toLowerCase()})`)) {
+                  homeEvents.push(e);
+                  return;
+              }
+              if (e.message.toLowerCase().includes(`(${teamNames.away.toLowerCase()})`)) {
+                  awayEvents.push(e);
+                  return;
+              }
+          }
+      }
+      
+      // PEGI plays are handled separately
+      if (e.category === 'pegi') {
+        pegiPlays.push(e);
+        return;
+      }
+
+      // Anything left is a general/other event (timer, notes, score corrections)
+      otherEvents.push(e);
+  });
 
   const homeGoals = homeEvents.filter(e => e.category === 'goals');
   const awayGoals = awayEvents.filter(e => e.category === 'goals');
