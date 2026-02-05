@@ -60,28 +60,14 @@ export function ReportView({ matchState }: ReportViewProps) {
   // --- Definitive Event Classification Logic ---
   const safeEvents = events || [];
 
-  // Helper functions to make classification robust for old and new data
-  const isHomeEvent = (e: MatchEvent) => {
-    if (e.side) return e.side === 'home';
-    // Fallback for old data without 'side' property by checking message
-    return e.message.toLowerCase().includes(teamNames.home.toLowerCase());
-  };
-
-  const isAwayEvent = (e: MatchEvent) => {
-      if (e.side) return e.side === 'away';
-      // Fallback for old data without 'side' property by checking message
-      return e.message.toLowerCase().includes(teamNames.away.toLowerCase());
-  };
-
-  // Filter events based on the robust helpers
-  const homeGoals = safeEvents.filter(e => e.category === 'goals' && isHomeEvent(e));
-  const awayGoals = safeEvents.filter(e => e.category === 'goals' && isAwayEvent(e));
-  const homeYellows = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟨') && isHomeEvent(e));
-  const awayYellows = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟨') && isAwayEvent(e));
-  const homeReds = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟥') && isHomeEvent(e));
-  const awayReds = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟥') && isAwayEvent(e));
-  const homeSubs = safeEvents.filter(e => e.category === 'subs' && isHomeEvent(e));
-  const awaySubs = safeEvents.filter(e => e.category === 'subs' && isAwayEvent(e));
+  const homeGoals = safeEvents.filter(e => e.category === 'goals' && e.side === 'home');
+  const awayGoals = safeEvents.filter(e => e.category === 'goals' && e.side === 'away');
+  const homeYellows = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟨') && e.side === 'home');
+  const awayYellows = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟨') && e.side === 'away');
+  const homeReds = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟥') && e.side === 'home');
+  const awayReds = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟥') && e.side === 'away');
+  const homeSubs = safeEvents.filter(e => e.category === 'subs' && e.side === 'home');
+  const awaySubs = safeEvents.filter(e => e.category === 'subs' && e.side === 'away');
 
   // Events for the bottom section
   const noteEvents = safeEvents.filter(e => e.category === 'notes');
@@ -314,7 +300,18 @@ export function ReportView({ matchState }: ReportViewProps) {
                 <text x="400" y={noteEvents.length > 0 ? "95" : "25"} textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE" style={{textTransform: 'uppercase'}}>Jugadas PEGI</text>
                  <foreignObject x="50" y={noteEvents.length > 0 ? "120" : "50"} width="700" height="60">
                   <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E9D5FF', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
-                    {pegiPlays.map(p => p.message.replace(/🔎|JUGADAS PEGI: /g, '').trim()).join('; ')}
+                    {pegiPlays.map(p => {
+                      const msg = p.message;
+                      if (msg.endsWith('No')) {
+                          return 'Jugadas pegi no';
+                      }
+                      const yesPrefix = '🔎 JUGADAS PEGI: Sí - ';
+                      if (msg.startsWith(yesPrefix)) {
+                          return msg.substring(yesPrefix.length);
+                      }
+                      // Fallback for older data formats
+                      return msg.replace(/🔎|JUGADAS PEGI: /g, '').trim();
+                    }).join('; ')}
                   </p>
                 </foreignObject>
               </>
