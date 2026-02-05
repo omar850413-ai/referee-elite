@@ -63,24 +63,14 @@ export function ReportView({ matchState }: ReportViewProps) {
   const pegiPlays: MatchEvent[] = [];
 
   events.forEach(e => {
-    // Only include event types that are meant to be in the main columns
-    const isTeamColumnEvent = ['goals', 'cards', 'subs'].includes(e.category);
-
-    if (e.side === 'home' && isTeamColumnEvent) {
-        homeEvents.push(e);
-        return;
-    }
-    if (e.side === 'away' && isTeamColumnEvent) {
-        awayEvents.push(e);
-        return;
-    }
-    if (e.category === 'pegi') {
-      pegiPlays.push(e);
-      return;
-    }
-    if (e.category === 'notes') {
+    if (e.side === 'home') {
+      homeEvents.push(e);
+    } else if (e.side === 'away') {
+      awayEvents.push(e);
+    } else if (e.category === 'notes') {
       noteEvents.push(e);
-      return;
+    } else if (e.category === 'pegi') {
+      pegiPlays.push(e);
     }
   });
 
