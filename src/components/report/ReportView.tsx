@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef } from 'react';
@@ -58,50 +57,19 @@ export function ReportView({ matchState }: ReportViewProps) {
     };
   };
 
-  // --- Event Classification Logic ---
-  const homeGoals: MatchEvent[] = [];
-  const awayGoals: MatchEvent[] = [];
-  const homeYellows: MatchEvent[] = [];
-  const awayYellows: MatchEvent[] = [];
-  const homeReds: MatchEvent[] = [];
-  const awayReds: MatchEvent[] = [];
-  const homeSubs: MatchEvent[] = [];
-  const awaySubs: MatchEvent[] = [];
-  const noteEvents: MatchEvent[] = [];
-  const pegiPlays: MatchEvent[] = [];
+  // --- Event Classification Logic (Robust Version) ---
+  const safeEvents = events || [];
+  const homeGoals = safeEvents.filter(e => e.category === 'goals' && e.side === 'home');
+  const awayGoals = safeEvents.filter(e => e.category === 'goals' && e.side === 'away');
+  const homeYellows = safeEvents.filter(e => e.category === 'cards' && e.side === 'home' && e.message.includes('🟨'));
+  const awayYellows = safeEvents.filter(e => e.category === 'cards' && e.side === 'away' && e.message.includes('🟨'));
+  const homeReds = safeEvents.filter(e => e.category === 'cards' && e.side === 'home' && e.message.includes('🟥'));
+  const awayReds = safeEvents.filter(e => e.category === 'cards' && e.side === 'away' && e.message.includes('🟥'));
+  const homeSubs = safeEvents.filter(e => e.category === 'subs' && e.side === 'home');
+  const awaySubs = safeEvents.filter(e => e.category === 'subs' && e.side === 'away');
+  const noteEvents = safeEvents.filter(e => e.category === 'notes');
+  const pegiPlays = safeEvents.filter(e => e.category === 'pegi');
 
-  // This is the definitive, corrected classification logic.
-  if (events && events.length > 0) {
-    for (const event of events) {
-      switch (event.category) {
-        case 'goals':
-          if (event.side === 'home') homeGoals.push(event);
-          if (event.side === 'away') awayGoals.push(event);
-          break;
-        case 'cards':
-          if (event.message.includes('🟨')) {
-            if (event.side === 'home') homeYellows.push(event);
-            if (event.side === 'away') awayYellows.push(event);
-          } else if (event.message.includes('🟥')) {
-            if (event.side === 'home') homeReds.push(event);
-            if (event.side === 'away') awayReds.push(event);
-          }
-          break;
-        case 'subs':
-          if (event.side === 'home') homeSubs.push(event);
-          if (event.side === 'away') awaySubs.push(event);
-          break;
-        case 'notes':
-          noteEvents.push(event);
-          break;
-        case 'pegi':
-          pegiPlays.push(event);
-          break;
-        default:
-          break;
-      }
-    }
-  }
 
   const parseEvent = (event: MatchEvent) => {
     const time = event.time;
@@ -145,7 +113,7 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const renderEventList = (title: string, items: MatchEvent[], x: number, y: number, textColor: string, titleColor: string) => {
     const elements: JSX.Element[] = [];
-    if (items.length === 0) return { elements, endY: y };
+    if (!items || items.length === 0) return { elements, endY: y };
 
     elements.push(
       <text key={title} x={x} y={y} fontSize="22" fontFamily="Inter, sans-serif" fontWeight="900" fill={titleColor} textAnchor="middle">
