@@ -11,7 +11,7 @@ interface ReportViewProps {
 }
 
 export function ReportView({ matchState }: ReportViewProps) {
-  const { scores, teamNames, matchInfo, events } = matchState;
+  const { scores, teamNames, matchInfo, events, fouls } = matchState;
   const svgRef = useRef<SVGSVGElement>(null);
 
   const localBg = PlaceHolderImages.find(p => p.id === 'local-team-bg')?.imageUrl;
@@ -63,22 +63,25 @@ export function ReportView({ matchState }: ReportViewProps) {
   const pegiPlays: MatchEvent[] = [];
 
   events.forEach(e => {
-      if (e.side === 'home') {
-          homeEvents.push(e);
-          return;
-      }
-      if (e.side === 'away') {
-          awayEvents.push(e);
-          return;
-      }
-      if (e.category === 'pegi') {
-        pegiPlays.push(e);
+    // Only include event types that are meant to be in the main columns
+    const isTeamColumnEvent = ['goals', 'cards', 'subs'].includes(e.category);
+
+    if (e.side === 'home' && isTeamColumnEvent) {
+        homeEvents.push(e);
         return;
-      }
-      if (e.category === 'notes') {
-        noteEvents.push(e);
+    }
+    if (e.side === 'away' && isTeamColumnEvent) {
+        awayEvents.push(e);
         return;
-      }
+    }
+    if (e.category === 'pegi') {
+      pegiPlays.push(e);
+      return;
+    }
+    if (e.category === 'notes') {
+      noteEvents.push(e);
+      return;
+    }
   });
 
   const homeGoals = homeEvents.filter(e => e.category === 'goals');
@@ -96,6 +99,7 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const parseEvent = (event: MatchEvent) => {
     const time = event.time;
+    // Use a case-insensitive regex to find and remove team name
     const teamNameRegex = new RegExp(`\\((${teamNames.home}|${teamNames.away})\\)`, 'i');
     let message = event.message.replace(teamNameRegex, '').trim();
 
@@ -113,8 +117,9 @@ export function ReportView({ matchState }: ReportViewProps) {
         };
     }
     
+    // Clean up various symbols
     message = message
-      .replace(/⚽|🔄|📝|🔎|🚩|▶️|⏹️|🏁|✏️/g, '')
+      .replace(/⚽|🔄|📝|🔎/g, '')
       .trim();
       
     if (event.category === 'subs') {
@@ -186,7 +191,7 @@ export function ReportView({ matchState }: ReportViewProps) {
   };
 
   const homeColumn = [];
-  let yHome = 520;
+  let yHome = 550;
 
   const homeGoalsSection = renderEventList('Anotadores', homeGoals, 200, yHome, '#E2E8F0', '#FFFFFF');
   if (homeGoals.length > 0) {
@@ -213,7 +218,7 @@ export function ReportView({ matchState }: ReportViewProps) {
   }
   
   const awayColumn = [];
-  let yAway = 520;
+  let yAway = 550;
 
   const awayGoalsSection = renderEventList('Anotadores', awayGoals, 600, yAway, '#E2E8F0', '#FFFFFF');
   if (awayGoals.length > 0) {
@@ -286,9 +291,14 @@ export function ReportView({ matchState }: ReportViewProps) {
           {/* Main Content */}
           <text x="200" y="190" fontFamily="Inter, sans-serif" fontSize="56" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.home}</text>
           <text x="200" y="380" fontFamily="Inter, sans-serif" fontSize="240" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
+          <text x="200" y="440" textAnchor="middle" fill="#FDBA74" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
+          <text x="200" y="480" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.home}</text>
+
 
           <text x="600" y="190" fontFamily="Inter, sans-serif" fontSize="56" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.away}</text>
           <text x="600" y="380" fontFamily="Inter, sans-serif" fontSize="240" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
+          <text x="600" y="440" textAnchor="middle" fill="#22D3EE" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
+          <text x="600" y="480" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
 
           {/* Event Columns */}
           {homeColumn}
@@ -298,7 +308,7 @@ export function ReportView({ matchState }: ReportViewProps) {
           <rect y="1020" width="800" height="180" fill="rgba(0,0,0,0.2)" />
           <g transform="translate(0, 1040)">
             {(noteEvents.length > 0 || pegiPlays.length > 0) && (
-                 <text x="400" y="0" textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA" style={{textTransform: 'uppercase'}}>Anotaciones y Observaciones</text>
+                 <text x="400" y="0" textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA" style={{textTransform: 'uppercase'}}>Anotaciones del Asesor</text>
             )}
             {noteEvents.length > 0 && (
                  <foreignObject x="50" y="25" width="700" height="60">
