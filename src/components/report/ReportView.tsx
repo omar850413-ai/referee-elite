@@ -73,7 +73,7 @@ export function ReportView({ matchState }: ReportViewProps) {
   const homeSubs = homeEvents.filter(e => e.category === 'subs');
   const awaySubs = awayEvents.filter(e => e.category === 'subs');
 
-  const notes = events.filter(e => e.category === 'notes');
+  const otherEvents = events.filter(e => e.category === 'notes' || e.category === 'general');
   const pegiPlays = events.filter(e => e.category === 'pegi');
 
 
@@ -292,11 +292,6 @@ export function ReportView({ matchState }: ReportViewProps) {
 
           <text x="600" y="190" fontFamily="Inter, sans-serif" fontSize="56" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.away}</text>
           <text x="600" y="380" fontFamily="Inter, sans-serif" fontSize="240" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
-          
-          <rect x="350" y="440" width="100" height="40" rx="20" fill="rgba(0,0,0,0.3)" />
-          <text x="400" y="468" textAnchor="middle" fill="white" fontSize="24" fontWeight="700">
-            {`${scores.home} - ${scores.away}`}
-          </text>
 
           {/* Event Columns */}
           {homeColumn}
@@ -305,20 +300,20 @@ export function ReportView({ matchState }: ReportViewProps) {
           {/* Footer */}
           <rect y="1020" width="800" height="180" fill="rgba(0,0,0,0.2)" />
           <g transform="translate(0, 1040)">
-            {notes.length > 0 && (
+            {otherEvents.length > 0 && (
               <>
-                <text x="400" y="0" textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA" style={{textTransform: 'uppercase'}}>Anotaciones del Asesor</text>
+                <text x="400" y="0" textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA" style={{textTransform: 'uppercase'}}>Anotaciones y Observaciones</text>
                  <foreignObject x="50" y="25" width="700" height="60">
                   <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E2E8F0', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
-                    {notes.map(n => n.message.replace('📝', '').trim()).join('; ')}
+                    {otherEvents.map(n => n.message.replace(/📝|✏️|▶️|⏹️|🏁|🚩/g, '').trim()).join('; ')}
                   </p>
                 </foreignObject>
               </>
             )}
             {pegiPlays.length > 0 && (
               <>
-                <text x="400" y={notes.length > 0 ? "95" : "0"} textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE" style={{textTransform: 'uppercase'}}>Jugadas PEGI</text>
-                 <foreignObject x="50" y={notes.length > 0 ? "120" : "25"} width="700" height="60">
+                <text x="400" y={otherEvents.length > 0 ? "95" : "0"} textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE" style={{textTransform: 'uppercase'}}>Jugadas PEGI</text>
+                 <foreignObject x="50" y={otherEvents.length > 0 ? "120" : "25"} width="700" height="60">
                   <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E9D5FF', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
                     {pegiPlays.map(p => p.message.replace(/🔎|JUGADAS PEGI: /g, '').trim()).join('; ')}
                   </p>
