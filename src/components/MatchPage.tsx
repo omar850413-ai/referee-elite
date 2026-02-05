@@ -68,6 +68,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const [editEventMsg, setEditEventMsg] = useState('');
   const [editEventTime, setEditEventTime] = useState('');
   const [editEventPdfDescription, setEditEventPdfDescription] = useState('');
+  const [editEventSide, setEditEventSide] = useState<'home' | 'away'>();
   
   const [pegiDecision, setPegiDecision] = useState<'yes' | 'no' | null>(null);
   const [pegiDescription, setPegiDescription] = useState('');
@@ -436,12 +437,17 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     setEditEventMsg(event.message);
     setEditEventTime(event.time);
     setEditEventPdfDescription(event.pdfDescription || '');
+    setEditEventSide(event.side);
     setModal('edit-event');
   }
 
   const saveEventEdit = () => {
     if (!matchState) return;
-    const updatedEvents = matchState.events.map(e => e.id === editingEventId ? {...e, message: editEventMsg, time: editEventTime} : e);
+    const updatedEvents = matchState.events.map(e => 
+      e.id === editingEventId 
+        ? {...e, message: editEventMsg, time: editEventTime, side: editEventSide} 
+        : e
+    );
     updateMatch({ events: updatedEvents });
     setModal(null);
   }
@@ -963,13 +969,34 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
-              <label className="text-[10px] font-black uppercase text-gray-400">Mensaje:</label>
+              <Label className="text-[10px] font-black uppercase text-gray-400">Mensaje:</Label>
               <Input value={editEventMsg} onChange={e => setEditEventMsg(e.target.value)} className="font-bold" />
             </div>
              <div>
-              <label className="text-[10px] font-black uppercase text-gray-400">Tiempo:</label>
+              <Label className="text-[10px] font-black uppercase text-gray-400">Tiempo:</Label>
               <Input value={editEventTime} onChange={e => setEditEventTime(e.target.value)} className="font-mono font-bold" />
             </div>
+
+            {editEventSide !== undefined && (
+              <div>
+                <Label className="text-[10px] font-black uppercase text-gray-400">Equipo:</Label>
+                <RadioGroup 
+                  value={editEventSide} 
+                  onValueChange={(value: 'home' | 'away') => setEditEventSide(value)} 
+                  className="grid grid-cols-2 gap-4 mt-1"
+                >
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="home" id="edit-side-home" />
+                        <Label htmlFor="edit-side-home" className="font-normal">{teamNames.home}</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="away" id="edit-side-away" />
+                        <Label htmlFor="edit-side-away" className="font-normal">{teamNames.away}</Label>
+                    </div>
+                </RadioGroup>
+              </div>
+            )}
+
             <div className="flex flex-col gap-2 pt-2">
                <div className="flex gap-2">
                 <Button onClick={saveEventEdit} className="flex-1">Guardar</Button>
