@@ -19,12 +19,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls, UserProfile, Timer, MatchState } from '@/lib/types';
 import { formatTime } from '@/lib/utils';
@@ -743,16 +737,9 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           >
             🔎 JUGADAS PEGI
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
-              >
-                Generar Informe
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => {
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={() => {
                 if (!matchState || matchState.events.length === 0) {
                   toast({
                     title: 'No hay datos suficientes',
@@ -762,10 +749,13 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                   return;
                 }
                 setIsReportOpen(true);
-              }}>
-                Generar Imagen
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
+              }}
+              className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
+            >
+              Imagen
+            </Button>
+            <Button
+              onClick={() => {
                 if (!matchState || matchState.events.length === 0) {
                   toast({
                     title: 'No hay datos suficientes',
@@ -775,11 +765,12 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                   return;
                 }
                 setIsPdfReportOpen(true);
-              }}>
-                Generar PDF
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              }}
+              className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
+            >
+              PDF
+            </Button>
+          </div>
           <Button
             onClick={triggerFullReset}
             variant="destructive"
