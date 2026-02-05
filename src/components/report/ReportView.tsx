@@ -11,7 +11,7 @@ interface ReportViewProps {
 }
 
 export function ReportView({ matchState }: ReportViewProps) {
-  const { scores, teamNames, matchInfo, events, fouls } = matchState;
+  const { scores, teamNames, matchInfo, events } = matchState;
   const svgRef = useRef<SVGSVGElement>(null);
 
   const localBg = PlaceHolderImages.find(p => p.id === 'local-team-bg')?.imageUrl;
@@ -22,7 +22,6 @@ export function ReportView({ matchState }: ReportViewProps) {
 
     const svg = svgRef.current;
     const style = document.createElement('style');
-    // It's important to embed the font that the SVG uses.
     style.innerHTML = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
     svg { font-family: 'Inter', sans-serif; }`;
     svg.insertBefore(style, svg.firstChild);
@@ -31,7 +30,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     svg.removeChild(style);
 
     const canvas = document.createElement('canvas');
-    const scale = 2; // For higher resolution
+    const scale = 2;
     canvas.width = 800 * scale;
     canvas.height = 1200 * scale;
     const ctx = canvas.getContext('2d');
@@ -42,7 +41,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
 
     img.onload = () => {
-      ctx.fillStyle = '#0F172A'; // Set a background color for the JPEG
+      ctx.fillStyle = '#0F172A';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       const jpegUrl = canvas.toDataURL('image/jpeg', 0.95);
@@ -60,9 +59,8 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const homeEvents: MatchEvent[] = [];
   const awayEvents: MatchEvent[] = [];
-  const otherEvents: MatchEvent[] = [];
+  const noteEvents: MatchEvent[] = [];
   const pegiPlays: MatchEvent[] = [];
-  const timerEventKeywords = ['INICIO PARTIDO', 'FIN 1T', 'INICIO 2T', 'FIN PARTIDO'];
 
   events.forEach(e => {
       if (e.side === 'home') {
@@ -73,20 +71,14 @@ export function ReportView({ matchState }: ReportViewProps) {
           awayEvents.push(e);
           return;
       }
-      
-      // PEGI plays are handled separately
       if (e.category === 'pegi') {
         pegiPlays.push(e);
         return;
       }
-
-      // Exclude timer events from the "other" category
-      if (timerEventKeywords.some(keyword => e.message.includes(keyword))) {
-          return;
+      if (e.category === 'notes') {
+        noteEvents.push(e);
+        return;
       }
-
-      // Anything left is a general/other event (notes, score corrections, etc.)
-      otherEvents.push(e);
   });
 
   const homeGoals = homeEvents.filter(e => e.category === 'goals');
@@ -139,7 +131,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     
     return {
         isCard: false,
-        text: `${message} min ${time}`,
+        text: `${message} ${event.category !== 'notes' ? `min ${time}` : ''}`.trim(),
     };
   };
 
@@ -153,22 +145,21 @@ export function ReportView({ matchState }: ReportViewProps) {
       </text>
     );
 
-    let currentY = y + 40; // Increased spacing after title
+    let currentY = y + 40;
     items.forEach((item, index) => {
       const parsed = parseEvent(item);
       if (parsed.isCard && parsed.causal) {
-        // Card with causal
         elements.push(
           <text key={`${index}-target`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
             {parsed.targetInfo}
           </text>
         );
-        currentY += 22; // Space for causal below
+        currentY += 22;
 
         elements.push(
           <foreignObject key={`${index}-causal`} x={x - 175} y={currentY - 15} width="350" height="40">
             <p xmlns="http://www.w3.org/1999/xhtml" style={{
-              color: '#A1A1AA', // muted gray
+              color: '#A1A1AA',
               fontSize: '14px',
               fontStyle: 'italic',
               whiteSpace: 'normal',
@@ -180,16 +171,15 @@ export function ReportView({ matchState }: ReportViewProps) {
             </p>
           </foreignObject>
         );
-        currentY += 32; // Extra space after causal
+        currentY += 32;
       } else {
-        // Goal, sub, or card without causal
         const textToShow = parsed.isCard ? parsed.targetInfo : parsed.text;
         elements.push(
           <text key={index} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
             {textToShow}
           </text>
         );
-        currentY += 30; // Standard spacing
+        currentY += 30;
       }
     });
     return { elements, endY: currentY };
@@ -222,15 +212,6 @@ export function ReportView({ matchState }: ReportViewProps) {
     yHome = homeSubsSection.endY + 40;
   }
   
-  homeColumn.push(
-    <text key="home-fouls-title" x={200} y={yHome} fontSize="22" fontFamily="Inter, sans-serif" fontWeight="900" fill="#FFFFFF" textAnchor='middle'>
-      Faltas Cometidas
-    </text>,
-    <text key="home-fouls-count" x={200} y={yHome + 35} fontSize="18" fontFamily="Inter, sans-serif" fontWeight="700" fill="#E2E8F0" textAnchor='middle'>
-      Total: {fouls.home}
-    </text>
-  );
-
   const awayColumn = [];
   let yAway = 520;
 
@@ -257,15 +238,6 @@ export function ReportView({ matchState }: ReportViewProps) {
     awayColumn.push(...awaySubsSection.elements);
     yAway = awaySubsSection.endY + 40;
   }
-
-  awayColumn.push(
-    <text key="away-fouls-title" x={600} y={yAway} fontSize="22" fontFamily="Inter, sans-serif" fontWeight="900" fill="#FFFFFF" textAnchor='middle'>
-      Faltas Cometidas
-    </text>,
-    <text key="away-fouls-count" x={600} y={yAway + 35} fontSize="18" fontWeight="700" fill="#E2E8F0" textAnchor='middle'>
-      Total: {fouls.away}
-    </text>
-  );
 
 
   return (
@@ -325,20 +297,20 @@ export function ReportView({ matchState }: ReportViewProps) {
           {/* Footer */}
           <rect y="1020" width="800" height="180" fill="rgba(0,0,0,0.2)" />
           <g transform="translate(0, 1040)">
-            {(otherEvents.length > 0 || pegiPlays.length > 0) && (
+            {(noteEvents.length > 0 || pegiPlays.length > 0) && (
                  <text x="400" y="0" textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA" style={{textTransform: 'uppercase'}}>Anotaciones y Observaciones</text>
             )}
-            {otherEvents.length > 0 && (
+            {noteEvents.length > 0 && (
                  <foreignObject x="50" y="25" width="700" height="60">
                   <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E2E8F0', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
-                    {otherEvents.map(e => parseEvent(e).text).join('; ')}
+                    {noteEvents.map(e => parseEvent(e).text).join('; ')}
                   </p>
                 </foreignObject>
             )}
             {pegiPlays.length > 0 && (
               <>
-                <text x="400" y={otherEvents.length > 0 ? "95" : "25"} textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE" style={{textTransform: 'uppercase'}}>Jugadas PEGI</text>
-                 <foreignObject x="50" y={otherEvents.length > 0 ? "120" : "50"} width="700" height="60">
+                <text x="400" y={noteEvents.length > 0 ? "95" : "25"} textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE" style={{textTransform: 'uppercase'}}>Jugadas PEGI</text>
+                 <foreignObject x="50" y={noteEvents.length > 0 ? "120" : "50"} width="700" height="60">
                   <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E9D5FF', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
                     {pegiPlays.map(p => p.message.replace(/🔎|JUGADAS PEGI: /g, '').trim()).join('; ')}
                   </p>
