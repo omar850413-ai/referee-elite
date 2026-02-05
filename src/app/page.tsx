@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc, setDoc, DocumentReference } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { UserProfile, MatchState } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from '@/components/ui/Logo';
@@ -47,7 +47,14 @@ export default function Home() {
         // Use setDoc to create the new match document
         setDoc(ref, initialState).then(() => {
           setMatchDocRef(ref);
-        }).catch(err => console.error("Error creating match document:", err));
+        }).catch(err => {
+            const permissionError = new FirestorePermissionError({
+              path: ref.path,
+              operation: 'create',
+              requestResourceData: initialState,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
       } else {
         // Document already exists, just set the reference
         setMatchDocRef(ref);

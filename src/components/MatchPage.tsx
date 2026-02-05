@@ -247,7 +247,12 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
       };
       setDoc(matchDocRef, initialState).catch((error) => {
-        // Handle potential permission error on reset
+        const permissionError = new FirestorePermissionError({
+            path: matchDocRef.path,
+            operation: 'write',
+            requestResourceData: initialState,
+        });
+        errorEmitter.emit('permission-error', permissionError);
       });
       setModal(null);
   };
@@ -382,17 +387,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   }
 
   const openPegiModal = () => {
-    if (!matchState) {
-        return;
-    }
-    if (matchState.timer.status === 'NOT_STARTED') {
-      toast({
-        title: 'El partido no ha comenzado',
-        description: 'Debes iniciar el cronómetro para registrar eventos PEGI.',
-        variant: 'destructive',
-      });
-      return;
-    }
     capturedTimeRef.current = getSmartTime();
     setPegiDecision(null);
     setPegiDescription('');
@@ -912,7 +906,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             )}
             
             <DialogFooter className="mt-4">
-                <Button onClick={handleSavePegi} className="w-full shadow-lg">Aceptar</Button>
+                <Button onClick={handleSavePegi} className="w-full shadow-lg" disabled={!pegiDecision}>Aceptar</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
