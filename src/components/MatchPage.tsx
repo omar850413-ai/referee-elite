@@ -91,34 +91,33 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   // --- Timer Sync & Display Logic ---
   useEffect(() => {
     if (!matchState) return;
-    const { timer } = matchState;
-    let totalElapsed = timer.elapsedSeconds;
-    
-    if (timer.isRunning && timer.startTime > 0) {
-      const serverTimeOffset = 0; // Assume client and server time are roughly in sync
-      const timeSinceLastStart = (Date.now() - timer.startTime + serverTimeOffset) / 1000;
-      totalElapsed += timeSinceLastStart;
-    }
-    setDisplaySeconds(totalElapsed);
-  }, [matchState]);
 
-  useEffect(() => {
-    if (matchState?.timer.isRunning) {
-      const internalStartTime = Date.now() - displaySeconds * 1000;
+    const { timer } = matchState;
+
+    if (timer.isRunning) {
+      // If timer is running, set up an interval to update the display
       timerIntervalRef.current = setInterval(() => {
-        setDisplaySeconds((Date.now() - internalStartTime) / 1000);
+        // Calculate the current total elapsed time based on when this period started.
+        const timeSincePeriodStart = (Date.now() - timer.startTime) / 1000;
+        setDisplaySeconds(timer.elapsedSeconds + timeSincePeriodStart);
       }, 1000);
     } else {
+      // If timer is not running, just display the final elapsed seconds.
+      setDisplaySeconds(timer.elapsedSeconds);
+      // And clear any existing interval.
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
     }
+
+    // Cleanup function to clear the interval when the component unmounts
+    // or when the matchState changes (which will re-trigger the effect).
     return () => {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [matchState?.timer.isRunning, displaySeconds]);
+  }, [matchState]);
 
 
   const getSmartTime = () => {
@@ -182,24 +181,60 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const handleTimerClick = () => {
     if (!matchState) return;
 
-    const { status, isRunning } = matchState.timer;
+    const { timer } = matchState;
     const now = Date.now();
     let newTimerState: Partial<Timer> = {};
 
-    if (status === 'NOT_STARTED') {
-      newTimerState = { status: 'FIRST_HALF', isRunning: true, startTime: now, elapsedSeconds: 0 };
-    } else if (status === 'FIRST_HALF') {
-        const elapsed = displaySeconds;
-        newTimerState = { status: 'HALF_TIME', isRunning: false, startTime: 0, elapsedSeconds: elapsed, firstHalfEndSeconds: elapsed };
-    } else if (status === 'HALF_TIME') {
-        newTimerState = { status: 'SECOND_HALF', isRunning: true, startTime: now };
-    } else if (status === 'SECOND_HALF') {
-        newTimerState = { status: 'FINISHED', isRunning: false, startTime: 0, elapsedSeconds: displaySeconds };
-    } else {
-        return; // FINISHED, do nothing
+    switch (timer.status) {
+      case 'NOT_STARTED':
+        // Start the match -> First half running
+        newTimerState = {
+          status: 'FIRST_HALF',
+          isRunning: true,
+          startTime: now, // The timestamp when the current period started
+          elapsedSeconds: 0, // No time has elapsed before this period
+        };
+        break;
+
+      case 'FIRST_HALF':
+        // End first half -> Go to half time
+        const firstHalfElapsed = timer.elapsedSeconds + (now - timer.startTime) / 1000;
+        newTimerState = {
+          status: 'HALF_TIME',
+          isRunning: false,
+          startTime: 0, // Not running, so no start time for the period
+          elapsedSeconds: firstHalfElapsed, // Save the total time so far
+          firstHalfEndSeconds: firstHalfElapsed, // Save this for 2nd half calculations
+        };
+        break;
+
+      case 'HALF_TIME':
+        // Start second half -> Second half running
+        newTimerState = {
+          status: 'SECOND_HALF',
+          isRunning: true,
+          startTime: now, // The timestamp when the second half started
+          // elapsedSeconds is preserved from half time, representing the full duration of the first half.
+        };
+        break;
+
+      case 'SECOND_HALF':
+        // End second half -> Match finished
+        const totalElapsed = timer.elapsedSeconds + (now - timer.startTime) / 1000;
+        newTimerState = {
+          status: 'FINISHED',
+          isRunning: false,
+          startTime: 0,
+          elapsedSeconds: totalElapsed, // Save the final total time
+        };
+        break;
+
+      case 'FINISHED':
+        // Do nothing if match is already finished
+        return;
     }
 
-    updateMatch({ timer: { ...matchState.timer, ...newTimerState } });
+    updateMatch({ timer: { ...timer, ...newTimerState } });
   };
 
   const triggerResetCrono = () => setModal('reset-crono-confirm');
@@ -906,7 +941,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             )}
             
             <DialogFooter className="mt-4">
-                <Button onClick={handleSavePegi} className="w-full shadow-lg" disabled={!pegiDecision}>Aceptar</Button>
+                <Button onClick={handleSavePegi} className="w-full shadow-lg">Aceptar</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -988,5 +1023,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     </div>
   );
 }
+
+    
 
     
