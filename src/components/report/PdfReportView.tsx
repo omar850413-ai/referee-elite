@@ -95,9 +95,10 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
         <table className="w-full text-sm border-collapse">
             <thead>
                 <tr className="border-b-2 border-black">
-                    <th className="w-[15%] text-left font-bold p-2">Minuto</th>
-                    <th className="w-[25%] text-left font-bold p-2">Acción</th>
-                    <th className="w-[60%] text-left font-bold p-2">Descripción</th>
+                    <th className="w-[12%] text-left font-bold p-2">Minuto</th>
+                    <th className="w-[20%] text-left font-bold p-2">Acción</th>
+                    <th className="w-[48%] text-left font-bold p-2">Descripción</th>
+                    <th className="w-[20%] text-left font-bold p-2">Valoración</th>
                 </tr>
             </thead>
             <tbody>
@@ -139,13 +140,17 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                                     </div>
                                 )}
                             </td>
+                            <td className="p-2 font-bold">
+                                {event.valuation === 'correcta' && <span style={{ color: 'green' }}>Correcto</span>}
+                                {event.valuation === 'incorrecta' && <span style={{ color: 'red' }}>Incorrecto</span>}
+                            </td>
                         </tr>
                     );
                 })}
 
                 {filteredAndSortedEvents.length === 0 && (
                     <tr>
-                        <td colSpan={3} className="text-center text-gray-500 p-4">
+                        <td colSpan={4} className="text-center text-gray-500 p-4">
                             No hay incidentes (goles, tarjetas, notas) para reportar.
                         </td>
                     </tr>

@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls, UserProfile, Timer, MatchState } from '@/lib/types';
-import { formatTime } from '@/lib/utils';
+import { formatTime, cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ReportView } from '@/components/report/ReportView';
 import { PdfReportView } from '@/components/report/PdfReportView';
@@ -445,6 +445,17 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     updateMatch({ events: updatedEvents });
     setModal(null);
   }
+
+  const handleSetValuation = (valuation: 'correcta' | 'incorrecta') => {
+    if (!matchState || editingEventId === null) return;
+    const updatedEvents = matchState.events.map(e =>
+      e.id === editingEventId
+        ? { ...e, valuation }
+        : e
+    );
+    updateMatch({ events: updatedEvents });
+    setModal('edit-event');
+  };
 
   const deleteEvent = () => {
     if (!matchState) return;
@@ -957,6 +968,13 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-center uppercase italic text-primary/90">Editar Registro</DialogTitle>
+            {matchState.events.find(e => e.id === editingEventId)?.valuation && (
+                <DialogDescription className="text-center !mt-2">
+                Valoración actual: <span className={cn('font-bold', matchState.events.find(e => e.id === editingEventId)?.valuation === 'correcta' ? 'text-emerald-600' : 'text-red-600' )}>
+                    {matchState.events.find(e => e.id === editingEventId)?.valuation?.toUpperCase()}
+                </span>
+                </DialogDescription>
+            )}
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
@@ -998,6 +1016,12 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 onClick={() => setModal('edit-pdf-description')}
               >
                 Descripción de la jugada (PDF)
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setModal('edit-valuation')}
+              >
+                Valoración
               </Button>
             </div>
           </div>
@@ -1127,6 +1151,21 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             updateMatch({ scores: manualScores });
             setModal(null);
           }} className="w-full shadow-lg">Actualizar Marcador</Button>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modal === 'edit-valuation'} onOpenChange={() => setModal('edit-event')}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle className="text-center uppercase italic text-primary/90">Valoración de la Jugada</DialogTitle>
+                <DialogDescription className="text-center pt-2">
+                    Califica la decisión arbitral para esta jugada.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4 pt-4">
+                <Button onClick={() => handleSetValuation('correcta')} className="bg-emerald-600 hover:bg-emerald-700 text-white">Correcta</Button>
+                <Button onClick={() => handleSetValuation('incorrecta')} variant="destructive">Incorrecta</Button>
+            </div>
         </DialogContent>
       </Dialog>
 

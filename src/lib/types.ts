@@ -28,6 +28,7 @@ export interface MatchEvent {
   message: string;
   side?: 'home' | 'away';
   pdfDescription?: string;
+  valuation?: 'correcta' | 'incorrecta';
 }
 
 export interface MatchInfo {
