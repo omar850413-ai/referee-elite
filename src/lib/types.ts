@@ -27,6 +27,7 @@ export interface MatchEvent {
   category: string;
   message: string;
   side?: 'home' | 'away';
+  pdfDescription?: string;
 }
 
 export interface MatchInfo {

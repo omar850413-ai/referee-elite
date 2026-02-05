@@ -66,6 +66,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const [newTeamName, setNewTeamName] = useState('');
   const [editEventMsg, setEditEventMsg] = useState('');
   const [editEventTime, setEditEventTime] = useState('');
+  const [editEventPdfDescription, setEditEventPdfDescription] = useState('');
   
   const [pegiDecision, setPegiDecision] = useState<'yes' | 'no' | null>(null);
   const [pegiDescription, setPegiDescription] = useState('');
@@ -115,38 +116,35 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   // --- Timer Sync & Display Logic ---
   useEffect(() => {
     if (!matchState) return;
-  
+
     const { timer } = matchState;
-  
+
     if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-    }
-  
-    const getInitialDisplaySeconds = () => {
-      if (!timer.isRunning) {
-        return timer.elapsedSeconds;
-      }
-      const timeSinceStart = (Date.now() - timer.startTime) / 1000;
-      return timer.elapsedSeconds + timeSinceStart;
-    };
-  
-    let initialSeconds = getInitialDisplaySeconds();
-    setDisplaySeconds(initialSeconds);
-  
-    if (timer.isRunning) {
-      timerIntervalRef.current = setInterval(() => {
-        // We calculate from the startTime every second for better accuracy
-        const timeSinceStart = (Date.now() - timer.startTime) / 1000;
-        setDisplaySeconds(timer.elapsedSeconds + timeSinceStart);
-      }, 1000);
-    }
-  
-    return () => {
-      if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
-      }
+    }
+
+    const calculateDisplaySeconds = () => {
+        if (!timer.isRunning) {
+            return timer.elapsedSeconds;
+        }
+        const timeSinceStart = (Date.now() - timer.startTime) / 1000;
+        return timer.elapsedSeconds + timeSinceStart;
     };
-  }, [matchState?.timer]); // Depend on the whole timer object
+
+    setDisplaySeconds(calculateDisplaySeconds());
+
+    if (timer.isRunning) {
+        timerIntervalRef.current = setInterval(() => {
+            setDisplaySeconds(calculateDisplaySeconds());
+        }, 1000);
+    }
+
+    return () => {
+        if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+        }
+    };
+}, [matchState?.timer]);
 
 
   const getSmartTime = () => {
@@ -160,31 +158,24 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     }
     
     // During the first half
-    if (status === 'FIRST_HALF') {
-      const minutes = Math.floor(totalSeconds / 60);
+    if (status === 'FIRST_HALF' || status === 'HALF_TIME') {
+      const secondsToFormat = status === 'HALF_TIME' ? (firstHalfEndSeconds ?? 0) : totalSeconds;
+      const minutes = Math.floor(secondsToFormat / 60);
+
       if (minutes >= 45) {
-        const extraSeconds = totalSeconds - 45 * 60;
-        const extraMinutes = Math.floor(extraSeconds / 60) + 1;
+        const extraSeconds = secondsToFormat - 45 * 60;
+        // For half time, we show the final added minute. For running time, we show the current one.
+        const extraMinutes = status === 'HALF_TIME'
+            ? Math.ceil(extraSeconds / 60)
+            : Math.floor(extraSeconds / 60) + 1;
         return `45+${extraMinutes}`;
       }
-      return formatTime(totalSeconds);
-    }
-
-    const firstHalfDuration = firstHalfEndSeconds ?? 0;
-    
-    // At half time, display the duration of the first half
-    if (status === 'HALF_TIME') {
-        const minutes = Math.floor(firstHalfDuration / 60);
-        if (minutes >= 45) {
-          const extraSeconds = firstHalfDuration - 45 * 60;
-          const extraMinutes = Math.floor(extraSeconds / 60) + 1;
-          return `45+${extraMinutes}`;
-        }
-        return formatTime(firstHalfDuration);
+      return formatTime(secondsToFormat);
     }
     
     // During the second half or after the match is finished
     if (status === 'SECOND_HALF' || status === 'FINISHED') {
+        const firstHalfDuration = firstHalfEndSeconds ?? 0;
         // Time elapsed in the second half is total time minus the first half's duration
         const secondHalfSeconds = totalSeconds - firstHalfDuration;
         const gameMinute = 45 + Math.floor(secondHalfSeconds / 60);
@@ -193,14 +184,15 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         if (gameMinute >= 90) {
             const regulationSecondHalfSeconds = 45 * 60;
             const extraTimeSeconds = secondHalfSeconds - regulationSecondHalfSeconds;
-            const extraMinutes = Math.floor(extraTimeSeconds / 60) + 1;
+             // For finished, we show the final added minute. For running time, we show the current one.
+            const extraMinutes = status === 'FINISHED'
+              ? Math.ceil(extraTimeSeconds / 60)
+              : Math.floor(extraTimeSeconds / 60) + 1;
             return `90+${extraMinutes}`;
         }
         
         // Regular time display for the second half
-        const displayMinute = gameMinute + 1;
-        const displaySecondInMinute = Math.floor(secondHalfSeconds % 60);
-        return `${String(displayMinute).padStart(2, '0')}:${String(displaySecondInMinute).padStart(2, '0')}`;
+        return formatTime(45 * 60 + secondHalfSeconds);
     }
 
     // Fallback for any other state
@@ -247,6 +239,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 status: 'SECOND_HALF',
                 isRunning: true,
                 startTime: now,
+                // elapsedSeconds remains unchanged until the half ends.
             };
             break;
 
@@ -275,7 +268,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   
       let newTimerState: Timer;
   
-      if (status === 'NOT_STARTED' || status === 'FIRST_HALF') {
+      if (status === 'NOT_STARTED' || status === 'FIRST_HALF' || status === 'HALF_TIME') {
+        // Reset to the very beginning
         newTimerState = {
           status: 'NOT_STARTED',
           startTime: 0,
@@ -283,13 +277,14 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           isRunning: false,
           firstHalfEndSeconds: undefined,
         };
-      } else {
+      } else { // SECOND_HALF or FINISHED
+        // Reset to the beginning of the second half (i.e., half time state)
         newTimerState = {
           status: 'HALF_TIME',
           startTime: 0,
-          elapsedSeconds: firstHalfEndSeconds || 0,
+          elapsedSeconds: firstHalfEndSeconds || 2700, // Default to 45 mins if undefined
           isRunning: false,
-          firstHalfEndSeconds: firstHalfEndSeconds || 0,
+          firstHalfEndSeconds: firstHalfEndSeconds,
         };
       }
       
@@ -443,6 +438,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     setEditingEventId(event.id);
     setEditEventMsg(event.message);
     setEditEventTime(event.time);
+    setEditEventPdfDescription(event.pdfDescription || '');
     setModal('edit-event');
   }
 
@@ -968,11 +964,49 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
               <label className="text-[10px] font-black uppercase text-gray-400">Tiempo:</label>
               <Input value={editEventTime} onChange={e => setEditEventTime(e.target.value)} className="font-mono font-bold" />
             </div>
-            <div className="flex gap-2 pt-2">
-              <Button onClick={saveEventEdit} className="flex-1">Guardar</Button>
-              <Button onClick={deleteEvent} variant="destructive" className="px-4">🗑️</Button>
+            <div className="flex flex-col gap-2 pt-2">
+               <div className="flex gap-2">
+                <Button onClick={saveEventEdit} className="flex-1">Guardar</Button>
+                <Button onClick={deleteEvent} variant="destructive" className="px-4">🗑️</Button>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setModal('edit-pdf-description')}
+              >
+                Descripción de la jugada (PDF)
+              </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+       <Dialog open={modal === 'edit-pdf-description'} onOpenChange={() => setModal('edit-event')}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-center uppercase italic text-primary/90">Descripción para PDF</DialogTitle>
+            <DialogDescription className="text-center pt-2">
+              Esta descripción detallada solo aparecerá en el informe PDF.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={editEventPdfDescription}
+            onChange={(e) => setEditEventPdfDescription(e.target.value)}
+            className="my-4"
+            rows={6}
+            placeholder="Añade una descripción detallada de la jugada..."
+          />
+          <Button onClick={() => {
+            if (!matchState || editingEventId === null) return;
+            const updatedEvents = matchState.events.map(e => 
+              e.id === editingEventId 
+                ? { ...e, pdfDescription: editEventPdfDescription } 
+                : e
+            );
+            updateMatch({ events: updatedEvents });
+            setModal('edit-event');
+          }}>
+            Guardar Descripción
+          </Button>
         </DialogContent>
       </Dialog>
       
@@ -1012,7 +1046,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       
       <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
         <DialogContent className="max-w-4xl p-4 md:p-6">
-          <DialogHeader>
+           <DialogHeader>
             <DialogTitle>Informe del Partido</DialogTitle>
             <DialogDescription>
               Este es un resumen visual del partido. Puedes descargarlo como una imagen JPEG.
