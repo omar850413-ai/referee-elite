@@ -57,16 +57,33 @@ export function ReportView({ matchState }: ReportViewProps) {
     };
   };
 
-  // --- Event Classification Logic (Robust Version) ---
+  // --- Definitive Event Classification Logic ---
   const safeEvents = events || [];
-  const homeGoals = safeEvents.filter(e => e.category === 'goals' && e.side === 'home');
-  const awayGoals = safeEvents.filter(e => e.category === 'goals' && e.side === 'away');
-  const homeYellows = safeEvents.filter(e => e.category === 'cards' && e.side === 'home' && e.message.includes('🟨'));
-  const awayYellows = safeEvents.filter(e => e.category === 'cards' && e.side === 'away' && e.message.includes('🟨'));
-  const homeReds = safeEvents.filter(e => e.category === 'cards' && e.side === 'home' && e.message.includes('🟥'));
-  const awayReds = safeEvents.filter(e => e.category === 'cards' && e.side === 'away' && e.message.includes('🟥'));
-  const homeSubs = safeEvents.filter(e => e.category === 'subs' && e.side === 'home');
-  const awaySubs = safeEvents.filter(e => e.category === 'subs' && e.side === 'away');
+
+  // Helper functions to make classification robust for old and new data
+  const isHomeEvent = (e: MatchEvent) => {
+    if (e.side) return e.side === 'home';
+    // Fallback for old data without 'side' property by checking message
+    return e.message.toLowerCase().includes(teamNames.home.toLowerCase());
+  };
+
+  const isAwayEvent = (e: MatchEvent) => {
+      if (e.side) return e.side === 'away';
+      // Fallback for old data without 'side' property by checking message
+      return e.message.toLowerCase().includes(teamNames.away.toLowerCase());
+  };
+
+  // Filter events based on the robust helpers
+  const homeGoals = safeEvents.filter(e => e.category === 'goals' && isHomeEvent(e));
+  const awayGoals = safeEvents.filter(e => e.category === 'goals' && isAwayEvent(e));
+  const homeYellows = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟨') && isHomeEvent(e));
+  const awayYellows = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟨') && isAwayEvent(e));
+  const homeReds = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟥') && isHomeEvent(e));
+  const awayReds = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟥') && isAwayEvent(e));
+  const homeSubs = safeEvents.filter(e => e.category === 'subs' && isHomeEvent(e));
+  const awaySubs = safeEvents.filter(e => e.category === 'subs' && isAwayEvent(e));
+
+  // Events for the bottom section
   const noteEvents = safeEvents.filter(e => e.category === 'notes');
   const pegiPlays = safeEvents.filter(e => e.category === 'pegi');
 
@@ -75,12 +92,10 @@ export function ReportView({ matchState }: ReportViewProps) {
     const time = event.time;
     let message = event.message;
 
-    if (event.side) {
-        const teamNameToRemove = event.side === 'home' ? teamNames.home : teamNames.away;
-        const teamNameRegex = new RegExp(`\\((${teamNameToRemove})\\)`, 'i');
-        message = message.replace(teamNameRegex, '').trim();
-    }
-
+    // Remove team name from message for cleaner display
+    const teamNameRegex = new RegExp(`\\((${teamNames.home}|${teamNames.away})\\)`, 'i');
+    message = message.replace(teamNameRegex, '').trim();
+    
     if (event.category === 'cards') {
         const symbol = message.includes('🟨') ? '🟨' : '🟥';
         message = message.replace(symbol, '').trim();
@@ -215,7 +230,8 @@ export function ReportView({ matchState }: ReportViewProps) {
     yAway = awaySubsSection.endY + 40;
   }
 
-  const noEvents = [homeGoals, awayGoals, homeYellows, awayYellows, homeReds, awayReds, homeSubs, awaySubs, noteEvents, pegiPlays].every(list => list.length === 0);
+  const noEventsInColumns = homeGoals.length === 0 && awayGoals.length === 0 && homeYellows.length === 0 && awayYellows.length === 0 && homeReds.length === 0 && awayReds.length === 0 && homeSubs.length === 0 && awaySubs.length === 0;
+  const noNotes = noteEvents.length === 0 && pegiPlays.length === 0;
 
   return (
     <div className="w-full">
@@ -276,7 +292,7 @@ export function ReportView({ matchState }: ReportViewProps) {
           {homeColumn}
           {awayColumn}
           
-          {noEvents && (
+          {noEventsInColumns && noNotes && (
             <text x="400" y="650" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="20" fontStyle="italic">No hay eventos para mostrar en el informe.</text>
           )}
 
