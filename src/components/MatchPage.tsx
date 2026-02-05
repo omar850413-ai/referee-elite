@@ -129,10 +129,15 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     const totalSeconds = Math.floor(displaySeconds);
     const { status, firstHalfEndSeconds } = matchState.timer;
 
-    if (status === 'NOT_STARTED' || status === 'FIRST_HALF') {
+    if (status === 'NOT_STARTED') {
+        return '00:00';
+    }
+
+    if (status === 'FIRST_HALF') {
       const minutes = Math.floor(totalSeconds / 60);
       if (minutes >= 45) {
-        return `45+${minutes - 44}`;
+        const extraMinutes = Math.floor((totalSeconds - 45 * 60) / 60) + 1;
+        return `45+${extraMinutes}`;
       }
       return formatTime(totalSeconds);
     }
@@ -141,22 +146,24 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
     if (status === 'HALF_TIME') {
       const minutes = Math.floor(firstHalfDuration / 60);
-      if (minutes >= 45) {
-        return `45+${minutes - 44}`;
+       if (minutes >= 45) {
+        const extraMinutes = Math.floor((firstHalfDuration - 45 * 60) / 60) + 1;
+        return `45+${extraMinutes}`;
       }
       return formatTime(firstHalfDuration);
     }
 
     if (status === 'SECOND_HALF' || status === 'FINISHED') {
-      const secondHalfRunTime = totalSeconds - firstHalfDuration;
-      const gameMinute = 45 + Math.floor(secondHalfRunTime / 60);
+      const secondHalfRunTime = totalSeconds;
+      const gameMinute = 45 + Math.floor((secondHalfRunTime - firstHalfDuration) / 60);
 
       if (gameMinute >= 90) {
-        return `90+${gameMinute - 89}`;
+        const extraMinutes = Math.floor((secondHalfRunTime - firstHalfDuration - 45 * 60) / 60) + 1;
+        return `90+${extraMinutes}`;
       }
       
       const displayMinute = gameMinute;
-      const displaySecondInMinute = Math.floor(secondHalfRunTime % 60);
+      const displaySecondInMinute = Math.floor((secondHalfRunTime - firstHalfDuration) % 60);
       
       return `${String(displayMinute).padStart(2, '0')}:${String(displaySecondInMinute).padStart(2, '0')}`;
     }
@@ -244,14 +251,28 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   };
 
   const addFoul = (side: 'home' | 'away') => {
-    if (!matchState || matchState.timer.status === 'NOT_STARTED') return;
+    if (!matchState || matchState.timer.status === 'NOT_STARTED') {
+      toast({
+        title: 'El partido no ha comenzado',
+        description: 'Debes iniciar el cronómetro para registrar faltas.',
+        variant: 'destructive',
+      });
+      return;
+    }
     const newFoulsCount = (matchState.fouls[side] ?? 0) + 1;
     addEvent('general', `🚩 Falta ${matchState.teamNames[side]}`, getSmartTime(), side);
     updateMatch({ fouls: { ...matchState.fouls, [side]: newFoulsCount }});
   };
 
   const captureTimeAndTrigger = (type: string, side: 'home' | 'away') => {
-    if (matchState?.timer.status === 'NOT_STARTED') return;
+    if (!matchState || matchState.timer.status === 'NOT_STARTED') {
+      toast({
+        title: 'El partido no ha comenzado',
+        description: 'Debes iniciar el cronómetro para registrar eventos.',
+        variant: 'destructive',
+      });
+      return;
+    }
     capturedTimeRef.current = getSmartTime();
     setCurrentSide(side);
     setModal(type);
@@ -285,7 +306,14 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   };
 
   const openCardSubMenu = (side: 'home' | 'away', type: 'amarilla' | 'roja') => {
-    if (matchState?.timer.status === 'NOT_STARTED') return;
+    if (!matchState || matchState.timer.status === 'NOT_STARTED') {
+      toast({
+        title: 'El partido no ha comenzado',
+        description: 'Debes iniciar el cronómetro para registrar tarjetas.',
+        variant: 'destructive',
+      });
+      return;
+    }
     capturedTimeRef.current = getSmartTime();
     setCurrentSide(side);
     setCurrentCardType(type);
@@ -350,7 +378,14 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   }
 
   const openPegiModal = () => {
-    if (matchState?.timer.status === 'NOT_STARTED') return;
+    if (!matchState || matchState.timer.status === 'NOT_STARTED') {
+      toast({
+        title: 'El partido no ha comenzado',
+        description: 'Debes iniciar el cronómetro para registrar una jugada PEGI.',
+        variant: 'destructive',
+      });
+      return;
+    }
     capturedTimeRef.current = getSmartTime();
     setPegiDecision(null);
     setPegiDescription('');
