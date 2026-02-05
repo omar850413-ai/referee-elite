@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -20,6 +19,12 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls, UserProfile, Timer, MatchState } from '@/lib/types';
 import { formatTime } from '@/lib/utils';
@@ -110,37 +115,38 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   // --- Timer Sync & Display Logic ---
   useEffect(() => {
     if (!matchState) return;
-
+  
     const { timer } = matchState;
-
-    // Clear any existing interval
+  
     if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
+      clearInterval(timerIntervalRef.current);
     }
-
-    if (timer.isRunning) {
-        // Calculate the time that has passed since the timer was last started
-        const timeSincePeriodStart = (Date.now() - timer.startTime) / 1000;
-        const currentTotalElapsed = timer.elapsedSeconds + timeSincePeriodStart;
-        setDisplaySeconds(currentTotalElapsed);
-        
-        // Set up an interval to update the display every second
-        timerIntervalRef.current = setInterval(() => {
-            setDisplaySeconds(prevSeconds => prevSeconds + 1);
-        }, 1000);
-    } else {
-        // If the timer is not running, just display the stored elapsed time
-        setDisplaySeconds(timer.elapsedSeconds);
-    }
-
-    // Cleanup function to clear the interval when the component unmounts or dependencies change
-    return () => {
-        if (timerIntervalRef.current) {
-            clearInterval(timerIntervalRef.current);
-        }
+  
+    const getInitialDisplaySeconds = () => {
+      if (!timer.isRunning) {
+        return timer.elapsedSeconds;
+      }
+      const timeSinceStart = (Date.now() - timer.startTime) / 1000;
+      return timer.elapsedSeconds + timeSinceStart;
     };
-}, [matchState?.timer.isRunning, matchState?.timer.startTime, matchState?.timer.elapsedSeconds]);
-
+  
+    let initialSeconds = getInitialDisplaySeconds();
+    setDisplaySeconds(initialSeconds);
+  
+    if (timer.isRunning) {
+      timerIntervalRef.current = setInterval(() => {
+        // We calculate from the startTime every second for better accuracy
+        const timeSinceStart = (Date.now() - timer.startTime) / 1000;
+        setDisplaySeconds(timer.elapsedSeconds + timeSinceStart);
+      }, 1000);
+    }
+  
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, [matchState?.timer]); // Depend on the whole timer object
 
 
   const getSmartTime = () => {
@@ -168,6 +174,12 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     
     // At half time, display the duration of the first half
     if (status === 'HALF_TIME') {
+        const minutes = Math.floor(firstHalfDuration / 60);
+        if (minutes >= 45) {
+          const extraSeconds = firstHalfDuration - 45 * 60;
+          const extraMinutes = Math.floor(extraSeconds / 60) + 1;
+          return `45+${extraMinutes}`;
+        }
         return formatTime(firstHalfDuration);
     }
     
@@ -186,7 +198,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         }
         
         // Regular time display for the second half
-        const displayMinute = gameMinute;
+        const displayMinute = gameMinute + 1;
         const displaySecondInMinute = Math.floor(secondHalfSeconds % 60);
         return `${String(displayMinute).padStart(2, '0')}:${String(displaySecondInMinute).padStart(2, '0')}`;
     }
@@ -220,14 +232,13 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             break;
 
         case 'FIRST_HALF':
-            // Calculate elapsed time when stopping
             const firstHalfElapsed = timer.elapsedSeconds + (now - timer.startTime) / 1000;
             newTimerState = {
                 status: 'HALF_TIME',
                 isRunning: false,
                 startTime: 0,
                 elapsedSeconds: firstHalfElapsed,
-                firstHalfEndSeconds: firstHalfElapsed, // Store the exact end time
+                firstHalfEndSeconds: firstHalfElapsed,
             };
             break;
 
@@ -236,12 +247,10 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 status: 'SECOND_HALF',
                 isRunning: true,
                 startTime: now,
-                // elapsedSeconds remains from the end of the first half
             };
             break;
 
         case 'SECOND_HALF':
-            // Calculate total elapsed time when finishing
             const totalElapsed = timer.elapsedSeconds + (now - timer.startTime) / 1000;
             newTimerState = {
                 status: 'FINISHED',
@@ -252,7 +261,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             break;
 
         case 'FINISHED':
-            // Do nothing if the match is already finished
             return;
     }
 
@@ -268,16 +276,14 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       let newTimerState: Timer;
   
       if (status === 'NOT_STARTED' || status === 'FIRST_HALF') {
-        // Reset to the very beginning
         newTimerState = {
           status: 'NOT_STARTED',
           startTime: 0,
           elapsedSeconds: 0,
           isRunning: false,
-          firstHalfEndSeconds: undefined, // Explicitly clear this
+          firstHalfEndSeconds: undefined,
         };
-      } else { // HALF_TIME, SECOND_HALF, or FINISHED
-        // Reset to the beginning of halftime
+      } else {
         newTimerState = {
           status: 'HALF_TIME',
           startTime: 0,
@@ -314,9 +320,9 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   };
 
   const addFoul = (side: 'home' | 'away') => {
-    if (!matchState || matchState.timer.status === 'NOT_STARTED' || matchState.timer.status === 'HALF_TIME') {
+    if (!matchState || matchState.timer.status === 'NOT_STARTED') {
       toast({
-        title: 'El partido no ha comenzado o está en descanso.',
+        title: 'El partido no ha comenzado.',
         description: 'No se pueden registrar faltas cuando el juego está detenido.',
         variant: 'destructive',
       });
@@ -462,26 +468,25 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   };
 
   const handleSavePegi = () => {
-    if (!pegiDecision) return;
+    if (!pegiDecision) {
+      toast({
+        title: 'Selección requerida',
+        description: 'Por favor, elige "Sí" o "No".',
+        variant: 'destructive',
+      });
+      return;
+    }
     if (pegiDecision === 'yes' && !pegiDescription.trim()) {
-      alert('Por favor, ingresa una descripción para la jugada PEGI.');
+      toast({
+        title: 'Descripción requerida',
+        description: 'Por favor, ingresa una descripción para la jugada PEGI.',
+        variant: 'destructive',
+      });
       return;
     }
     const message = pegiDecision === 'yes' ? `🔎 JUGADAS PEGI: Sí - ${pegiDescription.trim()}` : '🔎 JUGADAS PEGI: No';
     addEvent('pegi', message, capturedTimeRef.current);
     setModal(null);
-  };
-
-  const handleGenerateReport = () => {
-    if (!matchState || matchState.events.length === 0) {
-      toast({
-        title: 'No hay datos suficientes',
-        description: 'Aún no han ocurrido eventos para generar un informe.',
-        variant: 'destructive'
-      });
-      return;
-    }
-    setIsReportOpen(true);
   };
 
   const openScoreEditor = () => {
@@ -739,12 +744,38 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           >
             🔎 JUGADAS PEGI
           </Button>
-          <Button
-            onClick={handleGenerateReport}
-            className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
-          >
-            Generar Informe
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
+              >
+                Generar Informe
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => {
+                if (!matchState || matchState.events.length === 0) {
+                  toast({
+                    title: 'No hay datos suficientes',
+                    description: 'Aún no han ocurrido eventos para generar un informe.',
+                    variant: 'destructive'
+                  });
+                  return;
+                }
+                setIsReportOpen(true);
+              }}>
+                Generar Imagen
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                toast({
+                  title: "Función no implementada",
+                  description: "La generación de PDF estará disponible próximamente.",
+                });
+              }}>
+                Generar PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             onClick={triggerFullReset}
             variant="destructive"
@@ -1062,8 +1093,3 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     </div>
   );
 }
-
-    
-
-    
-
