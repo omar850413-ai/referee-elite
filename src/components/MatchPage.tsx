@@ -182,36 +182,24 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const handleTimerClick = () => {
     if (!matchState) return;
 
-    const { status } = matchState.timer;
-    let newTimerState: Partial<Timer> = {};
-    
+    const { status, isRunning } = matchState.timer;
     const now = Date.now();
+    let newTimerState: Partial<Timer> = {};
 
-    switch (status) {
-      case 'NOT_STARTED':
-        // Start of the match. Reset everything.
-        newTimerState = { status: 'FIRST_HALF', isRunning: true, elapsedSeconds: 0, startTime: now };
-        break;
-      case 'FIRST_HALF':
-        // At half-time, stop the timer. `elapsedSeconds` now holds the 1T duration.
-        newTimerState = { status: 'HALF_TIME', isRunning: false, elapsedSeconds: displaySeconds, startTime: 0, firstHalfEndSeconds: displaySeconds };
-        break;
-      case 'HALF_TIME':
-        // To start 2T, just mark as running and set a new startTime.
-        // `elapsedSeconds` (holding 1T duration) is carried over as the base.
+    if (status === 'NOT_STARTED') {
+      newTimerState = { status: 'FIRST_HALF', isRunning: true, startTime: now, elapsedSeconds: 0 };
+    } else if (status === 'FIRST_HALF') {
+        const elapsed = displaySeconds;
+        newTimerState = { status: 'HALF_TIME', isRunning: false, startTime: 0, elapsedSeconds: elapsed, firstHalfEndSeconds: elapsed };
+    } else if (status === 'HALF_TIME') {
         newTimerState = { status: 'SECOND_HALF', isRunning: true, startTime: now };
-        break;
-      case 'SECOND_HALF':
-        // At the end, store the final total elapsed time.
-        newTimerState = { status: 'FINISHED', isRunning: false, elapsedSeconds: displaySeconds, startTime: 0 };
-        break;
-      default:
-        return;
+    } else if (status === 'SECOND_HALF') {
+        newTimerState = { status: 'FINISHED', isRunning: false, startTime: 0, elapsedSeconds: displaySeconds };
+    } else {
+        return; // FINISHED, do nothing
     }
 
-    updateMatch({
-      timer: { ...matchState.timer, ...newTimerState },
-    });
+    updateMatch({ timer: { ...matchState.timer, ...newTimerState } });
   };
 
   const triggerResetCrono = () => setModal('reset-crono-confirm');
@@ -224,7 +212,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
     if (status === 'NOT_STARTED' || status === 'FIRST_HALF' || status === 'HALF_TIME') {
       // Reset to the very beginning of the match.
-      // This object intentionally omits `firstHalfEndSeconds`.
       newTimerObject = {
         status: 'NOT_STARTED',
         startTime: 0,
@@ -395,7 +382,10 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   }
 
   const openPegiModal = () => {
-    if (!matchState || matchState.timer.status === 'NOT_STARTED') {
+    if (!matchState) {
+        return;
+    }
+    if (matchState.timer.status === 'NOT_STARTED') {
       toast({
         title: 'El partido no ha comenzado',
         description: 'Debes iniciar el cronómetro para registrar eventos PEGI.',
@@ -922,7 +912,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             )}
             
             <DialogFooter className="mt-4">
-                <Button onClick={handleSavePegi} disabled={!pegiDecision} className="w-full shadow-lg">Guardar Análisis</Button>
+                <Button onClick={handleSavePegi} className="w-full shadow-lg">Aceptar</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
