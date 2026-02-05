@@ -60,6 +60,17 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const homeEvents = events.filter(e => e.message.includes(`(${teamNames.home})`));
   const awayEvents = events.filter(e => e.message.includes(`(${teamNames.away})`));
+  const pegiPlays = events.filter(e => e.category === 'pegi');
+
+  const assignedEventIds = new Set([
+    ...homeEvents.map(e => e.id),
+    ...awayEvents.map(e => e.id),
+    ...pegiPlays.map(e => e.id)
+  ]);
+
+  // Redefine otherEvents to include anything not assigned to a team column or PEGI.
+  // This will catch general notes, timer events, AND edited events.
+  const otherEvents = events.filter(e => !assignedEventIds.has(e.id));
 
   const homeGoals = homeEvents.filter(e => e.category === 'goals');
   const awayGoals = awayEvents.filter(e => e.category === 'goals');
@@ -72,9 +83,6 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const homeSubs = homeEvents.filter(e => e.category === 'subs');
   const awaySubs = awayEvents.filter(e => e.category === 'subs');
-
-  const otherEvents = events.filter(e => e.category === 'notes' || e.category === 'general');
-  const pegiPlays = events.filter(e => e.category === 'pegi');
 
 
   const parseEvent = (event: MatchEvent) => {
