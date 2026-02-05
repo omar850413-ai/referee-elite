@@ -3,7 +3,7 @@
 import React, { useRef } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { MatchState } from '@/lib/types';
+import { MatchEvent, MatchState } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { parseTimeToMinutes } from '@/lib/utils';
@@ -56,20 +56,11 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     .filter(e => ['goals', 'cards', 'notes'].includes(e.category))
     .sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
 
-  // Function to clean up the message for the PDF report
-  const cleanMessage = (message: string) => {
-    return message
-      .replace(/⚽|🟨|🟥|📝/g, '') // Remove emojis
-      .replace(/\(LOCAL\)|\(VISITA\)/gi, '') // Remove team indicators
-      .replace(/GOL|PENAL|AUTOGOL/gi, (match) => `${match.toUpperCase()}`) // Ensure goal types are uppercase
-      .trim();
-  };
-
   return (
     <div className="bg-gray-200 p-4 max-h-[70vh] overflow-y-auto">
       <div 
         ref={reportRef} 
-        className="p-8 bg-white text-black font-sans shadow-lg"
+        className="p-6 bg-white text-black font-sans shadow-lg"
         style={{ width: '210mm', minHeight: '297mm' }} // A4 size
       >
         <h1 className="text-2xl font-bold text-center mb-2">Informe de Asesor de Árbitros</h1>
@@ -99,26 +90,68 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
         </div>
         <hr className="my-4 border-black" />
 
-        {/* Incidents */}
+        {/* Incidents Table */}
         <h2 className="text-xl font-bold mb-4">Incidentes del Partido</h2>
-        <div className="space-y-4 text-sm">
-          {filteredAndSortedEvents.map(event => (
-            <div key={event.id} className="border-b border-gray-200 pb-3">
-              <p className="flex items-start">
-                <span className="font-bold w-16 flex-shrink-0">{event.time}'</span>
-                <span className="font-semibold">{cleanMessage(event.message)}</span>
-              </p>
-              {event.pdfDescription && (
-                <p className="pl-16 mt-1 text-gray-700 italic">
-                  <strong>Descripción Adicional:</strong> {event.pdfDescription}
-                </p>
-              )}
-            </div>
-          ))}
-          {filteredAndSortedEvents.length === 0 && (
-            <p className="text-gray-500">No hay incidentes (goles, tarjetas, notas) para reportar.</p>
-          )}
-        </div>
+        <table className="w-full text-sm border-collapse">
+            <thead>
+                <tr className="border-b-2 border-black">
+                    <th className="w-[15%] text-left font-bold p-2">Minuto</th>
+                    <th className="w-[25%] text-left font-bold p-2">Acción</th>
+                    <th className="w-[60%] text-left font-bold p-2">Descripción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {filteredAndSortedEvents.map(event => {
+                    let accion = '';
+                    let descripcion = '';
+                    const message = event.message;
+
+                    switch (event.category) {
+                        case 'goals':
+                            if (message.includes('PENAL')) accion = 'Penal';
+                            else if (message.includes('AUTOGOL')) accion = 'Autogol';
+                            else accion = 'Gol';
+                            descripcion = message.replace(/⚽|GOL|PENAL|AUTOGOL/gi, '').trim();
+                            break;
+                        case 'cards':
+                            if (message.includes('🟨')) accion = 'Amonestación';
+                            else if (message.includes('🟥')) accion = 'Expulsión';
+                            descripcion = message.replace(/🟨|🟥/g, '').trim();
+                            break;
+                        case 'notes':
+                            accion = 'Anotación de Asesor';
+                            descripcion = message.replace('📝 ', '').trim();
+                            break;
+                        default:
+                            accion = '';
+                            descripcion = message;
+                    }
+                    
+                    return (
+                        <tr key={event.id} className="border-b border-gray-300 align-top">
+                            <td className="p-2">{event.time}'</td>
+                            <td className="p-2 font-semibold">{accion}</td>
+                            <td className="p-2">
+                                {descripcion}
+                                {event.pdfDescription && (
+                                    <div className="mt-1 text-gray-600 italic">
+                                        {event.pdfDescription}
+                                    </div>
+                                )}
+                            </td>
+                        </tr>
+                    );
+                })}
+
+                {filteredAndSortedEvents.length === 0 && (
+                    <tr>
+                        <td colSpan={3} className="text-center text-gray-500 p-4">
+                            No hay incidentes (goles, tarjetas, notas) para reportar.
+                        </td>
+                    </tr>
+                )}
+            </tbody>
+        </table>
       </div>
 
       <div className="mt-4 flex justify-end sticky bottom-0 bg-gray-200 py-2 pr-2">
