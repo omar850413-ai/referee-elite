@@ -57,39 +57,52 @@ export function ReportView({ matchState }: ReportViewProps) {
     };
   };
 
-  const homeEvents: MatchEvent[] = [];
-  const awayEvents: MatchEvent[] = [];
+  // --- Event Classification Logic ---
+  const homeGoals: MatchEvent[] = [];
+  const awayGoals: MatchEvent[] = [];
+  const homeYellows: MatchEvent[] = [];
+  const awayYellows: MatchEvent[] = [];
+  const homeReds: MatchEvent[] = [];
+  const awayReds: MatchEvent[] = [];
+  const homeSubs: MatchEvent[] = [];
+  const awaySubs: MatchEvent[] = [];
   const noteEvents: MatchEvent[] = [];
   const pegiPlays: MatchEvent[] = [];
 
-  events.forEach(e => {
-    if (e.side === 'home') {
-      homeEvents.push(e);
-    } else if (e.side === 'away') {
-      awayEvents.push(e);
-    } else if (e.category === 'notes') {
-      noteEvents.push(e);
-    } else if (e.category === 'pegi') {
-      pegiPlays.push(e);
+  events.forEach(event => {
+    switch (event.category) {
+      case 'goals':
+        if (event.side === 'home') homeGoals.push(event);
+        if (event.side === 'away') awayGoals.push(event);
+        break;
+      case 'cards':
+        if (event.message.includes('🟨')) {
+          if (event.side === 'home') homeYellows.push(event);
+          if (event.side === 'away') awayYellows.push(event);
+        } else if (event.message.includes('🟥')) {
+          if (event.side === 'home') homeReds.push(event);
+          if (event.side === 'away') awayReds.push(event);
+        }
+        break;
+      case 'subs':
+        if (event.side === 'home') homeSubs.push(event);
+        if (event.side === 'away') awaySubs.push(event);
+        break;
+      case 'notes':
+        noteEvents.push(event);
+        break;
+      case 'pegi':
+        pegiPlays.push(event);
+        break;
+      default:
+        // Ignore 'general' events like timer start/stop, fouls, etc. for the lists.
+        break;
     }
   });
-
-  const homeGoals = homeEvents.filter(e => e.category === 'goals');
-  const awayGoals = awayEvents.filter(e => e.category === 'goals');
-
-  const homeYellows = homeEvents.filter(e => e.category === 'cards' && e.message.includes('🟨'));
-  const awayYellows = awayEvents.filter(e => e.category === 'cards' && e.message.includes('🟨'));
-
-  const homeReds = homeEvents.filter(e => e.category === 'cards' && e.message.includes('🟥'));
-  const awayReds = awayEvents.filter(e => e.category === 'cards' && e.message.includes('🟥'));
-
-  const homeSubs = homeEvents.filter(e => e.category === 'subs');
-  const awaySubs = awayEvents.filter(e => e.category === 'subs');
 
 
   const parseEvent = (event: MatchEvent) => {
     const time = event.time;
-    // Use a case-insensitive regex to find and remove team name
     const teamNameRegex = new RegExp(`\\((${teamNames.home}|${teamNames.away})\\)`, 'i');
     let message = event.message.replace(teamNameRegex, '').trim();
 
@@ -107,26 +120,19 @@ export function ReportView({ matchState }: ReportViewProps) {
         };
     }
     
-    // Clean up various symbols
-    message = message
-      .replace(/⚽|🔄|📝|🔎/g, '')
-      .trim();
-      
     if (event.category === 'subs') {
-        message = message.replace('Cambio:', '').trim();
+        message = message.replace('🔄', '').replace('Cambio:', '').trim();
         const parts = message.split(' ');
-        const pIn = parts.find(p => p.startsWith('↑'))?.replace('↑', '#');
-        const pOut = parts.find(p => p.startsWith('↓'))?.replace('↓', '#');
+        const pIn = parts.find(p => p.startsWith('↑'))?.replace('↑', '');
+        const pOut = parts.find(p => p.startsWith('↓'))?.replace('↓', '');
         message = `Entra ${pIn || '?'} Sale ${pOut || '?'}`;
     } else if (event.category === 'goals') {
-        message = message.replace('GOL', '').replace('PENAL', '(P)').replace('AUTOGOL', '(AG)').trim();
-    } else if (event.category === 'pegi') {
-        message = message.replace('JUGADAS PEGI:', '').trim();
+        message = message.replace('⚽', '').replace('GOL', '').replace('PENAL', '(P)').replace('AUTOGOL', '(AG)').trim();
     }
     
     return {
         isCard: false,
-        text: `${message} ${event.category !== 'notes' ? `min ${time}` : ''}`.trim(),
+        text: `${message} min ${time}`.trim(),
     };
   };
 
@@ -303,7 +309,7 @@ export function ReportView({ matchState }: ReportViewProps) {
             {noteEvents.length > 0 && (
                  <foreignObject x="50" y="25" width="700" height="60">
                   <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E2E8F0', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
-                    {noteEvents.map(e => parseEvent(e).text).join('; ')}
+                    {noteEvents.map(e => e.message.replace('📝 ', '')).join('; ')}
                   </p>
                 </foreignObject>
             )}
