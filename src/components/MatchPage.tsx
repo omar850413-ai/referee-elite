@@ -127,20 +127,51 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     if (!matchState) return '00:00';
 
     const totalSeconds = Math.floor(displaySeconds);
-    const { status } = matchState.timer;
-    const minutes = Math.floor(totalSeconds / 60);
+    const { status, firstHalfEndSeconds } = matchState.timer;
 
-    if (status === 'FIRST_HALF' && minutes >= 45) {
-      return `45+${minutes - 45 + 1}`; // 45:xx is 45+1
-    }
-    if (status === 'SECOND_HALF' || status === 'FINISHED') {
-      if (totalSeconds >= 45 * 60) {
-        const gameMinute = 45 + Math.floor((totalSeconds - 45 * 60) / 60);
-        if (gameMinute >= 90) {
-          return `90+${gameMinute - 90 + 1}`;
+    // NOT_STARTED or FIRST_HALF
+    if (status === 'NOT_STARTED' || status === 'FIRST_HALF') {
+        const minutes = Math.floor(totalSeconds / 60);
+        if (minutes >= 45) {
+            // For 45:xx, show 45+1, for 46:xx show 45+2
+            return `45+${minutes - 44}`;
         }
-      }
+        return formatTime(totalSeconds);
     }
+    
+    // For HALF_TIME, SECOND_HALF, FINISHED, we need the duration of the first half.
+    // Use the stored value, or default to 45 minutes if somehow not present.
+    const firstHalfDuration = firstHalfEndSeconds ?? 45 * 60;
+
+    // HALF_TIME: Display the final time of the first half
+    if(status === 'HALF_TIME') {
+        const minutes = Math.floor(firstHalfDuration / 60);
+         if (minutes >= 45) {
+            return `45+${minutes - 44}`;
+        }
+        return formatTime(firstHalfDuration);
+    }
+
+    // SECOND_HALF or FINISHED
+    if (status === 'SECOND_HALF' || status === 'FINISHED') {
+        const secondHalfRunTime = totalSeconds - firstHalfDuration;
+        
+        // Calculate the effective game minute (45 + minutes into second half)
+        const gameMinute = 45 + Math.floor(secondHalfRunTime / 60);
+
+        if (gameMinute >= 90) {
+            // For 90:xx, show 90+1, for 91:xx show 90+2
+            return `90+${gameMinute - 89}`;
+        }
+        
+        // Regular time in second half
+        const displayMinute = gameMinute;
+        const displaySecondInMinute = Math.floor(secondHalfRunTime % 60);
+        
+        return `${String(displayMinute).padStart(2, '0')}:${String(displaySecondInMinute).padStart(2, '0')}`;
+    }
+
+    // Fallback for any unexpected state
     return formatTime(totalSeconds);
   };
 
@@ -168,7 +199,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         newEventMessage = '▶️ INICIO PARTIDO';
         break;
       case 'FIRST_HALF':
-        newTimerState = { status: 'HALF_TIME', isRunning: false, elapsedSeconds: currentElapsed, startTime: 0 };
+        newTimerState = { status: 'HALF_TIME', isRunning: false, elapsedSeconds: currentElapsed, startTime: 0, firstHalfEndSeconds: currentElapsed };
         newEventMessage = `⏹️ FIN 1T`;
         break;
       case 'HALF_TIME':
@@ -198,9 +229,9 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     let newTimerState: Partial<Timer> = { isRunning: false, startTime: 0 };
 
     if (status === 'NOT_STARTED' || status === 'FIRST_HALF' || status === 'HALF_TIME') {
-      newTimerState = { ...newTimerState, status: 'NOT_STARTED', elapsedSeconds: 0 };
+      newTimerState = { ...newTimerState, status: 'NOT_STARTED', elapsedSeconds: 0, firstHalfEndSeconds: undefined };
     } else { // SECOND_HALF or FINISHED
-      newTimerState = { ...newTimerState, status: 'HALF_TIME', elapsedSeconds: 45 * 60 };
+      newTimerState = { ...newTimerState, status: 'HALF_TIME', elapsedSeconds: matchState.timer.firstHalfEndSeconds || 45 * 60 };
     }
     updateMatch({ timer: { ...matchState.timer, ...newTimerState } });
     setModal(null);

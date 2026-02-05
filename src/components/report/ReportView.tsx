@@ -58,8 +58,8 @@ export function ReportView({ matchState }: ReportViewProps) {
     };
   };
 
-  const homeEvents = events.filter(e => e.message.includes(`(${teamNames.home})`));
-  const awayEvents = events.filter(e => e.message.includes(`(${teamNames.away})`));
+  const homeEvents = events.filter(e => e.message.toLowerCase().includes(`(${teamNames.home.toLowerCase()})`));
+  const awayEvents = events.filter(e => e.message.toLowerCase().includes(`(${teamNames.away.toLowerCase()})`));
   const pegiPlays = events.filter(e => e.category === 'pegi');
 
   const assignedEventIds = new Set([
@@ -68,8 +68,8 @@ export function ReportView({ matchState }: ReportViewProps) {
     ...pegiPlays.map(e => e.id)
   ]);
 
-  // Redefine otherEvents to include anything not assigned to a team column or PEGI.
-  // This will catch general notes, timer events, AND edited events.
+  // Any event not assigned to a team column or PEGI is an "other" event.
+  // This catches general notes, timer events, and edited events that no longer match a team.
   const otherEvents = events.filter(e => !assignedEventIds.has(e.id));
 
   const homeGoals = homeEvents.filter(e => e.category === 'goals');
@@ -87,7 +87,7 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const parseEvent = (event: MatchEvent) => {
     const time = event.time;
-    const teamNameRegex = new RegExp(`\\s\\((${teamNames.home}|${teamNames.away})\\)`);
+    const teamNameRegex = new RegExp(`\\((${teamNames.home}|${teamNames.away})\\)`, 'i');
     let message = event.message.replace(teamNameRegex, '').trim();
 
     if (event.category === 'cards') {
@@ -105,7 +105,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     }
     
     message = message
-      .replace(/⚽|🔄|📝|🔎|🚩/g, '')
+      .replace(/⚽|🔄|📝|🔎|🚩|▶️|⏹️|🏁|✏️/g, '')
       .trim();
       
     if (event.category === 'subs') {
@@ -308,20 +308,20 @@ export function ReportView({ matchState }: ReportViewProps) {
           {/* Footer */}
           <rect y="1020" width="800" height="180" fill="rgba(0,0,0,0.2)" />
           <g transform="translate(0, 1040)">
+            {(otherEvents.length > 0 || pegiPlays.length > 0) && (
+                 <text x="400" y="0" textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA" style={{textTransform: 'uppercase'}}>Anotaciones y Observaciones</text>
+            )}
             {otherEvents.length > 0 && (
-              <>
-                <text x="400" y="0" textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA" style={{textTransform: 'uppercase'}}>Anotaciones y Observaciones</text>
                  <foreignObject x="50" y="25" width="700" height="60">
                   <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E2E8F0', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
-                    {otherEvents.map(n => n.message.replace(/📝|✏️|▶️|⏹️|🏁|🚩/g, '').trim()).join('; ')}
+                    {otherEvents.map(e => parseEvent(e).text).join('; ')}
                   </p>
                 </foreignObject>
-              </>
             )}
             {pegiPlays.length > 0 && (
               <>
-                <text x="400" y={otherEvents.length > 0 ? "95" : "0"} textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE" style={{textTransform: 'uppercase'}}>Jugadas PEGI</text>
-                 <foreignObject x="50" y={otherEvents.length > 0 ? "120" : "25"} width="700" height="60">
+                <text x="400" y={otherEvents.length > 0 ? "95" : "25"} textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE" style={{textTransform: 'uppercase'}}>Jugadas PEGI</text>
+                 <foreignObject x="50" y={otherEvents.length > 0 ? "120" : "50"} width="700" height="60">
                   <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E9D5FF', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
                     {pegiPlays.map(p => p.message.replace(/🔎|JUGADAS PEGI: /g, '').trim()).join('; ')}
                   </p>

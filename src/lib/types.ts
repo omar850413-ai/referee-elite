@@ -18,6 +18,7 @@ export interface Timer {
   startTime: number;
   elapsedSeconds: number;
   isRunning: boolean;
+  firstHalfEndSeconds?: number;
 }
 
 export interface MatchEvent {

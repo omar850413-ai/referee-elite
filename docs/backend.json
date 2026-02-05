@@ -63,7 +63,8 @@
         },
         "startTime": { "type": "number", "description": "Timestamp of the last time the timer was started or resumed." },
         "elapsedSeconds": { "type": "number", "description": "Total elapsed seconds in the current period." },
-        "isRunning": { "type": "boolean", "description": "Indicates whether the timer is currently running." }
+        "isRunning": { "type": "boolean", "description": "Indicates whether the timer is currently running." },
+        "firstHalfEndSeconds": { "type": "number", "description": "Timestamp of when the first half ended." }
       },
       "required": ["status", "startTime", "elapsedSeconds", "isRunning"]
     },
