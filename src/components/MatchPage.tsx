@@ -155,15 +155,15 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
     if (status === 'SECOND_HALF' || status === 'FINISHED') {
       const secondHalfRunTime = totalSeconds;
-      const gameMinute = 45 + Math.floor((secondHalfRunTime - firstHalfDuration) / 60);
+      const gameMinute = 45 + Math.floor((secondHalfRunTime) / 60);
 
       if (gameMinute >= 90) {
-        const extraMinutes = Math.floor((secondHalfRunTime - firstHalfDuration - 45 * 60) / 60) + 1;
+        const extraMinutes = Math.floor((secondHalfRunTime - 45 * 60) / 60) + 1;
         return `90+${extraMinutes}`;
       }
       
       const displayMinute = gameMinute;
-      const displaySecondInMinute = Math.floor((secondHalfRunTime - firstHalfDuration) % 60);
+      const displaySecondInMinute = Math.floor((secondHalfRunTime) % 60);
       
       return `${String(displayMinute).padStart(2, '0')}:${String(displaySecondInMinute).padStart(2, '0')}`;
     }
@@ -182,12 +182,11 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     if (!matchState) return;
 
     const time = getSmartTime();
-    const { status } = matchState.timer;
+    const { status, elapsedSeconds: currentElapsed } = matchState.timer;
     let newTimerState: Partial<Timer> = {};
     let newEventMessage = '';
     
     const now = Date.now();
-    const currentElapsed = displaySeconds;
 
     switch (status) {
       case 'NOT_STARTED':
@@ -195,15 +194,15 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         newEventMessage = '▶️ INICIO PARTIDO';
         break;
       case 'FIRST_HALF':
-        newTimerState = { status: 'HALF_TIME', isRunning: false, elapsedSeconds: currentElapsed, startTime: 0, firstHalfEndSeconds: currentElapsed };
+        newTimerState = { status: 'HALF_TIME', isRunning: false, elapsedSeconds: displaySeconds, startTime: 0, firstHalfEndSeconds: displaySeconds };
         newEventMessage = `⏹️ FIN 1T`;
         break;
       case 'HALF_TIME':
-        newTimerState = { status: 'SECOND_HALF', isRunning: true, elapsedSeconds: currentElapsed, startTime: now };
+        newTimerState = { status: 'SECOND_HALF', isRunning: true, startTime: now }; // elapsedSeconds is carried over
         newEventMessage = '▶️ INICIO 2T';
         break;
       case 'SECOND_HALF':
-        newTimerState = { status: 'FINISHED', isRunning: false, elapsedSeconds: currentElapsed, startTime: 0 };
+        newTimerState = { status: 'FINISHED', isRunning: false, elapsedSeconds: displaySeconds, startTime: 0 };
         newEventMessage = `🏁 FIN PARTIDO`;
         break;
       default:
@@ -297,9 +296,10 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   };
 
   const registerSub = () => {
+    if (!matchState) return;
     const i = playerIn || '?';
     const o = playerOut || '?';
-    addEvent('subs', `🔄 Cambio (${matchState?.teamNames[currentSide]}): ↑#${i} ↓#${o}`, capturedTimeRef.current, currentSide);
+    addEvent('subs', `🔄 Cambio (${matchState.teamNames[currentSide]}): ↑#${i} ↓#${o}`, capturedTimeRef.current, currentSide);
     setPlayerIn('');
     setPlayerOut('');
     setModal(null);
@@ -334,10 +334,11 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   };
 
   const registerCard = (causal: string) => {
+    if (!matchState) return;
     const p = playerNumber || 'S/N';
     const symbol = currentCardType === 'amarilla' ? '🟨' : '🟥';
     const target = currentCardTarget === 'jugador' ? `#${p}` : currentStaffRole;
-    const message = `${symbol} ${target} (${matchState?.teamNames[currentSide]}) - ${causal}`;
+    const message = `${symbol} ${target} (${matchState.teamNames[currentSide]}) - ${causal}`;
     addEvent('cards', message, capturedTimeRef.current, currentSide);
     setPlayerNumber('');
     setModal(null);
@@ -378,14 +379,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   }
 
   const openPegiModal = () => {
-    if (!matchState || matchState.timer.status === 'NOT_STARTED') {
-      toast({
-        title: 'El partido no ha comenzado',
-        description: 'Debes iniciar el cronómetro para registrar una jugada PEGI.',
-        variant: 'destructive',
-      });
-      return;
-    }
     capturedTimeRef.current = getSmartTime();
     setPegiDecision(null);
     setPegiDescription('');
@@ -496,7 +489,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
               id="timer-display"
               className="text-7xl font-mono font-black text-gray-800 tracking-tighter mb-2 bg-amber-100 rounded-2xl py-4 border-b-4 border-amber-200"
             >
-              {formatTime(displaySeconds)}
+              {getSmartTime()}
             </div>
             <div className="flex flex-col gap-2">
               <Button
