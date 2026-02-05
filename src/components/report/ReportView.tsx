@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef } from 'react';
@@ -69,42 +70,48 @@ export function ReportView({ matchState }: ReportViewProps) {
   const noteEvents: MatchEvent[] = [];
   const pegiPlays: MatchEvent[] = [];
 
-  events.forEach(event => {
-    switch (event.category) {
-      case 'goals':
-        if (event.side === 'home') homeGoals.push(event);
-        if (event.side === 'away') awayGoals.push(event);
-        break;
-      case 'cards':
-        if (event.message.includes('🟨')) {
-          if (event.side === 'home') homeYellows.push(event);
-          if (event.side === 'away') awayYellows.push(event);
-        } else if (event.message.includes('🟥')) {
-          if (event.side === 'home') homeReds.push(event);
-          if (event.side === 'away') awayReds.push(event);
-        }
-        break;
-      case 'subs':
-        if (event.side === 'home') homeSubs.push(event);
-        if (event.side === 'away') awaySubs.push(event);
-        break;
-      case 'notes':
-        noteEvents.push(event);
-        break;
-      case 'pegi':
-        pegiPlays.push(event);
-        break;
-      default:
-        // Ignore 'general' events like timer start/stop, fouls, etc. for the lists.
-        break;
+  // This is the definitive, corrected classification logic.
+  if (events && events.length > 0) {
+    for (const event of events) {
+      switch (event.category) {
+        case 'goals':
+          if (event.side === 'home') homeGoals.push(event);
+          if (event.side === 'away') awayGoals.push(event);
+          break;
+        case 'cards':
+          if (event.message.includes('🟨')) {
+            if (event.side === 'home') homeYellows.push(event);
+            if (event.side === 'away') awayYellows.push(event);
+          } else if (event.message.includes('🟥')) {
+            if (event.side === 'home') homeReds.push(event);
+            if (event.side === 'away') awayReds.push(event);
+          }
+          break;
+        case 'subs':
+          if (event.side === 'home') homeSubs.push(event);
+          if (event.side === 'away') awaySubs.push(event);
+          break;
+        case 'notes':
+          noteEvents.push(event);
+          break;
+        case 'pegi':
+          pegiPlays.push(event);
+          break;
+        default:
+          break;
+      }
     }
-  });
-
+  }
 
   const parseEvent = (event: MatchEvent) => {
     const time = event.time;
-    const teamNameRegex = new RegExp(`\\((${teamNames.home}|${teamNames.away})\\)`, 'i');
-    let message = event.message.replace(teamNameRegex, '').trim();
+    let message = event.message;
+
+    if (event.side) {
+        const teamNameToRemove = event.side === 'home' ? teamNames.home : teamNames.away;
+        const teamNameRegex = new RegExp(`\\((${teamNameToRemove})\\)`, 'i');
+        message = message.replace(teamNameRegex, '').trim();
+    }
 
     if (event.category === 'cards') {
         const symbol = message.includes('🟨') ? '🟨' : '🟥';
@@ -240,6 +247,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     yAway = awaySubsSection.endY + 40;
   }
 
+  const noEvents = [homeGoals, awayGoals, homeYellows, awayYellows, homeReds, awayReds, homeSubs, awaySubs, noteEvents, pegiPlays].every(list => list.length === 0);
 
   return (
     <div className="w-full">
@@ -299,6 +307,10 @@ export function ReportView({ matchState }: ReportViewProps) {
           {/* Event Columns */}
           {homeColumn}
           {awayColumn}
+          
+          {noEvents && (
+            <text x="400" y="650" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="20" fontStyle="italic">No hay eventos para mostrar en el informe.</text>
+          )}
 
           {/* Footer */}
           <rect y="1020" width="800" height="180" fill="rgba(0,0,0,0.2)" />
