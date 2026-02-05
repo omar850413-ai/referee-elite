@@ -30,6 +30,7 @@ import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls, UserProfile, Timer, Ma
 import { formatTime } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ReportView } from '@/components/report/ReportView';
+import { PdfReportView } from '@/components/report/PdfReportView';
 import { Logo } from '@/components/ui/Logo';
 import { Skeleton } from '@/components/ui/skeleton';
 import { causalesAmarilla, causalesRoja, causalesStaff } from '@/lib/causales';
@@ -72,6 +73,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const [pegiDescription, setPegiDescription] = useState('');
   
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isPdfReportOpen, setIsPdfReportOpen] = useState(false);
   const [manualScores, setManualScores] = useState<Scores>({ home: 0, away: 0 });
 
   const capturedTimeRef = useRef('00:00');
@@ -758,10 +760,15 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 Generar Imagen
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                toast({
-                  title: "Función no implementada",
-                  description: "La generación de PDF estará disponible próximamente.",
-                });
+                if (!matchState || matchState.events.length === 0) {
+                  toast({
+                    title: 'No hay datos suficientes',
+                    description: 'Aún no han ocurrido eventos para generar un informe.',
+                    variant: 'destructive'
+                  });
+                  return;
+                }
+                setIsPdfReportOpen(true);
               }}>
                 Generar PDF
               </DropdownMenuItem>
@@ -1046,12 +1053,24 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
         <DialogContent className="max-w-4xl p-4 md:p-6">
            <DialogHeader>
-            <DialogTitle>Informe del Partido</DialogTitle>
+            <DialogTitle>Informe del Partido (Imagen)</DialogTitle>
             <DialogDescription>
               Este es un resumen visual del partido. Puedes descargarlo como una imagen JPEG.
             </DialogDescription>
           </DialogHeader>
           <ReportView matchState={matchState} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPdfReportOpen} onOpenChange={setIsPdfReportOpen}>
+        <DialogContent className="max-w-4xl p-4 md:p-6">
+           <DialogHeader>
+            <DialogTitle>Informe del Partido (PDF)</DialogTitle>
+            <DialogDescription>
+              Este es un resumen del partido para generar un PDF. Puedes descargarlo.
+            </DialogDescription>
+          </DialogHeader>
+          <PdfReportView matchState={matchState} />
         </DialogContent>
       </Dialog>
       
