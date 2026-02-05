@@ -88,13 +88,12 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       });
   };
 
-  // --- Timer Sync Logic ---
+  // --- Timer Sync & Display Logic ---
   useEffect(() => {
     if (!matchState) return;
     const { timer } = matchState;
     let totalElapsed = timer.elapsedSeconds;
     
-    // If the timer was running, calculate time passed since last update
     if (timer.isRunning && timer.startTime > 0) {
       const serverTimeOffset = 0; // Assume client and server time are roughly in sync
       const timeSinceLastStart = (Date.now() - timer.startTime + serverTimeOffset) / 1000;
@@ -105,7 +104,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
   useEffect(() => {
     if (matchState?.timer.isRunning) {
-      // Recalculate start time based on current display seconds to keep it smooth
       const internalStartTime = Date.now() - displaySeconds * 1000;
       timerIntervalRef.current = setInterval(() => {
         setDisplaySeconds((Date.now() - internalStartTime) / 1000);
@@ -142,11 +140,11 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       return formatTime(totalSeconds);
     }
     
-    const firstHalfDuration = firstHalfEndSeconds ?? 45 * 60;
+    const firstHalfDuration = firstHalfEndSeconds ?? 0;
 
     if (status === 'HALF_TIME') {
       const minutes = Math.floor(firstHalfDuration / 60);
-       if (minutes >= 45) {
+      if (minutes >= 45) {
         const extraMinutes = Math.floor((firstHalfDuration - 45 * 60) / 60) + 1;
         return `45+${extraMinutes}`;
       }
@@ -154,16 +152,19 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     }
 
     if (status === 'SECOND_HALF' || status === 'FINISHED') {
-      const secondHalfRunTime = totalSeconds;
-      const gameMinute = 45 + Math.floor((secondHalfRunTime) / 60);
+      // elapsed time in the second half is total time minus the duration of the first half.
+      const secondHalfSeconds = totalSeconds - firstHalfDuration;
+      const gameMinute = 45 + Math.floor(secondHalfSeconds / 60);
 
       if (gameMinute >= 90) {
-        const extraMinutes = Math.floor((secondHalfRunTime - 45 * 60) / 60) + 1;
+        const regulationSecondHalfSeconds = 45 * 60;
+        const extraTimeSeconds = secondHalfSeconds - regulationSecondHalfSeconds;
+        const extraMinutes = Math.floor(extraTimeSeconds / 60) + 1;
         return `90+${extraMinutes}`;
       }
       
       const displayMinute = gameMinute;
-      const displaySecondInMinute = Math.floor((secondHalfRunTime) % 60);
+      const displaySecondInMinute = Math.floor(secondHalfSeconds % 60);
       
       return `${String(displayMinute).padStart(2, '0')}:${String(displaySecondInMinute).padStart(2, '0')}`;
     }
@@ -181,38 +182,35 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const handleTimerClick = () => {
     if (!matchState) return;
 
-    const time = getSmartTime();
-    const { status, elapsedSeconds: currentElapsed } = matchState.timer;
+    const { status } = matchState.timer;
     let newTimerState: Partial<Timer> = {};
-    let newEventMessage = '';
     
     const now = Date.now();
 
     switch (status) {
       case 'NOT_STARTED':
+        // Start of the match. Reset everything.
         newTimerState = { status: 'FIRST_HALF', isRunning: true, elapsedSeconds: 0, startTime: now };
-        newEventMessage = '▶️ INICIO PARTIDO';
         break;
       case 'FIRST_HALF':
+        // At half-time, stop the timer. `elapsedSeconds` now holds the 1T duration.
         newTimerState = { status: 'HALF_TIME', isRunning: false, elapsedSeconds: displaySeconds, startTime: 0, firstHalfEndSeconds: displaySeconds };
-        newEventMessage = `⏹️ FIN 1T`;
         break;
       case 'HALF_TIME':
-        newTimerState = { status: 'SECOND_HALF', isRunning: true, startTime: now }; // elapsedSeconds is carried over
-        newEventMessage = '▶️ INICIO 2T';
+        // To start 2T, just mark as running and set a new startTime.
+        // `elapsedSeconds` (holding 1T duration) is carried over as the base.
+        newTimerState = { status: 'SECOND_HALF', isRunning: true, startTime: now };
         break;
       case 'SECOND_HALF':
+        // At the end, store the final total elapsed time.
         newTimerState = { status: 'FINISHED', isRunning: false, elapsedSeconds: displaySeconds, startTime: 0 };
-        newEventMessage = `🏁 FIN PARTIDO`;
         break;
       default:
         return;
     }
 
-    const newEvent: MatchEvent = { id: now, category: 'general', message: newEventMessage, time };
     updateMatch({
       timer: { ...matchState.timer, ...newTimerState },
-      events: [newEvent, ...matchState.events],
     });
   };
 
@@ -226,7 +224,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     if (status === 'NOT_STARTED' || status === 'FIRST_HALF' || status === 'HALF_TIME') {
       newTimerState = { ...newTimerState, status: 'NOT_STARTED', elapsedSeconds: 0, firstHalfEndSeconds: undefined };
     } else { // SECOND_HALF or FINISHED
-      newTimerState = { ...newTimerState, status: 'HALF_TIME', elapsedSeconds: matchState.timer.firstHalfEndSeconds || 45 * 60 };
+      newTimerState = { ...newTimerState, status: 'HALF_TIME', elapsedSeconds: matchState.timer.firstHalfEndSeconds || 0 };
     }
     updateMatch({ timer: { ...matchState.timer, ...newTimerState } });
     setModal(null);
@@ -980,3 +978,5 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     </div>
   );
 }
+
+    
