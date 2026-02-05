@@ -119,32 +119,39 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
     const { timer } = matchState;
 
-    if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-    }
-
-    const calculateDisplaySeconds = () => {
+    // This function calculates the current total elapsed seconds based on server data.
+    // It's the single source of truth for time.
+    const calculateTotalElapsedSeconds = () => {
         if (!timer.isRunning) {
             return timer.elapsedSeconds;
         }
+        // Time elapsed since the timer was last started.
         const timeSinceStart = (Date.now() - timer.startTime) / 1000;
+        // Total time is the previously recorded elapsed time plus the new interval.
         return timer.elapsedSeconds + timeSinceStart;
     };
 
-    setDisplaySeconds(calculateDisplaySeconds());
+    if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+    }
+    
+    // Set the initial display time when the component loads or timer state changes.
+    setDisplaySeconds(calculateTotalElapsedSeconds());
 
+    // If the timer is running, set up an interval to update the display every second.
     if (timer.isRunning) {
         timerIntervalRef.current = setInterval(() => {
-            setDisplaySeconds(calculateDisplaySeconds());
+            setDisplaySeconds(calculateTotalElapsedSeconds());
         }, 1000);
     }
 
+    // Cleanup interval on component unmount or when timer state changes.
     return () => {
         if (timerIntervalRef.current) {
             clearInterval(timerIntervalRef.current);
         }
     };
-}, [matchState?.timer]);
+}, [matchState?.timer]); // This effect re-runs whenever the timer object from Firestore changes.
 
 
   const getSmartTime = () => {
@@ -157,45 +164,33 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         return '00:00';
     }
     
-    // During the first half
     if (status === 'FIRST_HALF' || status === 'HALF_TIME') {
-      const secondsToFormat = status === 'HALF_TIME' ? (firstHalfEndSeconds ?? 0) : totalSeconds;
+      const secondsToFormat = status === 'HALF_TIME' ? (firstHalfEndSeconds ?? 2700) : totalSeconds;
       const minutes = Math.floor(secondsToFormat / 60);
 
       if (minutes >= 45) {
         const extraSeconds = secondsToFormat - 45 * 60;
-        // For half time, we show the final added minute. For running time, we show the current one.
-        const extraMinutes = status === 'HALF_TIME'
-            ? Math.ceil(extraSeconds / 60)
-            : Math.floor(extraSeconds / 60) + 1;
+        const extraMinutes = Math.floor(extraSeconds / 60) + 1;
         return `45+${extraMinutes}`;
       }
       return formatTime(secondsToFormat);
     }
     
-    // During the second half or after the match is finished
     if (status === 'SECOND_HALF' || status === 'FINISHED') {
-        const firstHalfDuration = firstHalfEndSeconds ?? 0;
-        // Time elapsed in the second half is total time minus the first half's duration
+        const firstHalfDuration = firstHalfEndSeconds ?? 2700;
         const secondHalfSeconds = totalSeconds - firstHalfDuration;
         const gameMinute = 45 + Math.floor(secondHalfSeconds / 60);
         
-        // Handle added time in the second half
         if (gameMinute >= 90) {
             const regulationSecondHalfSeconds = 45 * 60;
             const extraTimeSeconds = secondHalfSeconds - regulationSecondHalfSeconds;
-             // For finished, we show the final added minute. For running time, we show the current one.
-            const extraMinutes = status === 'FINISHED'
-              ? Math.ceil(extraTimeSeconds / 60)
-              : Math.floor(extraTimeSeconds / 60) + 1;
+            const extraMinutes = Math.floor(extraTimeSeconds / 60) + 1;
             return `90+${extraMinutes}`;
         }
         
-        // Regular time display for the second half
         return formatTime(45 * 60 + secondHalfSeconds);
     }
 
-    // Fallback for any other state
     return formatTime(totalSeconds);
 };
 
@@ -206,12 +201,18 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     updateMatch({ events: updatedEvents });
   };
   
-  const handleTimerClick = () => {
+ const handleTimerClick = () => {
     if (!matchState) return;
 
     const { timer } = matchState;
     const now = Date.now();
     let newTimerState: Partial<Timer> = {};
+
+    // This function calculates the most up-to-date elapsed time.
+    const calculateCurrentElapsed = () => {
+        if (!timer.isRunning) return timer.elapsedSeconds;
+        return timer.elapsedSeconds + (now - timer.startTime) / 1000;
+    };
 
     switch (timer.status) {
         case 'NOT_STARTED':
@@ -222,41 +223,37 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 elapsedSeconds: 0,
             };
             break;
-
         case 'FIRST_HALF':
-            const firstHalfElapsed = timer.elapsedSeconds + (now - timer.startTime) / 1000;
+            const firstHalfElapsed = calculateCurrentElapsed();
             newTimerState = {
                 status: 'HALF_TIME',
                 isRunning: false,
-                startTime: 0,
+                startTime: 0, // Reset startTime
                 elapsedSeconds: firstHalfElapsed,
                 firstHalfEndSeconds: firstHalfElapsed,
             };
             break;
-
         case 'HALF_TIME':
             newTimerState = {
                 status: 'SECOND_HALF',
                 isRunning: true,
                 startTime: now,
-                // elapsedSeconds remains unchanged until the half ends.
+                // elapsedSeconds remains the same as at the end of the first half.
+                // The running time will be added to it.
             };
             break;
-
         case 'SECOND_HALF':
-            const totalElapsed = timer.elapsedSeconds + (now - timer.startTime) / 1000;
             newTimerState = {
                 status: 'FINISHED',
                 isRunning: false,
                 startTime: 0,
-                elapsedSeconds: totalElapsed,
+                elapsedSeconds: calculateCurrentElapsed(),
             };
             break;
-
         case 'FINISHED':
+            // No action when the match is finished.
             return;
     }
-
     updateMatch({ timer: { ...timer, ...newTimerState } });
 };
 
@@ -269,7 +266,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       let newTimerState: Timer;
   
       if (status === 'NOT_STARTED' || status === 'FIRST_HALF' || status === 'HALF_TIME') {
-        // Reset to the very beginning
         newTimerState = {
           status: 'NOT_STARTED',
           startTime: 0,
@@ -278,11 +274,10 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           firstHalfEndSeconds: undefined,
         };
       } else { // SECOND_HALF or FINISHED
-        // Reset to the beginning of the second half (i.e., half time state)
         newTimerState = {
           status: 'HALF_TIME',
           startTime: 0,
-          elapsedSeconds: firstHalfEndSeconds || 2700, // Default to 45 mins if undefined
+          elapsedSeconds: firstHalfEndSeconds || 2700,
           isRunning: false,
           firstHalfEndSeconds: firstHalfEndSeconds,
         };
@@ -300,7 +295,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         fouls: { home: 0, away: 0 },
         teamNames: { home: 'LOCAL', away: 'VISITA' },
         events: [],
-        matchInfo: { advisor: userProfile?.email || '', league: '', round: '', place: '', date: '' },
+        matchInfo: { advisor: userProfile?.email || '', league: '', round: '', place: '', date: '', referee: '', assistant1: '', assistant2: '', fourthOfficial: '' },
         timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
       };
       setDoc(matchDocRef, initialState).catch((error) => {
@@ -925,6 +920,10 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             <Input type="number" value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value}})} placeholder="Jornada" />
             <Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value}})} placeholder="Lugar" />
             <Input value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} placeholder="Fecha" />
+            <Input value={matchInfo.referee || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value}})} placeholder="Árbitro" />
+            <Input value={matchInfo.assistant1 || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value}})} placeholder="Asistente 1" />
+            <Input value={matchInfo.assistant2 || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value}})} placeholder="Asistente 2" />
+            <Input value={matchInfo.fourthOfficial || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, fourthOfficial: e.target.value}})} placeholder="Cuarto Árbitro" />
           </div>
           <Button onClick={() => setModal(null)} className="w-full mt-6 shadow-lg">Cerrar</Button>
         </DialogContent>

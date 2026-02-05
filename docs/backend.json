@@ -99,7 +99,11 @@
         "league": { "type": "string", "description": "Name of the league or tournament." },
         "round": { "type": "string", "description": "The matchday or round number." },
         "place": { "type": "string", "description": "Venue or location of the match." },
-        "date": { "type": "string", "description": "Date of the match." }
+        "date": { "type": "string", "description": "Date of the match." },
+        "referee": { "type": "string", "description": "Name of the referee." },
+        "assistant1": { "type": "string", "description": "Name of the first assistant referee." },
+        "assistant2": { "type": "string", "description": "Name of the second assistant referee." },
+        "fourthOfficial": { "type": "string", "description": "Name of the fourth official." }
       },
       "required": ["advisor", "league", "round", "place", "date"]
     },
