@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -26,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ReportView } from '@/components/report/ReportView';
 import { Logo } from '@/components/ui/Logo';
 import { Skeleton } from '@/components/ui/skeleton';
+import { causalesAmarilla, causalesRoja, causalesStaff } from '@/lib/causales';
 
 
 interface MatchPageProps {
@@ -33,33 +35,6 @@ interface MatchPageProps {
   userProfile: UserProfile | null;
   matchDocRef: DocumentReference;
 }
-
-const causalesAmarilla = [
-  'Conducta antideportiva',
-  'Desaprobar con palabras o acciones',
-  'Infringir persistentemente las Reglas',
-  'Retardar la reanudación del juego',
-  'No respetar la distancia reglamentaria',
-  'Entrar o salir del terreno sin permiso',
-];
-
-const causalesRoja = [
-  'Juego brusco grave',
-  'Conducta violenta',
-  'Escupir a un adversario o a otra persona',
-  'Impedir un gol con la mano (no guardameta)',
-  'Malograr oportunidad manifiesta de gol',
-  'Lenguaje ofensivo, insultante o humillante',
-  'Recibir una segunda amonestación',
-];
-
-const causalesStaff = [
-  'Conducta antideportiva',
-  'Desaprobar con palabras o acciones',
-  'Protestar decisiones arbitrales',
-  'Entrar al terreno de juego sin permiso',
-  'Retardar la reanudación del juego',
-];
 
 export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageProps) {
   const { toast } = useToast();
