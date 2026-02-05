@@ -113,24 +113,34 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
     const { timer } = matchState;
 
-    if (timer.isRunning) {
-      timerIntervalRef.current = setInterval(() => {
-        const timeSincePeriodStart = (Date.now() - timer.startTime) / 1000;
-        setDisplaySeconds(timer.elapsedSeconds + timeSincePeriodStart);
-      }, 1000);
-    } else {
-      setDisplaySeconds(timer.elapsedSeconds);
-      if (timerIntervalRef.current) {
+    // Clear any existing interval
+    if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
-      }
     }
 
+    if (timer.isRunning) {
+        // Calculate the time that has passed since the timer was last started
+        const timeSincePeriodStart = (Date.now() - timer.startTime) / 1000;
+        const currentTotalElapsed = timer.elapsedSeconds + timeSincePeriodStart;
+        setDisplaySeconds(currentTotalElapsed);
+        
+        // Set up an interval to update the display every second
+        timerIntervalRef.current = setInterval(() => {
+            setDisplaySeconds(prevSeconds => prevSeconds + 1);
+        }, 1000);
+    } else {
+        // If the timer is not running, just display the stored elapsed time
+        setDisplaySeconds(timer.elapsedSeconds);
+    }
+
+    // Cleanup function to clear the interval when the component unmounts or dependencies change
     return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
+        if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+        }
     };
-  }, [matchState]);
+}, [matchState?.timer.isRunning, matchState?.timer.startTime, matchState?.timer.elapsedSeconds]);
+
 
 
   const getSmartTime = () => {
@@ -142,7 +152,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     if (status === 'NOT_STARTED') {
         return '00:00';
     }
-
+    
+    // During the first half
     if (status === 'FIRST_HALF') {
       const minutes = Math.floor(totalSeconds / 60);
       if (minutes >= 45) {
@@ -152,32 +163,37 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       }
       return formatTime(totalSeconds);
     }
-    
-    const firstHalfDuration = firstHalfEndSeconds ?? 0;
 
+    const firstHalfDuration = firstHalfEndSeconds ?? 0;
+    
+    // At half time, display the duration of the first half
     if (status === 'HALF_TIME') {
         return formatTime(firstHalfDuration);
     }
-
+    
+    // During the second half or after the match is finished
     if (status === 'SECOND_HALF' || status === 'FINISHED') {
-      const secondHalfSeconds = totalSeconds - firstHalfDuration;
-      const gameMinute = 45 + Math.floor(secondHalfSeconds / 60);
-
-      if (gameMinute >= 90) {
-        const regulationSecondHalfSeconds = 45 * 60;
-        const extraTimeSeconds = secondHalfSeconds - regulationSecondHalfSeconds;
-        const extraMinutes = Math.floor(extraTimeSeconds / 60) + 1;
-        return `90+${extraMinutes}`;
-      }
-      
-      const displayMinute = gameMinute;
-      const displaySecondInMinute = Math.floor(secondHalfSeconds % 60);
-      
-      return `${String(displayMinute).padStart(2, '0')}:${String(displaySecondInMinute).padStart(2, '0')}`;
+        // Time elapsed in the second half is total time minus the first half's duration
+        const secondHalfSeconds = totalSeconds - firstHalfDuration;
+        const gameMinute = 45 + Math.floor(secondHalfSeconds / 60);
+        
+        // Handle added time in the second half
+        if (gameMinute >= 90) {
+            const regulationSecondHalfSeconds = 45 * 60;
+            const extraTimeSeconds = secondHalfSeconds - regulationSecondHalfSeconds;
+            const extraMinutes = Math.floor(extraTimeSeconds / 60) + 1;
+            return `90+${extraMinutes}`;
+        }
+        
+        // Regular time display for the second half
+        const displayMinute = gameMinute;
+        const displaySecondInMinute = Math.floor(secondHalfSeconds % 60);
+        return `${String(displayMinute).padStart(2, '0')}:${String(displaySecondInMinute).padStart(2, '0')}`;
     }
 
+    // Fallback for any other state
     return formatTime(totalSeconds);
-  };
+};
 
 
   const addEvent = (category: string, message: string, time: string, side?: 'home' | 'away') => {
@@ -194,69 +210,74 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     let newTimerState: Partial<Timer> = {};
 
     switch (timer.status) {
-      case 'NOT_STARTED':
-        newTimerState = {
-          status: 'FIRST_HALF',
-          isRunning: true,
-          startTime: now,
-          elapsedSeconds: 0,
-          firstHalfEndSeconds: undefined,
-        };
-        break;
+        case 'NOT_STARTED':
+            newTimerState = {
+                status: 'FIRST_HALF',
+                isRunning: true,
+                startTime: now,
+                elapsedSeconds: 0,
+            };
+            break;
 
-      case 'FIRST_HALF':
-        const firstHalfElapsed = timer.elapsedSeconds + (now - timer.startTime) / 1000;
-        newTimerState = {
-          status: 'HALF_TIME',
-          isRunning: false,
-          startTime: 0,
-          elapsedSeconds: firstHalfElapsed,
-          firstHalfEndSeconds: firstHalfElapsed,
-        };
-        break;
+        case 'FIRST_HALF':
+            // Calculate elapsed time when stopping
+            const firstHalfElapsed = timer.elapsedSeconds + (now - timer.startTime) / 1000;
+            newTimerState = {
+                status: 'HALF_TIME',
+                isRunning: false,
+                startTime: 0,
+                elapsedSeconds: firstHalfElapsed,
+                firstHalfEndSeconds: firstHalfElapsed, // Store the exact end time
+            };
+            break;
 
-      case 'HALF_TIME':
-        newTimerState = {
-          status: 'SECOND_HALF',
-          isRunning: true,
-          startTime: now,
-          // elapsedSeconds now represents the start of the 2nd half.
-        };
-        break;
+        case 'HALF_TIME':
+            newTimerState = {
+                status: 'SECOND_HALF',
+                isRunning: true,
+                startTime: now,
+                // elapsedSeconds remains from the end of the first half
+            };
+            break;
 
-      case 'SECOND_HALF':
-        const totalElapsed = timer.elapsedSeconds + (now - timer.startTime) / 1000;
-        newTimerState = {
-          status: 'FINISHED',
-          isRunning: false,
-          startTime: 0,
-          elapsedSeconds: totalElapsed,
-        };
-        break;
+        case 'SECOND_HALF':
+            // Calculate total elapsed time when finishing
+            const totalElapsed = timer.elapsedSeconds + (now - timer.startTime) / 1000;
+            newTimerState = {
+                status: 'FINISHED',
+                isRunning: false,
+                startTime: 0,
+                elapsedSeconds: totalElapsed,
+            };
+            break;
 
-      case 'FINISHED':
-        return;
+        case 'FINISHED':
+            // Do nothing if the match is already finished
+            return;
     }
 
     updateMatch({ timer: { ...timer, ...newTimerState } });
-  };
+};
 
   const triggerResetCrono = () => setModal('reset-crono-confirm');
 
   const handleResetCrono = () => {
       if (!matchState) return;
       const { status, firstHalfEndSeconds } = matchState.timer;
-
+  
       let newTimerState: Timer;
-
+  
       if (status === 'NOT_STARTED' || status === 'FIRST_HALF') {
+        // Reset to the very beginning
         newTimerState = {
           status: 'NOT_STARTED',
           startTime: 0,
           elapsedSeconds: 0,
           isRunning: false,
+          firstHalfEndSeconds: undefined, // Explicitly clear this
         };
       } else { // HALF_TIME, SECOND_HALF, or FINISHED
+        // Reset to the beginning of halftime
         newTimerState = {
           status: 'HALF_TIME',
           startTime: 0,
@@ -953,13 +974,19 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             )}
             
             <DialogFooter className="mt-4">
-                <Button onClick={handleSavePegi} className="w-full shadow-lg" disabled={!pegiDecision}>Aceptar</Button>
+                <Button onClick={handleSavePegi} className="w-full shadow-lg">Aceptar</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
       
       <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
         <DialogContent className="max-w-4xl p-4 md:p-6">
+          <DialogHeader>
+            <DialogTitle>Informe del Partido</DialogTitle>
+            <DialogDescription>
+              Este es un resumen visual del partido. Puedes descargarlo como una imagen JPEG.
+            </DialogDescription>
+          </DialogHeader>
           <ReportView matchState={matchState} />
         </DialogContent>
       </Dialog>
@@ -1039,3 +1066,4 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     
 
     
+
