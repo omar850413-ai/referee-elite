@@ -123,18 +123,18 @@ export function ReportView({ matchState }: ReportViewProps) {
     );
 
     let currentY = y + 40;
-    items.forEach((item, index) => {
+    items.forEach((item) => {
       const parsed = parseEvent(item);
       if (parsed.isCard && parsed.causal) {
         elements.push(
-          <text key={`${index}-target`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
+          <text key={`${item.id}-target`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
             {parsed.targetInfo}
           </text>
         );
         currentY += 22;
 
         elements.push(
-          <foreignObject key={`${index}-causal`} x={x - 175} y={currentY - 15} width="350" height="40">
+          <foreignObject key={`${item.id}-causal`} x={x - 175} y={currentY - 15} width="350" height="40">
             <p xmlns="http://www.w3.org/1999/xhtml" style={{
               color: '#A1A1AA',
               fontSize: '14px',
@@ -152,7 +152,7 @@ export function ReportView({ matchState }: ReportViewProps) {
       } else {
         const textToShow = parsed.isCard ? parsed.targetInfo : parsed.text;
         elements.push(
-          <text key={index} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
+          <text key={item.id} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
             {textToShow}
           </text>
         );
