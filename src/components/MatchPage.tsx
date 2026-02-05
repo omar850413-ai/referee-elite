@@ -218,15 +218,33 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
   const handleResetCrono = () => {
     if (!matchState) return;
-    const { status } = matchState.timer;
-    let newTimerState: Partial<Timer> = { isRunning: false, startTime: 0 };
+    const { status, firstHalfEndSeconds } = matchState.timer;
+
+    let newTimerObject: Timer;
 
     if (status === 'NOT_STARTED' || status === 'FIRST_HALF' || status === 'HALF_TIME') {
-      newTimerState = { ...newTimerState, status: 'NOT_STARTED', elapsedSeconds: 0, firstHalfEndSeconds: undefined };
-    } else { // SECOND_HALF or FINISHED
-      newTimerState = { ...newTimerState, status: 'HALF_TIME', elapsedSeconds: matchState.timer.firstHalfEndSeconds || 0 };
+      // Reset to the very beginning of the match.
+      // This object intentionally omits `firstHalfEndSeconds`.
+      newTimerObject = {
+        status: 'NOT_STARTED',
+        startTime: 0,
+        elapsedSeconds: 0,
+        isRunning: false,
+      };
+    } else { // status is SECOND_HALF or FINISHED
+      // Reset to the state of half-time. `elapsedSeconds` is reset to the duration of the first half.
+      newTimerObject = {
+        status: 'HALF_TIME',
+        startTime: 0,
+        elapsedSeconds: firstHalfEndSeconds || 0, // Use the stored value
+        isRunning: false,
+        firstHalfEndSeconds: firstHalfEndSeconds || 0, // Preserve this value
+      };
     }
-    updateMatch({ timer: { ...matchState.timer, ...newTimerState } });
+    
+    // This update replaces the entire `timer` map in Firestore, which is a safe
+    // way to handle removing nested fields and avoids the `undefined` value error.
+    updateMatch({ timer: newTimerObject });
     setModal(null);
   };
   
@@ -377,6 +395,14 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   }
 
   const openPegiModal = () => {
+    if (!matchState || matchState.timer.status === 'NOT_STARTED') {
+      toast({
+        title: 'El partido no ha comenzado',
+        description: 'Debes iniciar el cronómetro para registrar eventos PEGI.',
+        variant: 'destructive',
+      });
+      return;
+    }
     capturedTimeRef.current = getSmartTime();
     setPegiDecision(null);
     setPegiDescription('');
