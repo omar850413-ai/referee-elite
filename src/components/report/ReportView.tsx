@@ -62,9 +62,9 @@ export function ReportView({ matchState }: ReportViewProps) {
   const awayEvents: MatchEvent[] = [];
   const otherEvents: MatchEvent[] = [];
   const pegiPlays: MatchEvent[] = [];
+  const timerEventKeywords = ['INICIO PARTIDO', 'FIN 1T', 'INICIO 2T', 'FIN PARTIDO'];
 
   events.forEach(e => {
-      // New events have a 'side' property for robust categorization
       if (e.side === 'home') {
           homeEvents.push(e);
           return;
@@ -73,22 +73,6 @@ export function ReportView({ matchState }: ReportViewProps) {
           awayEvents.push(e);
           return;
       }
-
-      // For backward compatibility, check message content for older events
-      // that don't have the 'side' property.
-      if (e.side === undefined) {
-          const teamSpecificCategories = ['goals', 'cards', 'subs', 'general'];
-          if (teamSpecificCategories.includes(e.category)) {
-              if (e.message.toLowerCase().includes(`(${teamNames.home.toLowerCase()})`)) {
-                  homeEvents.push(e);
-                  return;
-              }
-              if (e.message.toLowerCase().includes(`(${teamNames.away.toLowerCase()})`)) {
-                  awayEvents.push(e);
-                  return;
-              }
-          }
-      }
       
       // PEGI plays are handled separately
       if (e.category === 'pegi') {
@@ -96,7 +80,12 @@ export function ReportView({ matchState }: ReportViewProps) {
         return;
       }
 
-      // Anything left is a general/other event (timer, notes, score corrections)
+      // Exclude timer events from the "other" category
+      if (timerEventKeywords.some(keyword => e.message.includes(keyword))) {
+          return;
+      }
+
+      // Anything left is a general/other event (notes, score corrections, etc.)
       otherEvents.push(e);
   });
 
