@@ -292,7 +292,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         fouls: { home: 0, away: 0 },
         teamNames: { home: 'LOCAL', away: 'VISITA' },
         events: [],
-        matchInfo: { advisor: userProfile?.email || '', league: '', round: '', place: '', date: '', referee: '', assistant1: '', assistant2: '', fourthOfficial: '' },
+        matchInfo: { advisor: userProfile?.email || '', league: '', round: '', place: '', date: '', referee: '', assistant1: '', assistant2: '', fourthOfficial: '', var: '', avar: '' },
         timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
       };
       setDoc(matchDocRef, initialState).catch((error) => {
@@ -939,6 +939,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             <Input value={matchInfo.assistant1 || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value}})} placeholder="Asistente 1" />
             <Input value={matchInfo.assistant2 || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value}})} placeholder="Asistente 2" />
             <Input value={matchInfo.fourthOfficial || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, fourthOfficial: e.target.value}})} placeholder="Cuarto Árbitro" />
+            <Input value={matchInfo.var || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, var: e.target.value}})} placeholder="VAR" />
+            <Input value={matchInfo.avar || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, avar: e.target.value}})} placeholder="AVAR" />
           </div>
           <Button onClick={() => setModal(null)} className="w-full mt-6 shadow-lg">Cerrar</Button>
         </DialogContent>

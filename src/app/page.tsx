@@ -41,7 +41,7 @@ export default function Home() {
             fouls: { home: 0, away: 0 },
             teamNames: { home: 'LOCAL', away: 'VISITA' },
             events: [],
-            matchInfo: { advisor: advisorName, league: '', round: '', place: '', date: '', referee: '', assistant1: '', assistant2: '', fourthOfficial: '' },
+            matchInfo: { advisor: advisorName, league: '', round: '', place: '', date: '', referee: '', assistant1: '', assistant2: '', fourthOfficial: '', var: '', avar: '' },
             timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
         };
         // Use setDoc to create the new match document

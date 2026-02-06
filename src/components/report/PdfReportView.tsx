@@ -79,6 +79,8 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           <div><strong>Asistente 1:</strong> {matchInfo.assistant1 || 'N/A'}</div>
           <div><strong>Asistente 2:</strong> {matchInfo.assistant2 || 'N/A'}</div>
           <div><strong>Cuarto Árbitro:</strong> {matchInfo.fourthOfficial || 'N/A'}</div>
+          <div><strong>VAR:</strong> {matchInfo.var || 'N/A'}</div>
+          <div><strong>AVAR:</strong> {matchInfo.avar || 'N/A'}</div>
         </div>
         <hr className="my-4 border-black" />
 

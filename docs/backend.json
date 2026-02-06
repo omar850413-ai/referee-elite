@@ -103,7 +103,9 @@
         "referee": { "type": "string", "description": "Name of the referee." },
         "assistant1": { "type": "string", "description": "Name of the first assistant referee." },
         "assistant2": { "type": "string", "description": "Name of the second assistant referee." },
-        "fourthOfficial": { "type": "string", "description": "Name of the fourth official." }
+        "fourthOfficial": { "type": "string", "description": "Name of the fourth official." },
+        "var": { "type": "string", "description": "Name of the VAR." },
+        "avar": { "type": "string", "description": "Name of the AVAR." }
       },
       "required": ["advisor", "league", "round", "place", "date"]
     },

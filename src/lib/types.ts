@@ -41,6 +41,8 @@ export interface MatchInfo {
   assistant1?: string;
   assistant2?: string;
   fourthOfficial?: string;
+  var?: string;
+  avar?: string;
 }
 
 export interface MatchState {
