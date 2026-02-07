@@ -32,7 +32,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     const canvas = document.createElement('canvas');
     const scale = 2;
     canvas.width = 800 * scale;
-    canvas.height = 1200 * scale;
+    canvas.height = svgHeight * scale; // Use dynamic height
     const ctx = canvas.getContext('2d');
 
     if (!ctx) return;
@@ -117,24 +117,24 @@ export function ReportView({ matchState }: ReportViewProps) {
     if (!items || items.length === 0) return { elements, endY: y };
 
     elements.push(
-      <text key={title} x={x} y={y} fontSize="22" fontFamily="Inter, sans-serif" fontWeight="900" fill={titleColor} textAnchor="middle">
+      <text key={`${title}-${x}`} x={x} y={y} fontSize="22" fontFamily="Inter, sans-serif" fontWeight="900" fill={titleColor} textAnchor="middle">
         {title}
       </text>
     );
 
     let currentY = y + 40;
-    items.forEach((item) => {
+    items.forEach((item, index) => {
       const parsed = parseEvent(item);
       if (parsed.isCard && parsed.causal) {
         elements.push(
-          <text key={`${item.id}-target`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
+          <text key={`${item.id}-target-${index}`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
             {parsed.targetInfo}
           </text>
         );
         currentY += 22;
 
         elements.push(
-          <foreignObject key={`${item.id}-causal`} x={x - 175} y={currentY - 15} width="350" height="40">
+          <foreignObject key={`${item.id}-causal-${index}`} x={x - 175} y={currentY - 15} width="350" height="40">
             <p xmlns="http://www.w3.org/1999/xhtml" style={{
               color: '#A1A1AA',
               fontSize: '14px',
@@ -152,7 +152,7 @@ export function ReportView({ matchState }: ReportViewProps) {
       } else {
         const textToShow = parsed.isCard ? parsed.targetInfo : parsed.text;
         elements.push(
-          <text key={item.id} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
+          <text key={`${item.id}-${index}`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
             {textToShow}
           </text>
         );
@@ -162,7 +162,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     return { elements, endY: currentY };
   };
 
-  const homeColumn = [];
+  const homeColumn: JSX.Element[] = [];
   let yHome = 550;
 
   const homeGoalsSection = renderEventList('Anotadores', homeGoals, 200, yHome, '#E2E8F0', '#FFFFFF');
@@ -189,7 +189,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     yHome = homeSubsSection.endY + 40;
   }
   
-  const awayColumn = [];
+  const awayColumn: JSX.Element[] = [];
   let yAway = 550;
 
   const awayGoalsSection = renderEventList('Anotadores', awayGoals, 600, yAway, '#E2E8F0', '#FFFFFF');
@@ -219,10 +219,18 @@ export function ReportView({ matchState }: ReportViewProps) {
   const noEventsInColumns = homeGoals.length === 0 && awayGoals.length === 0 && homeYellows.length === 0 && awayYellows.length === 0 && homeReds.length === 0 && awayReds.length === 0 && homeSubs.length === 0 && awaySubs.length === 0;
   const noNotes = noteEvents.length === 0 && pegiPlays.length === 0;
 
+  // --- Dynamic Height Calculation ---
+  const maxEventsY = Math.max(yHome, yAway);
+  const footerStartY = maxEventsY + 40;
+  const footerContentHeight = 180;
+  const bottomPadding = 40;
+  const calculatedHeight = footerStartY + footerContentHeight + bottomPadding;
+  const svgHeight = Math.max(1200, calculatedHeight);
+
   return (
     <div className="w-full">
-      <div className="bg-slate-900 p-2 md:p-4 rounded-lg border border-slate-700 aspect-[2/3] overflow-auto">
-        <svg ref={svgRef} viewBox="0 0 800 1200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <div className="bg-slate-900 p-2 md:p-4 rounded-lg border border-slate-700 overflow-auto">
+        <svg ref={svgRef} viewBox={`0 0 800 ${svgHeight}`} xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
           <defs>
             <linearGradient id="orangeScoreGradient" x1="0.5" y1="0" x2="0.5" y2="1">
               <stop offset="0%" stopColor="#FDBA74" />
@@ -245,8 +253,8 @@ export function ReportView({ matchState }: ReportViewProps) {
           </defs>
 
           {/* Backgrounds */}
-          <rect x="0" y="0" width="400" height="1200" fill="#064E3B" />
-          <rect x="400" y="0" width="400" height="1200" fill="#1E40AF" />
+          <rect x="0" y="0" width="400" height={svgHeight} fill="#064E3B" />
+          <rect x="400" y="0" width="400" height={svgHeight} fill="#1E40AF" />
 
           {localBg && <image href={localBg} data-ai-hint="jaguar pattern" x="-200" y="150" width="800" height="800" opacity="0.05" />}
           {awayBg && <image href={awayBg} data-ai-hint="gopher animal" x="200" y="150" width="800" height="800" opacity="0.05" />}
@@ -283,8 +291,8 @@ export function ReportView({ matchState }: ReportViewProps) {
           )}
 
           {/* Footer */}
-          <rect y="1020" width="800" height="180" fill="rgba(0,0,0,0.2)" />
-          <g transform="translate(0, 1040)">
+          <rect y={footerStartY} width="800" height={footerContentHeight} fill="rgba(0,0,0,0.2)" />
+          <g transform={`translate(0, ${footerStartY + 20})`}>
             {(noteEvents.length > 0 || pegiPlays.length > 0) && (
                  <text x="400" y="0" textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA" style={{textTransform: 'uppercase'}}>Anotaciones del Asesor</text>
             )}
@@ -318,7 +326,7 @@ export function ReportView({ matchState }: ReportViewProps) {
             )}
           </g>
 
-          <text x="20" y="1180" fontFamily="Inter, sans-serif" fontSize="14" fontWeight="900" fill="hsl(var(--primary))" textAnchor="start" style={{ fontStyle: 'italic', textTransform: 'uppercase' }}>Asesor Pro</text>
+          <text x="20" y={svgHeight - 20} fontFamily="Inter, sans-serif" fontSize="14" fontWeight="900" fill="hsl(var(--primary))" textAnchor="start" style={{ fontStyle: 'italic', textTransform: 'uppercase' }}>Asesor Pro</text>
 
         </svg>
       </div>
