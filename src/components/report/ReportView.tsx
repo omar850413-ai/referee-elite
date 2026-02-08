@@ -129,13 +129,12 @@ export function ReportView({ matchState }: ReportViewProps) {
           {mainText}
         </text>
       );
-      itemHeight += 20; // Reduced space
+      itemHeight += 16;
   
       // Causal text (if any)
       if (parsed.isCard && parsed.causal) {
         const causalText = parsed.causal;
-        // Increased height for wrapping
-        const foreignObjectHeight = 48; 
+        const foreignObjectHeight = 60; 
 
         elements.push(
             <foreignObject key={`${item.id}-causal-fo`} x={x - 175} y={currentY + 22} width="350" height={foreignObjectHeight}>
@@ -144,9 +143,9 @@ export function ReportView({ matchState }: ReportViewProps) {
                 </p>
             </foreignObject>
         );
-        itemHeight += foreignObjectHeight - 10; // Adjust for tighter packing
+        itemHeight += foreignObjectHeight - 14;
       }
-        currentY += itemHeight; // Add height of elements
+        currentY += itemHeight;
     });
   
     return { elements, endY: currentY };
@@ -157,15 +156,15 @@ export function ReportView({ matchState }: ReportViewProps) {
   let awayColumnY = 640;
   
   const homeGoalsSection = renderEventSection('GOLES', homeGoals, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
-  homeColumnY = homeGoalsSection.endY + (homeGoals.length > 0 ? 25 : 0);
+  homeColumnY = homeGoalsSection.endY + (homeGoals.length > 0 ? 30 : 0);
   allRenderedElements.push(...homeGoalsSection.elements);
   
   const homeYellowsSection = renderEventSection('AMONESTACIONES', homeYellowCards, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
-  homeColumnY = homeYellowsSection.endY + (homeYellowCards.length > 0 ? 25 : 0);
+  homeColumnY = homeYellowsSection.endY + (homeYellowCards.length > 0 ? 30 : 0);
   allRenderedElements.push(...homeYellowsSection.elements);
 
   const homeRedsSection = renderEventSection('EXPULSIONES', homeRedCards, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
-  homeColumnY = homeRedsSection.endY + (homeRedCards.length > 0 ? 25 : 0);
+  homeColumnY = homeRedsSection.endY + (homeRedCards.length > 0 ? 30 : 0);
   allRenderedElements.push(...homeRedsSection.elements);
   
   const homeSubsSection = renderEventSection('SUSTITUCIONES', homeSubs, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
@@ -173,15 +172,15 @@ export function ReportView({ matchState }: ReportViewProps) {
   allRenderedElements.push(...homeSubsSection.elements);
   
   const awayGoalsSection = renderEventSection('GOLES', awayGoals, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
-  awayColumnY = awayGoalsSection.endY + (awayGoals.length > 0 ? 25 : 0);
+  awayColumnY = awayGoalsSection.endY + (awayGoals.length > 0 ? 30 : 0);
   allRenderedElements.push(...awayGoalsSection.elements);
 
   const awayYellowsSection = renderEventSection('AMONESTACIONES', awayYellowCards, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
-  awayColumnY = awayYellowsSection.endY + (awayYellowCards.length > 0 ? 25 : 0);
+  awayColumnY = awayYellowsSection.endY + (awayYellowCards.length > 0 ? 30 : 0);
   allRenderedElements.push(...awayYellowsSection.elements);
   
   const awayRedsSection = renderEventSection('EXPULSIONES', awayRedCards, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
-  awayColumnY = awayRedsSection.endY + (awayRedCards.length > 0 ? 25 : 0);
+  awayColumnY = awayRedsSection.endY + (awayRedCards.length > 0 ? 30 : 0);
   allRenderedElements.push(...awayRedsSection.elements);
 
   const awaySubsSection = renderEventSection('SUSTITUCIONES', awaySubs, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
@@ -351,12 +350,12 @@ export function ReportView({ matchState }: ReportViewProps) {
           <text x="20" y={svgHeight - 20} fontFamily="Inter, sans-serif" fontSize="14" fontWeight="900" fill="hsl(var(--primary))" style={{ fontStyle: 'italic', textTransform: 'uppercase' }}>Asesor Pro</text>
 
         </svg>
-        <div className="absolute bottom-4 right-4">
-          <Button onClick={handleDownload} className="w-full">
-            <Download className="mr-2 h-4 w-4" />
-            Descargar como JPEG
-          </Button>
-        </div>
+      </div>
+      <div className="sticky bottom-0 -mx-4 -mb-4 mt-4 flex justify-end bg-slate-900/80 p-4 backdrop-blur-sm border-t border-slate-700">
+        <Button onClick={handleDownload}>
+          <Download className="mr-2 h-4 w-4" />
+          Descargar como JPEG
+        </Button>
       </div>
     </div>
   );
