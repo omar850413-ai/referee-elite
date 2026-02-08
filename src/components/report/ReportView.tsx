@@ -129,7 +129,7 @@ export function ReportView({ matchState }: ReportViewProps) {
       currentY += 18; // Move down for the next line (main text height)
 
       if (parsed.isCard && parsed.causal) {
-        const causalHeight = 50; // Enough for ~3 lines
+        const causalHeight = 60; // Increased height
         elements.push(
           <foreignObject key={`${item.id}-causal-${index}`} x={x - 175} y={currentY} width="350" height={causalHeight}>
             <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#A1A1AA', fontSize: '14px', fontStyle: 'italic', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2, margin: 0 }}>
@@ -137,12 +137,11 @@ export function ReportView({ matchState }: ReportViewProps) {
             </p>
           </foreignObject>
         );
-        // Add a compact increment for ~2 lines to keep it tight.
-        currentY += 32; 
+        currentY += 40; // Adjusted increment for potentially 3 lines
       }
 
       if (item.pdfDescription) {
-        const descriptionHeight = 55; // Enough for ~3 lines
+        const descriptionHeight = 55;
         elements.push(
           <foreignObject key={`${item.id}-pdfdesc-${index}`} x={x - 175} y={currentY} width="350" height={descriptionHeight}>
               <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#94A3B8', fontSize: '13px', fontStyle: 'italic', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.3, margin: 0, borderTop: '1px dashed #475569', paddingTop: '6px', marginTop: '6px' }}>
@@ -150,16 +149,14 @@ export function ReportView({ matchState }: ReportViewProps) {
             </p>
           </foreignObject>
         );
-        // Compact increment for the PDF description.
         currentY += 40;
       }
       
-      // A small gap to visually separate incidents.
-      currentY += 12;
+      currentY += 4;
     });
-    // Remove the last small gap to not affect section spacing
+    
     if (items.length > 0) {
-        currentY -= 12;
+        currentY -= 4;
     }
     return { elements, endY: currentY };
   };
@@ -208,8 +205,8 @@ export function ReportView({ matchState }: ReportViewProps) {
   const svgHeight = Math.max(1200, calculatedHeight);
 
   return (
-     <div className="relative bg-slate-900 rounded-lg border border-slate-700 max-h-[85vh] flex flex-col">
-       <DialogHeader className="p-4 flex-shrink-0 text-white text-center relative z-10">
+    <div className="relative bg-slate-900 rounded-lg border border-slate-700 max-h-[85vh] flex flex-col">
+      <DialogHeader className="p-4 flex-shrink-0 text-white text-center relative z-10">
         <DialogTitle>Informe del Partido</DialogTitle>
         <DialogDescription className="text-white/70 text-sm">
           Puedes pellizcar la pantalla para hacer zoom en la imagen.
@@ -219,8 +216,8 @@ export function ReportView({ matchState }: ReportViewProps) {
           <span className="sr-only">Cerrar</span>
         </DialogClose>
       </DialogHeader>
-
-      <div className="flex-1 overflow-auto p-4 rounded-lg">
+    
+      <div className="flex-grow overflow-auto p-4 rounded-lg">
         <svg
           ref={svgRef}
           viewBox={`0 0 800 ${svgHeight}`}
@@ -289,13 +286,13 @@ export function ReportView({ matchState }: ReportViewProps) {
           </text>
 
           {/* Main Content */}
-          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
+          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="24" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
           <text x="200" y="450" fontFamily="Inter, sans-serif" fontSize="140" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
           <text x="200" y="530" textAnchor="middle" fill="#FDBA74" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
           <text x="200" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.home}</text>
 
 
-          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
+          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="24" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
           <text x="600" y="450" fontFamily="Inter, sans-serif" fontSize="140" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
           <text x="600" y="530" textAnchor="middle" fill="#22D3EE" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
           <text x="600" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
@@ -344,7 +341,7 @@ export function ReportView({ matchState }: ReportViewProps) {
             )}
           </g>
 
-          <text x="20" y={svgHeight - 20} fontFamily="Inter, sans-serif" fontSize="14" fontWeight="900" fill="hsl(var(--primary))" textAnchor="start" style={{ fontStyle: 'italic', textTransform: 'uppercase' }}>Asesor Pro</text>
+          <text x="20" y={svgHeight - 20} fontFamily="Inter, sans-serif" fontSize="14" fontWeight="900" fill="hsl(var(--primary))" style={{ fontStyle: 'italic', textTransform: 'uppercase' }}>Asesor Pro</text>
 
         </svg>
       </div>

@@ -517,10 +517,10 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   };
   
   const getTeamNameSizeClass = (name: string | undefined) => {
-    if (!name) return 'text-2xl';
-    if (name.length > 12) return 'text-xl';
-    if (name.length > 9) return 'text-2xl';
-    return 'text-3xl';
+    if (!name) return 'text-xl';
+    if (name.length > 12) return 'text-lg';
+    if (name.length > 9) return 'text-xl';
+    return 'text-2xl';
   };
 
   if (isMatchLoading || !matchState) {
