@@ -45,7 +45,14 @@ export default function LoginPage() {
       const userDocRef = doc(firestore, 'users', user.uid);
 
       // Check if user profile exists
-      const userDoc = await getDoc(userDocRef);
+      const userDoc = await getDoc(userDocRef).catch(err => {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw err; // Re-throw to be caught by the outer try-catch
+      });
 
       if (userDoc.exists()) {
         // Profile exists, just update the session ID

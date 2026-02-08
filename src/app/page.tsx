@@ -60,6 +60,12 @@ export default function Home() {
         // Document already exists, just set the reference
         setMatchDocRef(ref);
       }
+    }).catch(err => {
+        const permissionError = new FirestorePermissionError({
+          path: ref.path,
+          operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
     });
 
   }, [user, firestore, userProfile]);
