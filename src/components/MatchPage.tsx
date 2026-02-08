@@ -544,7 +544,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   };
   
   const getTeamNameSizeClass = (name: string | undefined) => {
-    if (!name) return 'text-xl';
+    if (!name) return 'text-lg';
     if (name.length > 12) return 'text-base';
     if (name.length > 9) return 'text-lg';
     return 'text-xl';
@@ -1171,7 +1171,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                     <X className="h-5 w-5" />
                     <span className="sr-only">Cerrar</span>
                 </DialogClose>
-                <ReportView matchState={matchState} />
+                {isReportOpen && <ReportView matchState={matchState} />}
             </div>
         </div>
       </Dialog>
