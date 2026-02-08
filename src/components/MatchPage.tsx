@@ -28,6 +28,12 @@ import { PdfReportView } from '@/components/report/PdfReportView';
 import { Logo } from '@/components/ui/Logo';
 import { Skeleton } from '@/components/ui/skeleton';
 import { causalesAmarilla, causalesRoja, causalesStaff } from '@/lib/causales';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 
 interface MatchPageProps {
@@ -70,6 +76,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isPdfReportOpen, setIsPdfReportOpen] = useState(false);
   const [manualScores, setManualScores] = useState<Scores>({ home: 0, away: 0 });
+  const [selectedGoalType, setSelectedGoalType] = useState<'GOL' | 'PENAL' | 'AUTOGOL' | null>(null);
+  const [selectedCausal, setSelectedCausal] = useState<string | null>(null);
 
   const capturedTimeRef = useRef('00:00');
 
@@ -236,8 +244,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 status: 'SECOND_HALF',
                 isRunning: true,
                 startTime: now,
-                // elapsedSeconds remains the same as at the end of the first half.
-                // The running time will be added to it.
+                elapsedSeconds: matchState.timer.firstHalfEndSeconds ?? 2700,
             };
             break;
         case 'SECOND_HALF':
@@ -335,13 +342,18 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     } else {
       capturedTimeRef.current = getSmartTime();
     }
+
+    if (type === 'goal') {
+      setSelectedGoalType(null);
+    }
     
     setCurrentSide(side);
     setModal(type);
   };
 
-  const registerGoal = (type: string) => {
-    if (!matchState) return;
+  const registerGoal = (type: string | null) => {
+    if (!matchState || !type) return;
+
     const n = playerNumber || 'S/N';
     const otherSide = currentSide === 'home' ? 'away' : 'home';
     const sideToScore = type === 'AUTOGOL' ? otherSide : currentSide;
@@ -355,6 +367,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     updateMatch({ scores: newScores });
     
     setPlayerNumber('');
+    setSelectedGoalType(null);
     setModal(null);
   };
 
@@ -384,6 +397,9 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       capturedTimeRef.current = getSmartTime();
     }
 
+    setSelectedCausal(null);
+    setCurrentCardTarget('jugador');
+    setCurrentStaffRole('');
     setCurrentSide(side);
     setCurrentCardType(type);
     setModal('card-submenu');
@@ -402,14 +418,17 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     setModal('card-detail');
   };
 
-  const registerCard = (causal: string) => {
-    if (!matchState) return;
+  const registerCard = (causal: string | null) => {
+    if (!matchState || !causal) return;
     const p = playerNumber || 'S/N';
     const symbol = currentCardType === 'amarilla' ? '🟨' : '🟥';
     const target = currentCardTarget === 'jugador' ? `#${p}` : currentStaffRole;
     const message = `${symbol} ${target} (${matchState.teamNames[currentSide]}) - ${causal}`;
     addEvent('cards', message, capturedTimeRef.current, currentSide);
     setPlayerNumber('');
+    setSelectedCausal(null);
+    setCurrentStaffRole('');
+    setCurrentCardTarget('jugador');
     setModal(null);
   };
 
@@ -502,6 +521,13 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     localStorage.removeItem('sessionId');
     await signOut(auth);
     router.push('/login');
+  };
+  
+  const getTeamNameSizeClass = (name: string | undefined) => {
+    if (!name) return 'text-2xl';
+    if (name.length > 12) return 'text-xl';
+    if (name.length > 9) return 'text-2xl';
+    return 'text-3xl';
   };
 
   if (isMatchLoading || !matchState) {
@@ -608,7 +634,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 className="cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between text-center space-y-2"
                 title="Haz clic para corregir el marcador"
               >
-                <div>
+                <div className="h-16 flex items-center justify-center">
                   <p
                       onClick={(e) => {
                         e.stopPropagation();
@@ -616,14 +642,17 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                         setNewTeamName(teamNames.home);
                         setModal('edit-name');
                       }}
-                      className="text-2xl font-black text-blue-900 uppercase mb-2 border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2 truncate"
+                      className={cn(
+                        "font-black text-blue-900 uppercase border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2",
+                        getTeamNameSizeClass(teamNames.home)
+                      )}
                     >
                       {teamNames.home}
                     </p>
+                  </div>
                   <div className="text-center text-8xl font-black text-gray-800 leading-none py-2">
                     {scores.home}
                   </div>
-                </div>
                  <Button
                     onClick={(e) => { e.stopPropagation(); addFoul('home'); }}
                     className="mt-2 w-28 mx-auto bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
@@ -638,7 +667,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 className="cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between text-center space-y-2"
                 title="Haz clic para corregir el marcador"
               >
-                <div>
+                <div className="h-16 flex items-center justify-center">
                     <p
                       onClick={(e) => {
                         e.stopPropagation();
@@ -646,14 +675,17 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                         setNewTeamName(teamNames.away);
                         setModal('edit-name');
                       }}
-                      className="text-2xl font-black text-blue-900 uppercase mb-2 border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2 truncate"
+                      className={cn(
+                        "font-black text-blue-900 uppercase border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2",
+                        getTeamNameSizeClass(teamNames.away)
+                      )}
                     >
                       {teamNames.away}
                     </p>
+                  </div>
                   <div className="text-center text-8xl font-black text-gray-800 leading-none py-2">
                     {scores.away}
                   </div>
-                </div>
                 <Button
                     onClick={(e) => { e.stopPropagation(); addFoul('away'); }}
                     className="mt-2 w-28 mx-auto bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
@@ -748,9 +780,15 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           >
             🔎 JUGADAS PEGI
           </Button>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              onClick={() => {
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic">
+                Generar Informe
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-64">
+              <DropdownMenuItem onClick={() => {
                 if (!matchState || matchState.events.length === 0) {
                   toast({
                     title: 'No hay datos suficientes',
@@ -760,14 +798,11 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                   return;
                 }
                 setIsReportOpen(true);
-              }}
-              className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
-            >
-              Imagen
-            </Button>
-            <Button
-              onClick={() => {
-                if (!matchState || matchState.events.length === 0) {
+              }}>
+                Generar Imagen
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                 if (!matchState || matchState.events.length === 0) {
                   toast({
                     title: 'No hay datos suficientes',
                     description: 'Aún no han ocurrido eventos para generar un informe.',
@@ -776,12 +811,12 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                   return;
                 }
                 setIsPdfReportOpen(true);
-              }}
-              className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
-            >
-              PDF
-            </Button>
-          </div>
+              }}>
+                Generar PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button
             onClick={triggerFullReset}
             variant="destructive"
@@ -800,7 +835,10 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
               <div
                 key={e.id}
                 onClick={() => openEditEvent(e)}
-                className="flex justify-between p-3 border-b bg-white rounded-lg mb-1 shadow-sm cursor-pointer hover:bg-slate-50"
+                className={cn(
+                  "flex justify-between p-3 border-b bg-white rounded-lg mb-1 shadow-sm cursor-pointer hover:bg-slate-50",
+                  e.side === 'home' ? 'border-l-4 border-l-blue-300' : e.side === 'away' ? 'border-l-4 border-l-green-300' : ''
+                )}
               >
                 <span className="text-[11px] font-black uppercase text-slate-700">
                   {e.message}
@@ -850,10 +888,11 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             placeholder="00"
           />
           <div className="grid grid-cols-1 gap-2">
-            <Button onClick={() => registerGoal('GOL')} className="bg-emerald-600 hover:bg-emerald-700 text-white">Gol Normal</Button>
-            <Button onClick={() => registerGoal('PENAL')} className="bg-blue-600 hover:bg-blue-700 text-white">Penal</Button>
-            <Button onClick={() => registerGoal('AUTOGOL')} className="bg-red-600 hover:bg-red-700 text-white">Autogol</Button>
+            <Button onClick={() => setSelectedGoalType('GOL')} className={cn("text-white", selectedGoalType === 'GOL' ? 'bg-emerald-800 ring-2 ring-white ring-offset-2' : 'bg-emerald-600 hover:bg-emerald-700')}>Gol Normal</Button>
+            <Button onClick={() => setSelectedGoalType('PENAL')} className={cn("text-white", selectedGoalType === 'PENAL' ? 'bg-blue-800 ring-2 ring-white ring-offset-2' : 'bg-blue-600 hover:bg-blue-700')}>Penal</Button>
+            <Button onClick={() => setSelectedGoalType('AUTOGOL')} className={cn("text-white", selectedGoalType === 'AUTOGOL' ? 'bg-red-800 ring-2 ring-white ring-offset-2' : 'bg-red-600 hover:bg-red-700')}>Autogol</Button>
           </div>
+          <Button onClick={() => registerGoal(selectedGoalType)} disabled={!selectedGoalType} className="w-full mt-4 shadow-lg">Confirmar GOL</Button>
         </DialogContent>
       </Dialog>
       
@@ -916,11 +955,17 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             </div>
           )}
            <p className="text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">Selecciona Causal:</p>
-           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {(currentCardTarget === 'jugador' ? (currentCardType === 'amarilla' ? causalesAmarilla : causalesRoja) : causalesStaff).map(c => (
-              <Button key={c} variant="outline" className="w-full text-left p-4 h-auto text-[11px] font-black uppercase justify-start" onClick={() => registerCard(c)}>{c}</Button>
-            ))}
+           <div className="space-y-1 max-h-64 overflow-y-auto p-1">
+             <RadioGroup value={selectedCausal ?? ''} onValueChange={setSelectedCausal}>
+                {(currentCardTarget === 'jugador' ? (currentCardType === 'amarilla' ? causalesAmarilla : causalesRoja) : causalesStaff).map(c => (
+                  <div key={c} className="flex items-center space-x-3 p-2 rounded-md hover:bg-slate-100 cursor-pointer">
+                    <RadioGroupItem value={c} id={c} />
+                    <Label htmlFor={c} className="font-normal w-full cursor-pointer text-[11px] uppercase">{c}</Label>
+                  </div>
+                ))}
+            </RadioGroup>
            </div>
+           <Button onClick={() => registerCard(selectedCausal)} disabled={!selectedCausal} className="w-full mt-4 shadow-lg">Confirmar Tarjeta</Button>
         </DialogContent>
       </Dialog>
 
@@ -929,7 +974,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           <DialogHeader>
             <DialogTitle className="text-center uppercase italic text-primary/90">Ficha Técnica</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 mt-4">
+          <div className="space-y-3 mt-4 max-h-[60vh] overflow-y-auto p-1">
             <Input value={matchInfo.advisor} onChange={e => updateMatch({matchInfo: {...matchInfo, advisor: e.target.value}})} placeholder="Nombre Asesor" />
             <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value}})} placeholder="Torneo / Liga" />
             <Input type="number" value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value}})} placeholder="Jornada" />
@@ -1095,13 +1140,17 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       </Dialog>
       
       <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
-        <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none [&>button[data-radix-dialog-close]]:hidden">
+        <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none">
+           <DialogHeader>
+            <DialogTitle className="sr-only">Informe del Partido (Imagen)</DialogTitle>
+            <DialogDescription className="sr-only">Este es un resumen visual del partido. Puedes descargarlo como una imagen JPEG.</DialogDescription>
+          </DialogHeader>
           <ReportView matchState={matchState} />
         </DialogContent>
       </Dialog>
 
       <Dialog open={isPdfReportOpen} onOpenChange={setIsPdfReportOpen}>
-        <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none [&>button[data-radix-dialog-close]]:hidden">
+        <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none">
           <PdfReportView matchState={matchState} />
         </DialogContent>
       </Dialog>
