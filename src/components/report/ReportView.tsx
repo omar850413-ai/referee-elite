@@ -5,7 +5,7 @@ import { MatchState, MatchEvent } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { DialogClose } from '@/components/ui/dialog';
+import { DialogClose, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { parseTimeToMinutes } from '@/lib/utils';
 
 interface ReportViewProps {
@@ -59,7 +59,6 @@ export function ReportView({ matchState }: ReportViewProps) {
     };
   };
 
-  // --- Definitive Event Classification Logic ---
   const safeEvents = events || [];
   const sorter = (a: MatchEvent, b: MatchEvent) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
 
@@ -116,46 +115,43 @@ export function ReportView({ matchState }: ReportViewProps) {
       </text>
     );
   
-    let currentY = y + 25; // Compact spacing
-    items.forEach((item, index) => {
+    let currentY = y + 30;
+    items.forEach((item) => {
       const parsed = parseEventMessage(item);
       const mainText = parsed.isCard ? parsed.targetInfo : parsed.text;
   
       elements.push(
-        <text key={`${item.id}-main-${index}`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
+        <text key={`${item.id}-main`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
           {mainText}
         </text>
       );
-      currentY += 18;
+      currentY += 22;
   
       if (parsed.isCard && parsed.causal) {
-        const causalHeight = 60; // Height for up to 3 lines
-        elements.push(
-          <foreignObject key={`${item.id}-causal-${index}`} x={x - 175} y={currentY} width="350" height={causalHeight}>
-            <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#A1A1AA', fontSize: '14px', fontStyle: 'italic', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2, margin: 0, padding: '0 4px' }}>
-              {parsed.causal}
-            </p>
-          </foreignObject>
-        );
-        // Increment based on potential lines. A bit of trial and error.
-        const assumedLines = Math.min(3, Math.ceil((parsed.causal.length || 0) / 35));
-        currentY += (assumedLines * 14) + 4; // 14px line height + padding
+        // Simple text wrapping for causal
+        const words = parsed.causal.split(' ');
+        const lines: string[] = [];
+        let currentLine = '';
+        words.forEach(word => {
+          if ((currentLine + word).length > 40) {
+            lines.push(currentLine);
+            currentLine = word + ' ';
+          } else {
+            currentLine += word + ' ';
+          }
+        });
+        lines.push(currentLine);
+
+        lines.forEach((line, lineIndex) => {
+          elements.push(
+            <text key={`${item.id}-causal-${lineIndex}`} x={x} y={currentY} fontSize="14" fontFamily="Inter, sans-serif" fill="#A1A1AA" textAnchor="middle" fontStyle="italic">
+              {line.trim()}
+            </text>
+          );
+          currentY += 16;
+        });
       }
-  
-      if (item.pdfDescription) {
-        const descriptionHeight = 55;
-        elements.push(
-          <foreignObject key={`${item.id}-pdfdesc-${index}`} x={x - 175} y={currentY} width="350" height={descriptionHeight}>
-            <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#94A3B8', fontSize: '13px', fontStyle: 'italic', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.3, margin: 0, borderTop: '1px dashed #475569', paddingTop: '6px', marginTop: '6px' }}>
-              {item.pdfDescription}
-            </p>
-          </foreignObject>
-        );
-        const assumedLines = Math.min(3, Math.ceil((item.pdfDescription.length || 0) / 40));
-        currentY += (assumedLines * 13) + 10;
-      }
-  
-      currentY += 4; // small gap between items
+        currentY += 5;
     });
   
     return { elements, endY: currentY };
@@ -166,15 +162,15 @@ export function ReportView({ matchState }: ReportViewProps) {
   let awayColumnY = 640;
   
   const homeGoalsSection = renderEventSection('GOLES', homeGoals, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
-  homeColumnY = homeGoalsSection.endY + (homeGoals.length > 0 ? 15 : 0);
+  homeColumnY = homeGoalsSection.endY + (homeGoals.length > 0 ? 25 : 0);
   allRenderedElements.push(...homeGoalsSection.elements);
   
   const homeYellowsSection = renderEventSection('AMONESTACIONES', homeYellowCards, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
-  homeColumnY = homeYellowsSection.endY + (homeYellowCards.length > 0 ? 15 : 0);
+  homeColumnY = homeYellowsSection.endY + (homeYellowCards.length > 0 ? 25 : 0);
   allRenderedElements.push(...homeYellowsSection.elements);
 
   const homeRedsSection = renderEventSection('EXPULSIONES', homeRedCards, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
-  homeColumnY = homeRedsSection.endY + (homeRedCards.length > 0 ? 15 : 0);
+  homeColumnY = homeRedsSection.endY + (homeRedCards.length > 0 ? 25 : 0);
   allRenderedElements.push(...homeRedsSection.elements);
   
   const homeSubsSection = renderEventSection('SUSTITUCIONES', homeSubs, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
@@ -182,15 +178,15 @@ export function ReportView({ matchState }: ReportViewProps) {
   allRenderedElements.push(...homeSubsSection.elements);
   
   const awayGoalsSection = renderEventSection('GOLES', awayGoals, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
-  awayColumnY = awayGoalsSection.endY + (awayGoals.length > 0 ? 15 : 0);
+  awayColumnY = awayGoalsSection.endY + (awayGoals.length > 0 ? 25 : 0);
   allRenderedElements.push(...awayGoalsSection.elements);
 
   const awayYellowsSection = renderEventSection('AMONESTACIONES', awayYellowCards, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
-  awayColumnY = awayYellowsSection.endY + (awayYellowCards.length > 0 ? 15 : 0);
+  awayColumnY = awayYellowsSection.endY + (awayYellowCards.length > 0 ? 25 : 0);
   allRenderedElements.push(...awayYellowsSection.elements);
   
   const awayRedsSection = renderEventSection('EXPULSIONES', awayRedCards, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
-  awayColumnY = awayRedsSection.endY + (awayRedCards.length > 0 ? 15 : 0);
+  awayColumnY = awayRedsSection.endY + (awayRedCards.length > 0 ? 25 : 0);
   allRenderedElements.push(...awayRedsSection.elements);
 
   const awaySubsSection = renderEventSection('SUSTITUCIONES', awaySubs, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
@@ -206,8 +202,14 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   return (
     <div className="w-full h-full p-4 overflow-auto bg-slate-900 rounded-lg">
+       <DialogHeader className="px-2 pb-4 text-left">
+            <DialogTitle className="text-white">Informe del Partido</DialogTitle>
+            <DialogDescription>
+             Vista previa para descargar como imagen. Puedes pellizcar para hacer zoom.
+            </DialogDescription>
+        </DialogHeader>
       <div className="relative w-full max-w-[800px] mx-auto">
-        <DialogClose className="absolute -top-2 -right-2 z-10 rounded-full bg-black/30 p-1 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white">
+        <DialogClose className="absolute -top-14 right-0 z-10 rounded-full bg-black/30 p-1 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white">
           <X className="h-5 w-5" />
           <span className="sr-only">Cerrar</span>
         </DialogClose>
@@ -279,13 +281,13 @@ export function ReportView({ matchState }: ReportViewProps) {
           </text>
 
           {/* Main Content */}
-          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="22" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
+          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="20" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
           <text x="200" y="450" fontFamily="Inter, sans-serif" fontSize="120" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
           <text x="200" y="530" textAnchor="middle" fill="#FDBA74" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
           <text x="200" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.home}</text>
 
 
-          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="22" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
+          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="20" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
           <text x="600" y="450" fontFamily="Inter, sans-serif" fontSize="120" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
           <text x="600" y="530" textAnchor="middle" fill="#22D3EE" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
           <text x="600" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
