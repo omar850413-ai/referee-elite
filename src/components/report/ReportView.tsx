@@ -5,7 +5,7 @@ import { MatchState, MatchEvent } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { DialogClose } from '@/components/ui/dialog';
+import { DialogClose, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ReportViewProps {
   matchState: MatchState;
@@ -249,17 +249,19 @@ export function ReportView({ matchState }: ReportViewProps) {
   const svgHeight = Math.max(1200, calculatedHeight);
 
   return (
-    <div className="bg-slate-900 rounded-lg border border-slate-700 max-h-[85vh] flex flex-col p-4">
-      <div className="flex justify-between items-center flex-shrink-0 mb-4">
-        <div /> {/* Spacer */}
-        <h2 className="text-lg font-bold text-white">Informe de Partido</h2>
-        <DialogClose className="rounded-full bg-black/30 p-1 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white">
-            <X className="h-5 w-5" />
-            <span className="sr-only">Cerrar</span>
+    <div className="relative bg-slate-900 rounded-lg border border-slate-700 max-h-[85vh] flex flex-col">
+       <DialogHeader className="p-4 flex-shrink-0 text-white text-center relative">
+        <DialogTitle>Informe del Partido</DialogTitle>
+        <DialogDescription className="text-white/70 text-sm">
+          Puedes pellizcar para hacer zoom en la imagen.
+        </DialogDescription>
+        <DialogClose className="absolute top-4 right-4 rounded-full bg-black/30 p-1 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white z-10">
+          <X className="h-5 w-5" />
+          <span className="sr-only">Cerrar</span>
         </DialogClose>
-      </div>
+      </DialogHeader>
 
-      <div className="flex-1 overflow-auto rounded-lg">
+      <div className="flex-1 overflow-auto p-4 rounded-lg">
         <svg
           ref={svgRef}
           viewBox={`0 0 800 ${svgHeight}`}
@@ -388,7 +390,7 @@ export function ReportView({ matchState }: ReportViewProps) {
         </svg>
       </div>
 
-      <div className="flex-shrink-0 mt-4">
+      <div className="flex-shrink-0 p-4 border-t border-slate-700">
         <Button onClick={handleDownload} className="w-full">
           <Download className="mr-2 h-4 w-4" />
           Descargar como JPEG
