@@ -129,25 +129,27 @@ export function ReportView({ matchState }: ReportViewProps) {
       currentY += 22;
 
       if (parsed.isCard && parsed.causal) {
+        const causalHeight = 45; // Generous height for 2-3 lines
         elements.push(
-          <foreignObject key={`${item.id}-causal-${index}`} x={x - 175} y={currentY - 15} width="350" height="40">
+          <foreignObject key={`${item.id}-causal-${index}`} x={x - 175} y={currentY - 15} width="350" height={causalHeight}>
             <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#A1A1AA', fontSize: '14px', fontStyle: 'italic', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2, margin: 0 }}>
               {parsed.causal}
             </p>
           </foreignObject>
         );
-        currentY += 32;
+        currentY += 40; // Incremented to provide enough space
       }
 
       if (item.pdfDescription) {
+        const descriptionHeight = 60; // Increased height for up to 3-4 lines
         elements.push(
-          <foreignObject key={`${item.id}-pdfdesc-${index}`} x={x - 175} y={currentY - 15} width="350" height="50">
+          <foreignObject key={`${item.id}-pdfdesc-${index}`} x={x - 175} y={currentY - 15} width="350" height={descriptionHeight}>
               <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#94A3B8', fontSize: '13px', fontStyle: 'italic', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.3, margin: 0, borderTop: '1px dashed #475569', paddingTop: '6px', marginTop: '6px' }}>
               {item.pdfDescription}
             </p>
           </foreignObject>
         );
-        currentY += 42;
+        currentY += 55; // Incremented to provide enough space
       }
       currentY += 5;
     });
@@ -198,13 +200,13 @@ export function ReportView({ matchState }: ReportViewProps) {
   const svgHeight = Math.max(1200, calculatedHeight);
 
   return (
-    <div className="relative bg-slate-900 rounded-lg border border-slate-700 max-h-[85vh] flex flex-col">
-       <DialogHeader className="p-4 flex-shrink-0 text-white text-center relative">
+     <div className="relative bg-slate-900 rounded-lg border border-slate-700 max-h-[85vh] flex flex-col">
+       <DialogHeader className="p-4 flex-shrink-0 text-white text-center relative z-10">
         <DialogTitle>Informe del Partido</DialogTitle>
         <DialogDescription className="text-white/70 text-sm">
-          Puedes pellizcar para hacer zoom en la imagen.
+          Puedes pellizcar la pantalla para hacer zoom en la imagen.
         </DialogDescription>
-        <DialogClose className="absolute top-4 right-4 rounded-full bg-black/30 p-1 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white z-10">
+        <DialogClose className="absolute top-3 right-3 rounded-full bg-black/30 p-1 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white">
           <X className="h-5 w-5" />
           <span className="sr-only">Cerrar</span>
         </DialogClose>
@@ -215,7 +217,7 @@ export function ReportView({ matchState }: ReportViewProps) {
           ref={svgRef}
           viewBox={`0 0 800 ${svgHeight}`}
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-auto"
+          className="max-w-full h-auto bg-slate-900"
         >
           <defs>
             <linearGradient id="orangeScoreGradient" x1="0.5" y1="0" x2="0.5" y2="1">
@@ -279,14 +281,14 @@ export function ReportView({ matchState }: ReportViewProps) {
           </text>
 
           {/* Main Content */}
-          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
-          <text x="200" y="450" fontFamily="Inter, sans-serif" fontSize="180" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
+          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
+          <text x="200" y="450" fontFamily="Inter, sans-serif" fontSize="160" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
           <text x="200" y="530" textAnchor="middle" fill="#FDBA74" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
           <text x="200" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.home}</text>
 
 
-          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
-          <text x="600" y="450" fontFamily="Inter, sans-serif" fontSize="180" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
+          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
+          <text x="600" y="450" fontFamily="Inter, sans-serif" fontSize="160" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
           <text x="600" y="530" textAnchor="middle" fill="#22D3EE" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
           <text x="600" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
 
