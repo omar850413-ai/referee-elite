@@ -5,7 +5,7 @@ import { MatchState, MatchEvent } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { DialogClose, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogClose, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { parseTimeToMinutes } from '@/lib/utils';
 
 interface ReportViewProps {
@@ -27,14 +27,15 @@ export function ReportView({ matchState }: ReportViewProps) {
     style.innerHTML = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
     svg { font-family: 'Inter', sans-serif; }`;
     svg.insertBefore(style, svg.firstChild);
-
+    
+    const svgHeight = parseFloat(svg.getAttribute('height') || '1200');
     const svgData = new XMLSerializer().serializeToString(svg);
     svg.removeChild(style);
 
     const canvas = document.createElement('canvas');
     const scale = 2;
     canvas.width = 800 * scale;
-    canvas.height = svgHeight * scale; // Use dynamic height
+    canvas.height = svgHeight * scale;
     const ctx = canvas.getContext('2d');
 
     if (!ctx) return;
@@ -115,43 +116,36 @@ export function ReportView({ matchState }: ReportViewProps) {
       </text>
     );
   
-    let currentY = y + 30;
+    let currentY = y + 10;
     items.forEach((item) => {
       const parsed = parseEventMessage(item);
       const mainText = parsed.isCard ? parsed.targetInfo : parsed.text;
+      
+      let itemHeight = 0;
   
+      // Main text
       elements.push(
-        <text key={`${item.id}-main`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
+        <text key={`${item.id}-main`} x={x} y={currentY + 16} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
           {mainText}
         </text>
       );
-      currentY += 22;
+      itemHeight += 22;
   
+      // Causal text (if any)
       if (parsed.isCard && parsed.causal) {
-        // Simple text wrapping for causal
-        const words = parsed.causal.split(' ');
-        const lines: string[] = [];
-        let currentLine = '';
-        words.forEach(word => {
-          if ((currentLine + word).length > 40) {
-            lines.push(currentLine);
-            currentLine = word + ' ';
-          } else {
-            currentLine += word + ' ';
-          }
-        });
-        lines.push(currentLine);
+        const causalText = parsed.causal;
+        const foreignObjectHeight = causalText.length > 45 ? 32 : 16;
 
-        lines.forEach((line, lineIndex) => {
-          elements.push(
-            <text key={`${item.id}-causal-${lineIndex}`} x={x} y={currentY} fontSize="14" fontFamily="Inter, sans-serif" fill="#A1A1AA" textAnchor="middle" fontStyle="italic">
-              {line.trim()}
-            </text>
-          );
-          currentY += 16;
-        });
+        elements.push(
+            <foreignObject key={`${item.id}-causal-fo`} x={x - 175} y={currentY + 22} width="350" height={foreignObjectHeight}>
+                <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#A1A1AA', fontSize: '14px', fontStyle: 'italic', textAlign: 'center', margin: 0, padding: 0, lineHeight: '1.1' }}>
+                    {causalText}
+                </p>
+            </foreignObject>
+        );
+        itemHeight += foreignObjectHeight;
       }
-        currentY += 5;
+        currentY += itemHeight + 2; // Add height of elements + small margin
     });
   
     return { elements, endY: currentY };
@@ -194,9 +188,55 @@ export function ReportView({ matchState }: ReportViewProps) {
   allRenderedElements.push(...awaySubsSection.elements);
 
   const maxEventsY = Math.max(homeColumnY, awayColumnY);
-  const footerStartY = maxEventsY < 640 ? 640 : maxEventsY + 40;
-  const footerContentHeight = (noteEvents.length > 0 || pegiPlays.length > 0) ? 180 : 40;
-  const bottomPadding = 40;
+  let footerStartY = maxEventsY < 640 ? 640 : maxEventsY + 40;
+
+  const notesAndPegiElements: JSX.Element[] = [];
+  let footerContentHeight = 0;
+
+  if (noteEvents.length > 0 || pegiPlays.length > 0) {
+      footerContentHeight += 40; // Initial padding
+      notesAndPegiElements.push(<rect key="footer-bg" y={footerStartY} width="800" height="1" fill="rgba(255,255,255,0.1)" />);
+      let footerCurrentY = footerStartY + 40;
+
+      if (noteEvents.length > 0) {
+        notesAndPegiElements.push(<text key="notes-title" x="400" y={footerCurrentY} textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA" style={{textTransform: 'uppercase'}}>Anotaciones del Asesor</text>);
+        footerCurrentY += 25;
+        notesAndPegiElements.push(
+            <foreignObject key="notes-fo" x="50" y={footerCurrentY} width="700" height="60">
+                <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E2E8F0', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
+                    {noteEvents.map(e => e.message.replace('📝 ', '')).join('; ')}
+                </p>
+            </foreignObject>
+        );
+        footerCurrentY += 70;
+      }
+
+      if (pegiPlays.length > 0) {
+        notesAndPegiElements.push(<text key="pegi-title" x="400" y={footerCurrentY} textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE" style={{textTransform: 'uppercase'}}>Jugadas PEGI</text>);
+        footerCurrentY += 25;
+        notesAndPegiElements.push(
+            <foreignObject key="pegi-fo" x="50" y={footerCurrentY} width="700" height="60">
+              <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E9D5FF', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
+                {pegiPlays.map(p => {
+                  const msg = p.message;
+                  if (msg.endsWith('No')) {
+                      return 'Jugadas pegi no';
+                  }
+                  const yesPrefix = '🔎 JUGADAS PEGI: Sí - ';
+                  if (msg.startsWith(yesPrefix)) {
+                      return msg.substring(yesPrefix.length);
+                  }
+                  return msg.replace(/🔎|JUGADAS PEGI: /g, '').trim();
+                }).join('; ')}
+              </p>
+            </foreignObject>
+        );
+        footerCurrentY += 70;
+      }
+      footerContentHeight = footerCurrentY - footerStartY;
+  }
+
+  const bottomPadding = 60;
   const calculatedHeight = footerStartY + footerContentHeight + bottomPadding;
   const svgHeight = Math.max(1200, calculatedHeight);
 
@@ -216,6 +256,7 @@ export function ReportView({ matchState }: ReportViewProps) {
         <svg
           ref={svgRef}
           viewBox={`0 0 800 ${svgHeight}`}
+          height={svgHeight}
           xmlns="http://www.w3.org/2000/svg"
           className="max-w-full h-auto bg-slate-900"
         >
@@ -228,13 +269,6 @@ export function ReportView({ matchState }: ReportViewProps) {
               <stop offset="0%" stopColor="#22D3EE" />
               <stop offset="100%" stopColor="#06B6D4" />
             </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="5" result="coloredBlur" />
-              <feMerge>
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
             <filter id="text-shadow" x="-0.1" y="-0.1" width="1.2" height="1.2">
               <feDropShadow dx="3" dy="3" stdDeviation="3" floodColor="rgba(0,0,0,0.3)" />
             </filter>
@@ -309,38 +343,8 @@ export function ReportView({ matchState }: ReportViewProps) {
           )}
 
           {/* Footer */}
-          <rect y={footerStartY} width="800" height={footerContentHeight} fill="rgba(0,0,0,0.2)" />
-          <g transform={`translate(0, ${footerStartY + 20})`}>
-            {(noteEvents.length > 0 || pegiPlays.length > 0) && (
-                 <text x="400" y="0" textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA" style={{textTransform: 'uppercase'}}>Anotaciones del Asesor</text>
-            )}
-            {noteEvents.length > 0 && (
-                 <foreignObject x="50" y="25" width="700" height="60">
-                  <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E2E8F0', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
-                    {noteEvents.map(e => e.message.replace('📝 ', '')).join('; ')}
-                  </p>
-                </foreignObject>
-            )}
-            {pegiPlays.length > 0 && (
-              <>
-                <text x="400" y={noteEvents.length > 0 ? "95" : "25"} textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE" style={{textTransform: 'uppercase'}}>Jugadas PEGI</text>
-                 <foreignObject x="50" y={noteEvents.length > 0 ? "120" : "50"} width="700" height="60">
-                  <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E9D5FF', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
-                    {pegiPlays.map(p => {
-                      const msg = p.message;
-                      if (msg.endsWith('No')) {
-                          return 'Jugadas pegi no';
-                      }
-                      const yesPrefix = '🔎 JUGADAS PEGI: Sí - ';
-                      if (msg.startsWith(yesPrefix)) {
-                          return msg.substring(yesPrefix.length);
-                      }
-                      return msg.replace(/🔎|JUGADAS PEGI: /g, '').trim();
-                    }).join('; ')}
-                  </p>
-                </foreignObject>
-              </>
-            )}
+          <g transform={`translate(0, ${footerStartY})`}>
+            {notesAndPegiElements}
           </g>
 
           <text x="20" y={svgHeight - 20} fontFamily="Inter, sans-serif" fontSize="14" fontWeight="900" fill="hsl(var(--primary))" style={{ fontStyle: 'italic', textTransform: 'uppercase' }}>Asesor Pro</text>
