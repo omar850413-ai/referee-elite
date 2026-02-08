@@ -61,25 +61,23 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   // --- Definitive Event Classification Logic ---
   const safeEvents = events || [];
+  const sorter = (a: MatchEvent, b: MatchEvent) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
 
-  const homeEvents = safeEvents
-    .filter(e => e.side === 'home' && ['goals', 'cards', 'subs'].includes(e.category))
-    .sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+  const homeGoals = safeEvents.filter(e => e.side === 'home' && e.category === 'goals').sort(sorter);
+  const homeYellowCards = safeEvents.filter(e => e.side === 'home' && e.category === 'cards' && e.message.includes('🟨')).sort(sorter);
+  const homeRedCards = safeEvents.filter(e => e.side === 'home' && e.category === 'cards' && e.message.includes('🟥')).sort(sorter);
+  const homeSubs = safeEvents.filter(e => e.side === 'home' && e.category === 'subs').sort(sorter);
 
-  const awayEvents = safeEvents
-    .filter(e => e.side === 'away' && ['goals', 'cards', 'subs'].includes(e.category))
-    .sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
-
-  // Events for the bottom section
+  const awayGoals = safeEvents.filter(e => e.side === 'away' && e.category === 'goals').sort(sorter);
+  const awayYellowCards = safeEvents.filter(e => e.side === 'away' && e.category === 'cards' && e.message.includes('🟨')).sort(sorter);
+  const awayRedCards = safeEvents.filter(e => e.side === 'away' && e.category === 'cards' && e.message.includes('🟥')).sort(sorter);
+  const awaySubs = safeEvents.filter(e => e.side === 'away' && e.category === 'subs').sort(sorter);
+  
   const noteEvents = safeEvents.filter(e => e.category === 'notes');
   const pegiPlays = safeEvents.filter(e => e.category === 'pegi');
 
-
-  const parseEvent = (event: MatchEvent) => {
-    const time = event.time;
+  const parseEventMessage = (event: MatchEvent) => {
     let message = event.message;
-
-    // Remove team name from message for cleaner display
     const teamNameRegex = new RegExp(`\\((${teamNames.home}|${teamNames.away})\\)`, 'i');
     message = message.replace(teamNameRegex, '').trim();
     
@@ -89,13 +87,7 @@ export function ReportView({ matchState }: ReportViewProps) {
         const parts = message.split(' - ');
         const target = parts[0]?.trim() || '';
         const causal = parts.slice(1).join(' - ').trim();
-
-        return {
-            isCard: true,
-            targetInfo: `${symbol} ${target} min ${time}`,
-            causal: causal || null,
-            pdfDescription: event.pdfDescription || null,
-        };
+        return { isCard: true, targetInfo: `${symbol} ${target} min ${event.time}`, causal: causal || null };
     }
     
     let icon = '';
@@ -111,14 +103,10 @@ export function ReportView({ matchState }: ReportViewProps) {
         message = message.replace(icon, '').replace('GOL', '').replace('PENAL', '(P)').replace('AUTOGOL', '(AG)').trim();
     }
     
-    return {
-        isCard: false,
-        text: `${icon} ${message} min ${time}`.trim(),
-        pdfDescription: event.pdfDescription || null,
-    };
+    return { isCard: false, text: `${icon} ${message} min ${event.time}`.trim() };
   };
 
-  const renderEventList = (title: string, items: MatchEvent[], x: number, y: number, textColor: string, titleColor: string) => {
+  const renderEventSection = (title: string, items: MatchEvent[], x: number, y: number, textColor: string, titleColor: string) => {
     const elements: JSX.Element[] = [];
     if (!items || items.length === 0) return { elements, endY: y };
 
@@ -130,7 +118,7 @@ export function ReportView({ matchState }: ReportViewProps) {
 
     let currentY = y + 40;
     items.forEach((item, index) => {
-      const parsed = parseEvent(item);
+      const parsed = parseEventMessage(item);
       
       const mainText = parsed.isCard ? parsed.targetInfo : parsed.text;
       elements.push(
@@ -143,15 +131,7 @@ export function ReportView({ matchState }: ReportViewProps) {
       if (parsed.isCard && parsed.causal) {
         elements.push(
           <foreignObject key={`${item.id}-causal-${index}`} x={x - 175} y={currentY - 15} width="350" height="40">
-            <p xmlns="http://www.w3.org/1999/xhtml" style={{
-              color: '#A1A1AA',
-              fontSize: '14px',
-              fontStyle: 'italic',
-              whiteSpace: 'normal',
-              textAlign: 'center',
-              lineHeight: 1.2,
-              margin: 0,
-            }}>
+            <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#A1A1AA', fontSize: '14px', fontStyle: 'italic', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2, margin: 0 }}>
               {parsed.causal}
             </p>
           </foreignObject>
@@ -159,46 +139,60 @@ export function ReportView({ matchState }: ReportViewProps) {
         currentY += 32;
       }
 
-      if (parsed.pdfDescription) {
+      if (item.pdfDescription) {
         elements.push(
           <foreignObject key={`${item.id}-pdfdesc-${index}`} x={x - 175} y={currentY - 15} width="350" height="50">
-              <p xmlns="http://www.w3.org/1999/xhtml" style={{
-              color: '#94A3B8',
-              fontSize: '13px',
-              fontStyle: 'italic',
-              whiteSpace: 'normal',
-              textAlign: 'center',
-              lineHeight: 1.3,
-              margin: 0,
-              borderTop: '1px dashed #475569',
-              paddingTop: '6px',
-              marginTop: '6px'
-            }}>
-              {parsed.pdfDescription}
+              <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#94A3B8', fontSize: '13px', fontStyle: 'italic', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.3, margin: 0, borderTop: '1px dashed #475569', paddingTop: '6px', marginTop: '6px' }}>
+              {item.pdfDescription}
             </p>
           </foreignObject>
         );
         currentY += 42;
       }
-
-      currentY += 15;
+      currentY += 5;
     });
     return { elements, endY: currentY };
   };
 
-  const homeColumn = renderEventList('INCIDENTES', homeEvents, 200, 640, '#E2E8F0', '#FFFFFF');
-  const awayColumn = renderEventList('INCIDENTES', awayEvents, 600, 640, '#E2E8F0', '#FFFFFF');
+  const allRenderedElements: JSX.Element[] = [];
+  let homeColumnY = 640;
+  let awayColumnY = 640;
+  
+  const homeGoalsSection = renderEventSection('GOLES', homeGoals, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
+  if(homeGoals.length > 0) homeColumnY = homeGoalsSection.endY + 30;
+  allRenderedElements.push(...homeGoalsSection.elements);
+  
+  const homeYellowsSection = renderEventSection('AMONESTACIONES', homeYellowCards, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
+  if(homeYellowCards.length > 0) homeColumnY = homeYellowsSection.endY + 30;
+  allRenderedElements.push(...homeYellowsSection.elements);
 
-  const yHome = homeColumn.endY;
-  const yAway = awayColumn.endY;
+  const homeRedsSection = renderEventSection('EXPULSIONES', homeRedCards, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
+  if(homeRedCards.length > 0) homeColumnY = homeRedsSection.endY + 30;
+  allRenderedElements.push(...homeRedsSection.elements);
+  
+  const homeSubsSection = renderEventSection('SUSTITUCIONES', homeSubs, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
+  if(homeSubs.length > 0) homeColumnY = homeSubsSection.endY;
+  allRenderedElements.push(...homeSubsSection.elements);
+  
+  const awayGoalsSection = renderEventSection('GOLES', awayGoals, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
+  if(awayGoals.length > 0) awayColumnY = awayGoalsSection.endY + 30;
+  allRenderedElements.push(...awayGoalsSection.elements);
 
-  const noEventsInColumns = homeEvents.length === 0 && awayEvents.length === 0;
-  const noNotes = noteEvents.length === 0 && pegiPlays.length === 0;
+  const awayYellowsSection = renderEventSection('AMONESTACIONES', awayYellowCards, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
+  if(awayYellowCards.length > 0) awayColumnY = awayYellowsSection.endY + 30;
+  allRenderedElements.push(...awayYellowsSection.elements);
+  
+  const awayRedsSection = renderEventSection('EXPULSIONES', awayRedCards, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
+  if(awayRedCards.length > 0) awayColumnY = awayRedsSection.endY + 30;
+  allRenderedElements.push(...awayRedsSection.elements);
 
-  // --- Dynamic Height Calculation ---
-  const maxEventsY = Math.max(yHome, yAway);
-  const footerStartY = maxEventsY + 40;
-  const footerContentHeight = 180;
+  const awaySubsSection = renderEventSection('SUSTITUCIONES', awaySubs, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
+  if(awaySubs.length > 0) awayColumnY = awaySubsSection.endY;
+  allRenderedElements.push(...awaySubsSection.elements);
+
+  const maxEventsY = Math.max(homeColumnY, awayColumnY);
+  const footerStartY = maxEventsY < 640 ? 640 : maxEventsY + 40;
+  const footerContentHeight = (noteEvents.length > 0 || pegiPlays.length > 0) ? 180 : 40;
   const bottomPadding = 40;
   const calculatedHeight = footerStartY + footerContentHeight + bottomPadding;
   const svgHeight = Math.max(1200, calculatedHeight);
@@ -297,10 +291,11 @@ export function ReportView({ matchState }: ReportViewProps) {
           <text x="600" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
 
           {/* Event Columns */}
-          {homeColumn.elements}
-          {awayColumn.elements}
+          {allRenderedElements}
           
-          {noEventsInColumns && noNotes && (
+          {(homeGoals.length === 0 && homeYellowCards.length === 0 && homeRedCards.length === 0 && homeSubs.length === 0 &&
+            awayGoals.length === 0 && awayYellowCards.length === 0 && awayRedCards.length === 0 && awaySubs.length === 0 &&
+            noteEvents.length === 0 && pegiPlays.length === 0) && (
             <text x="400" y="650" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="20" fontStyle="italic">No hay incidentes para mostrar en el informe.</text>
           )}
 
@@ -331,7 +326,6 @@ export function ReportView({ matchState }: ReportViewProps) {
                       if (msg.startsWith(yesPrefix)) {
                           return msg.substring(yesPrefix.length);
                       }
-                      // Fallback for older data formats
                       return msg.replace(/🔎|JUGADAS PEGI: /g, '').trim();
                     }).join('; ')}
                   </p>
