@@ -93,6 +93,7 @@ export function ReportView({ matchState }: ReportViewProps) {
             isCard: true,
             targetInfo: `${target} min ${time}`,
             causal: causal || null,
+            pdfDescription: event.pdfDescription || null,
         };
     }
     
@@ -109,6 +110,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     return {
         isCard: false,
         text: `${message} min ${time}`.trim(),
+        pdfDescription: event.pdfDescription || null,
     };
   };
 
@@ -125,14 +127,16 @@ export function ReportView({ matchState }: ReportViewProps) {
     let currentY = y + 40;
     items.forEach((item, index) => {
       const parsed = parseEvent(item);
-      if (parsed.isCard && parsed.causal) {
-        elements.push(
-          <text key={`${item.id}-target-${index}`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
-            {parsed.targetInfo}
+      
+      const mainText = parsed.isCard ? parsed.targetInfo : parsed.text;
+      elements.push(
+          <text key={`${item.id}-main-${index}`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
+            {mainText}
           </text>
-        );
-        currentY += 22;
+      );
+      currentY += 22;
 
+      if (parsed.isCard && parsed.causal) {
         elements.push(
           <foreignObject key={`${item.id}-causal-${index}`} x={x - 175} y={currentY - 15} width="350" height="40">
             <p xmlns="http://www.w3.org/1999/xhtml" style={{
@@ -149,21 +153,37 @@ export function ReportView({ matchState }: ReportViewProps) {
           </foreignObject>
         );
         currentY += 32;
-      } else {
-        const textToShow = parsed.isCard ? parsed.targetInfo : parsed.text;
-        elements.push(
-          <text key={`${item.id}-${index}`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
-            {textToShow}
-          </text>
-        );
-        currentY += 30;
       }
+
+      if (parsed.pdfDescription) {
+        elements.push(
+          <foreignObject key={`${item.id}-pdfdesc-${index}`} x={x - 175} y={currentY - 15} width="350" height="50">
+              <p xmlns="http://www.w3.org/1999/xhtml" style={{
+              color: '#94A3B8',
+              fontSize: '13px',
+              fontStyle: 'italic',
+              whiteSpace: 'normal',
+              textAlign: 'center',
+              lineHeight: 1.3,
+              margin: 0,
+              borderTop: '1px dashed #475569',
+              paddingTop: '6px',
+              marginTop: '6px'
+            }}>
+              {parsed.pdfDescription}
+            </p>
+          </foreignObject>
+        );
+        currentY += 42;
+      }
+
+      currentY += 15;
     });
     return { elements, endY: currentY };
   };
 
   const homeColumn: JSX.Element[] = [];
-  let yHome = 550;
+  let yHome = 640;
 
   const homeGoalsSection = renderEventList('Anotadores', homeGoals, 200, yHome, '#E2E8F0', '#FFFFFF');
   if (homeGoals.length > 0) {
@@ -190,7 +210,7 @@ export function ReportView({ matchState }: ReportViewProps) {
   }
   
   const awayColumn: JSX.Element[] = [];
-  let yAway = 550;
+  let yAway = 640;
 
   const awayGoalsSection = renderEventList('Anotadores', awayGoals, 600, yAway, '#E2E8F0', '#FFFFFF');
   if (awayGoals.length > 0) {
@@ -263,24 +283,45 @@ export function ReportView({ matchState }: ReportViewProps) {
           <text x="400" y="60" textAnchor="middle" fill="white" fontSize="24" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {`${matchInfo.league || 'TORNEO'} - JORNADA ${matchInfo.round || 'N/A'}`}
           </text>
-          <text x="400" y="90" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16">
+          <text x="400" y="85" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16">
             {`${matchInfo.place || 'Lugar no especificado'} | ${matchInfo.date || 'Fecha no especificada'}`}
           </text>
-           <text x="400" y="120" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16">
+          <text x="400" y="110" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16">
             Asesor: {matchInfo.advisor || 'No especificado'}
+          </text>
+          
+          <rect y="125" x="200" width="400" height="1" fill="rgba(255,255,255,0.2)" />
+
+          <text x="400" y="150" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="14">
+            Árbitro: {matchInfo.referee || 'N/A'}
+          </text>
+          <text x="250" y="175" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="14">
+            Asistente 1: {matchInfo.assistant1 || 'N/A'}
+          </text>
+          <text x="550" y="175" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="14">
+            Asistente 2: {matchInfo.assistant2 || 'N/A'}
+          </text>
+           <text x="400" y="200" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="14">
+            4to Árbitro: {matchInfo.fourthOfficial || 'N/A'}
+          </text>
+          <text x="250" y="225" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="14">
+            VAR: {matchInfo.var || 'N/A'}
+          </text>
+          <text x="550" y="225" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="14">
+            AVAR: {matchInfo.avar || 'N/A'}
           </text>
 
           {/* Main Content */}
-          <text x="200" y="190" fontFamily="Inter, sans-serif" fontSize="56" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.home}</text>
-          <text x="200" y="380" fontFamily="Inter, sans-serif" fontSize="240" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
-          <text x="200" y="440" textAnchor="middle" fill="#FDBA74" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
-          <text x="200" y="480" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.home}</text>
+          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="56" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
+          <text x="200" y="470" fontFamily="Inter, sans-serif" fontSize="240" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
+          <text x="200" y="530" textAnchor="middle" fill="#FDBA74" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
+          <text x="200" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.home}</text>
 
 
-          <text x="600" y="190" fontFamily="Inter, sans-serif" fontSize="56" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }}>{teamNames.away}</text>
-          <text x="600" y="380" fontFamily="Inter, sans-serif" fontSize="240" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
-          <text x="600" y="440" textAnchor="middle" fill="#22D3EE" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
-          <text x="600" y="480" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
+          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="56" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
+          <text x="600" y="470" fontFamily="Inter, sans-serif" fontSize="240" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
+          <text x="600" y="530" textAnchor="middle" fill="#22D3EE" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
+          <text x="600" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
 
           {/* Event Columns */}
           {homeColumn}
