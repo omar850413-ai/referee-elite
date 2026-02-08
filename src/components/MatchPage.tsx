@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, signOut } from 'firebase/auth';
 import { DocumentReference, updateDoc, setDoc } from 'firebase/firestore';
+import { X } from 'lucide-react';
 
 import { useAuth, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +19,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
@@ -543,9 +545,9 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   
   const getTeamNameSizeClass = (name: string | undefined) => {
     if (!name) return 'text-xl';
-    if (name.length > 12) return 'text-lg';
-    if (name.length > 9) return 'text-xl';
-    return 'text-2xl';
+    if (name.length > 12) return 'text-base';
+    if (name.length > 9) return 'text-lg';
+    return 'text-xl';
   };
 
   if (isMatchLoading || !matchState) {
@@ -758,7 +760,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
               onClick={() => openCardSubMenu('away', 'roja')}
               className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl font-black text-[9px] border-b-4 border-red-800 uppercase italic"
             >
-              🟥 Expulsión {teamNames.home}
+              🟥 Expulsión {teamNames.away}
             </Button>
           </div>
         </div>
