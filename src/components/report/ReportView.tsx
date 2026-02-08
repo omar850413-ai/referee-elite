@@ -111,7 +111,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     if (!items || items.length === 0) return { elements, endY: y };
 
     elements.push(
-      <text key={`${title}-${x}`} x={x} y={y} fontSize="22" fontFamily="Inter, sans-serif" fontWeight="900" fill={titleColor} textAnchor="middle" textTransform="uppercase">
+      <text key={`${title}-${x}`} x={x} y={y} fontSize="22" fontFamily="Inter, sans-serif" fontWeight="900" fill={titleColor} textAnchor="middle" style={{ textTransform: 'uppercase' }}>
         {title}
       </text>
     );
