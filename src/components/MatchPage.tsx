@@ -528,7 +528,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             duration: 4000,
         });
     }
-    setManualPenaltyScores(matchState.penaltyShootout ?? { home: 0, away: 0 });
+    setManualPenaltyScores(matchState.penaltyShootout ?? { home: 0, away: 0, active: false });
     setModal('penalties');
   };
 
@@ -580,7 +580,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     );
   }
 
-  const { scores, fouls, teamNames, events, matchInfo, timer } = matchState;
+  const { scores, fouls, teamNames, events, matchInfo, timer, penaltyShootout } = matchState;
   const matchStatus = timer.status;
   const timerButtonLabel = {
     'NOT_STARTED': 'Iniciar Partido',
@@ -1165,15 +1165,9 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       </Dialog>
       
       <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
-        <div className="w-full h-full p-4 overflow-auto">
-            <div className="relative w-full max-w-[800px] mx-auto">
-                <DialogClose className="absolute -top-2 -right-2 z-10 rounded-full bg-black/30 p-1 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white">
-                    <X className="h-5 w-5" />
-                    <span className="sr-only">Cerrar</span>
-                </DialogClose>
-                {isReportOpen && <ReportView matchState={matchState} />}
-            </div>
-        </div>
+        <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none">
+          {isReportOpen && <ReportView matchState={matchState} />}
+        </DialogContent>
       </Dialog>
 
       <Dialog open={isPdfReportOpen} onOpenChange={setIsPdfReportOpen}>
@@ -1249,9 +1243,9 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 <Label htmlFor="penalty-active" className="font-bold">Mostrar en Informe</Label>
                 <Switch
                     id="penalty-active"
-                    checked={matchState?.penaltyShootout?.active ?? false}
+                    checked={penaltyShootout?.active ?? false}
                     onCheckedChange={(checked) => {
-                        const currentScores = matchState?.penaltyShootout ?? { home: 0, away: 0 };
+                        const currentScores = penaltyShootout ?? { home: 0, away: 0, active: false };
                         updateMatch({ penaltyShootout: { ...currentScores, active: checked } });
                     }}
                 />
@@ -1280,8 +1274,9 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             </div>
 
             <Button onClick={() => {
+                const currentPenaltyState = matchState.penaltyShootout ?? { home: 0, away: 0, active: false };
                 addEvent('general', `🥅 Tanda de Penales: ${manualPenaltyScores.home} - ${manualPenaltyScores.away}`, 'PEN');
-                updateMatch({ penaltyShootout: { ...manualPenaltyScores, active: matchState?.penaltyShootout?.active ?? false } });
+                updateMatch({ penaltyShootout: { ...currentPenaltyState, home: manualPenaltyScores.home, away: manualPenaltyScores.away } });
                 setModal(null);
             }} className="w-full shadow-lg">
                 Actualizar Marcador de Penales

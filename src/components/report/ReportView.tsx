@@ -129,23 +129,24 @@ export function ReportView({ matchState }: ReportViewProps) {
           {mainText}
         </text>
       );
-      itemHeight += 22;
+      itemHeight += 20; // Reduced space
   
       // Causal text (if any)
       if (parsed.isCard && parsed.causal) {
         const causalText = parsed.causal;
-        const foreignObjectHeight = causalText.length > 45 ? 32 : 16;
+        // Increased height for wrapping
+        const foreignObjectHeight = 48; 
 
         elements.push(
             <foreignObject key={`${item.id}-causal-fo`} x={x - 175} y={currentY + 22} width="350" height={foreignObjectHeight}>
-                <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#A1A1AA', fontSize: '14px', fontStyle: 'italic', textAlign: 'center', margin: 0, padding: 0, lineHeight: '1.1' }}>
+                <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#A1A1AA', fontSize: '14px', fontStyle: 'italic', textAlign: 'center', margin: 0, padding: 0, lineHeight: '1.2', wordWrap: 'break-word' }}>
                     {causalText}
                 </p>
             </foreignObject>
         );
-        itemHeight += foreignObjectHeight;
+        itemHeight += foreignObjectHeight - 10; // Adjust for tighter packing
       }
-        currentY += itemHeight + 2; // Add height of elements + small margin
+        currentY += itemHeight; // Add height of elements
     });
   
     return { elements, endY: currentY };
@@ -241,7 +242,7 @@ export function ReportView({ matchState }: ReportViewProps) {
   const svgHeight = Math.max(1200, calculatedHeight);
 
   return (
-    <div className="w-full h-full p-4 overflow-auto bg-slate-900 rounded-lg">
+    <div className="w-full max-h-[90vh] overflow-y-auto p-4 bg-slate-900 rounded-lg">
        <DialogHeader className="px-2 pb-4 text-left">
             <DialogTitle className="text-white">Informe del Partido</DialogTitle>
             <DialogDescription>
