@@ -121,7 +121,7 @@ export function ReportView({ matchState }: ReportViewProps) {
       const parsed = parseEventMessage(item);
       const mainText = parsed.isCard ? parsed.targetInfo : parsed.text;
       
-      let itemHeight = 0;
+      let itemHeight = 20; 
   
       // Main text
       elements.push(
@@ -129,12 +129,11 @@ export function ReportView({ matchState }: ReportViewProps) {
           {mainText}
         </text>
       );
-      itemHeight += 16;
   
       // Causal text (if any)
       if (parsed.isCard && parsed.causal) {
         const causalText = parsed.causal;
-        const foreignObjectHeight = 60; 
+        const foreignObjectHeight = 40; 
 
         elements.push(
             <foreignObject key={`${item.id}-causal-fo`} x={x - 175} y={currentY + 22} width="350" height={foreignObjectHeight}>
@@ -143,7 +142,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                 </p>
             </foreignObject>
         );
-        itemHeight += foreignObjectHeight - 14;
+        itemHeight += foreignObjectHeight - 16;
       }
         currentY += itemHeight;
     });
@@ -156,15 +155,15 @@ export function ReportView({ matchState }: ReportViewProps) {
   let awayColumnY = 640;
   
   const homeGoalsSection = renderEventSection('GOLES', homeGoals, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
-  homeColumnY = homeGoalsSection.endY + (homeGoals.length > 0 ? 30 : 0);
+  homeColumnY = homeGoalsSection.endY + (homeGoals.length > 0 ? 15 : 0);
   allRenderedElements.push(...homeGoalsSection.elements);
   
   const homeYellowsSection = renderEventSection('AMONESTACIONES', homeYellowCards, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
-  homeColumnY = homeYellowsSection.endY + (homeYellowCards.length > 0 ? 30 : 0);
+  homeColumnY = homeYellowsSection.endY + (homeYellowCards.length > 0 ? 15 : 0);
   allRenderedElements.push(...homeYellowsSection.elements);
 
   const homeRedsSection = renderEventSection('EXPULSIONES', homeRedCards, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
-  homeColumnY = homeRedsSection.endY + (homeRedCards.length > 0 ? 30 : 0);
+  homeColumnY = homeRedsSection.endY + (homeRedCards.length > 0 ? 15 : 0);
   allRenderedElements.push(...homeRedsSection.elements);
   
   const homeSubsSection = renderEventSection('SUSTITUCIONES', homeSubs, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
@@ -172,15 +171,15 @@ export function ReportView({ matchState }: ReportViewProps) {
   allRenderedElements.push(...homeSubsSection.elements);
   
   const awayGoalsSection = renderEventSection('GOLES', awayGoals, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
-  awayColumnY = awayGoalsSection.endY + (awayGoals.length > 0 ? 30 : 0);
+  awayColumnY = awayGoalsSection.endY + (awayGoals.length > 0 ? 15 : 0);
   allRenderedElements.push(...awayGoalsSection.elements);
 
   const awayYellowsSection = renderEventSection('AMONESTACIONES', awayYellowCards, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
-  awayColumnY = awayYellowsSection.endY + (awayYellowCards.length > 0 ? 30 : 0);
+  awayColumnY = awayYellowsSection.endY + (awayYellowCards.length > 0 ? 15 : 0);
   allRenderedElements.push(...awayYellowsSection.elements);
   
   const awayRedsSection = renderEventSection('EXPULSIONES', awayRedCards, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
-  awayColumnY = awayRedsSection.endY + (awayRedCards.length > 0 ? 30 : 0);
+  awayColumnY = awayRedsSection.endY + (awayRedCards.length > 0 ? 15 : 0);
   allRenderedElements.push(...awayRedsSection.elements);
 
   const awaySubsSection = renderEventSection('SUSTITUCIONES', awaySubs, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
@@ -194,10 +193,9 @@ export function ReportView({ matchState }: ReportViewProps) {
   let footerContentHeight = 0;
 
   if (noteEvents.length > 0 || pegiPlays.length > 0) {
-      footerContentHeight += 40; // Initial padding
-      notesAndPegiElements.push(<rect key="footer-bg" y={footerStartY} width="800" height="1" fill="rgba(255,255,255,0.1)" />);
-      let footerCurrentY = footerStartY + 40;
-
+      let footerCurrentY = 40; // Start with a relative Y position for content within the group
+      notesAndPegiElements.push(<rect key="footer-bg" y={0} width="800" height="1" fill="rgba(255,255,255,0.1)" />);
+      
       if (noteEvents.length > 0) {
         notesAndPegiElements.push(<text key="notes-title" x="400" y={footerCurrentY} textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA" style={{textTransform: 'uppercase'}}>Anotaciones del Asesor</text>);
         footerCurrentY += 25;
@@ -233,7 +231,7 @@ export function ReportView({ matchState }: ReportViewProps) {
         );
         footerCurrentY += 70;
       }
-      footerContentHeight = footerCurrentY - footerStartY;
+      footerContentHeight = footerCurrentY;
   }
 
   const bottomPadding = 60;
@@ -315,13 +313,13 @@ export function ReportView({ matchState }: ReportViewProps) {
           </text>
 
           {/* Main Content */}
-          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="20" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
+          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
           <text x="200" y="450" fontFamily="Inter, sans-serif" fontSize="120" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
           <text x="200" y="530" textAnchor="middle" fill="#FDBA74" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
           <text x="200" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.home}</text>
 
 
-          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="20" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
+          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
           <text x="600" y="450" fontFamily="Inter, sans-serif" fontSize="120" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
           <text x="600" y="530" textAnchor="middle" fill="#22D3EE" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
           <text x="600" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
