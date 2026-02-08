@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { MatchState, MatchEvent } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Download, X } from 'lucide-react';
+import { Download, X, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { DialogClose, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -14,6 +14,7 @@ interface ReportViewProps {
 export function ReportView({ matchState }: ReportViewProps) {
   const { scores, teamNames, matchInfo, events, fouls } = matchState;
   const svgRef = useRef<SVGSVGElement>(null);
+  const [zoom, setZoom] = useState(1);
 
   const localBg = PlaceHolderImages.find(p => p.id === 'local-team-bg')?.imageUrl;
   const awayBg = PlaceHolderImages.find(p => p.id === 'away-team-bg')?.imageUrl;
@@ -249,19 +250,30 @@ export function ReportView({ matchState }: ReportViewProps) {
   const svgHeight = Math.max(1200, calculatedHeight);
 
   return (
-     <div className="bg-slate-900 p-4 rounded-lg border border-slate-700 max-h-[85vh] overflow-y-auto relative">
-      <DialogClose className="absolute right-4 top-4 z-10 rounded-full bg-black/30 p-1 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white">
+     <div className="bg-slate-900 p-4 rounded-lg border border-slate-700 flex flex-col max-h-[85vh] relative">
+      <DialogClose className="absolute right-4 top-4 z-20 rounded-full bg-black/30 p-1 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white">
         <X className="h-5 w-5" />
         <span className="sr-only">Cerrar</span>
       </DialogClose>
-      <DialogHeader className="px-2 pb-4 text-left">
+      <DialogHeader className="px-2 pb-4 text-left flex-shrink-0">
         <DialogTitle className="text-white">Informe del Partido (Imagen)</DialogTitle>
         <DialogDescription>
-          Este es un resumen visual del partido. Puedes descargarlo como una imagen JPEG.
+          Puedes hacer zoom en el informe para ver los detalles antes de descargar.
         </DialogDescription>
       </DialogHeader>
 
-      <svg ref={svgRef} viewBox={`0 0 800 ${svgHeight}`} xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <div className="flex-1 overflow-auto rounded-lg bg-slate-800/20">
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 800 ${svgHeight}`}
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-auto mx-auto"
+          style={{
+            transform: `scale(${zoom})`,
+            transformOrigin: 'top center',
+            transition: 'transform 0.2s ease-out',
+          }}
+        >
           <defs>
             <linearGradient id="orangeScoreGradient" x1="0.5" y1="0" x2="0.5" y2="1">
               <stop offset="0%" stopColor="#FDBA74" />
@@ -323,14 +335,14 @@ export function ReportView({ matchState }: ReportViewProps) {
           </text>
 
           {/* Main Content */}
-          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
-          <text x="200" y="470" fontFamily="Inter, sans-serif" fontSize="220" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
+          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
+          <text x="200" y="470" fontFamily="Inter, sans-serif" fontSize="200" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
           <text x="200" y="530" textAnchor="middle" fill="#FDBA74" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
           <text x="200" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.home}</text>
 
 
-          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
-          <text x="600" y="470" fontFamily="Inter, sans-serif" fontSize="220" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
+          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
+          <text x="600" y="470" fontFamily="Inter, sans-serif" fontSize="200" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
           <text x="600" y="530" textAnchor="middle" fill="#22D3EE" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
           <text x="600" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
 
@@ -381,7 +393,19 @@ export function ReportView({ matchState }: ReportViewProps) {
           <text x="20" y={svgHeight - 20} fontFamily="Inter, sans-serif" fontSize="14" fontWeight="900" fill="hsl(var(--primary))" textAnchor="start" style={{ fontStyle: 'italic', textTransform: 'uppercase' }}>Asesor Pro</text>
 
         </svg>
-      <div className="sticky bottom-0 -mx-4 -mb-4 mt-4 flex justify-end bg-slate-900/80 backdrop-blur-sm py-3 px-4 border-t border-slate-700">
+      </div>
+      <div className="flex-shrink-0 mt-4 flex justify-end items-center gap-2 bg-slate-900/80 backdrop-blur-sm py-3 px-4 border-t border-slate-700 -mx-4 -mb-4 sticky bottom-0">
+        <div className="flex items-center gap-2 mr-auto">
+          <Button variant="outline" size="icon" onClick={() => setZoom(z => z * 1.2)} aria-label="Acercar">
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => setZoom(z => z / 1.2)} aria-label="Alejar">
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => setZoom(1)} aria-label="Reiniciar zoom">
+            <RotateCw className="h-4 w-4" />
+          </Button>
+        </div>
         <Button onClick={handleDownload}>
           <Download className="mr-2 h-4 w-4" />
           Descargar como JPEG
