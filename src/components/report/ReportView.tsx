@@ -3,8 +3,9 @@
 import React, { useRef } from 'react';
 import { MatchState, MatchEvent } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { DialogClose, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ReportViewProps {
   matchState: MatchState;
@@ -248,9 +249,19 @@ export function ReportView({ matchState }: ReportViewProps) {
   const svgHeight = Math.max(1200, calculatedHeight);
 
   return (
-    <div className="w-full">
-      <div className="bg-slate-900 p-2 md:p-4 rounded-lg border border-slate-700 overflow-auto">
-        <svg ref={svgRef} viewBox={`0 0 800 ${svgHeight}`} xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+     <div className="bg-slate-900 p-4 rounded-lg border border-slate-700 max-h-[85vh] overflow-y-auto relative">
+      <DialogClose className="absolute right-4 top-4 z-10 rounded-full bg-black/30 p-1 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white">
+        <X className="h-5 w-5" />
+        <span className="sr-only">Cerrar</span>
+      </DialogClose>
+      <DialogHeader className="px-2 pb-4 text-left">
+        <DialogTitle className="text-white">Informe del Partido (Imagen)</DialogTitle>
+        <DialogDescription>
+          Este es un resumen visual del partido. Puedes descargarlo como una imagen JPEG.
+        </DialogDescription>
+      </DialogHeader>
+
+      <svg ref={svgRef} viewBox={`0 0 800 ${svgHeight}`} xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
           <defs>
             <linearGradient id="orangeScoreGradient" x1="0.5" y1="0" x2="0.5" y2="1">
               <stop offset="0%" stopColor="#FDBA74" />
@@ -370,8 +381,7 @@ export function ReportView({ matchState }: ReportViewProps) {
           <text x="20" y={svgHeight - 20} fontFamily="Inter, sans-serif" fontSize="14" fontWeight="900" fill="hsl(var(--primary))" textAnchor="start" style={{ fontStyle: 'italic', textTransform: 'uppercase' }}>Asesor Pro</text>
 
         </svg>
-      </div>
-      <div className="mt-4 flex justify-end">
+      <div className="sticky bottom-0 -mx-4 -mb-4 mt-4 flex justify-end bg-slate-900/80 backdrop-blur-sm py-3 px-4 border-t border-slate-700">
         <Button onClick={handleDownload}>
           <Download className="mr-2 h-4 w-4" />
           Descargar como JPEG

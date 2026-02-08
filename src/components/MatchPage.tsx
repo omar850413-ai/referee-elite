@@ -1095,25 +1095,13 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       </Dialog>
       
       <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
-        <DialogContent className="max-w-4xl p-4 md:p-6">
-           <DialogHeader>
-            <DialogTitle>Informe del Partido (Imagen)</DialogTitle>
-            <DialogDescription>
-              Este es un resumen visual del partido. Puedes descargarlo como una imagen JPEG.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none [&>button[data-radix-dialog-close]]:hidden">
           <ReportView matchState={matchState} />
         </DialogContent>
       </Dialog>
 
       <Dialog open={isPdfReportOpen} onOpenChange={setIsPdfReportOpen}>
-        <DialogContent className="max-w-4xl p-4 md:p-6">
-           <DialogHeader>
-            <DialogTitle>Informe del Partido (PDF)</DialogTitle>
-            <DialogDescription>
-              Este es un resumen del partido para generar un PDF. Puedes descargarlo.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none [&>button[data-radix-dialog-close]]:hidden">
           <PdfReportView matchState={matchState} />
         </DialogContent>
       </Dialog>

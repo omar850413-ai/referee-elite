@@ -5,7 +5,8 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { MatchEvent, MatchState } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { DialogClose, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Download, X } from 'lucide-react';
 import { parseTimeToMinutes } from '@/lib/utils';
 
 interface PdfReportViewProps {
@@ -57,7 +58,18 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     .sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
 
   return (
-    <div className="bg-gray-200 p-4 max-h-[70vh] overflow-y-auto">
+    <div className="bg-gray-200 p-4 max-h-[85vh] overflow-y-auto rounded-lg relative">
+        <DialogClose className="absolute right-4 top-4 z-10 rounded-full bg-black/10 p-1 text-black/60 backdrop-blur-sm transition-all hover:bg-black/20 hover:text-black">
+            <X className="h-5 w-5" />
+            <span className="sr-only">Cerrar</span>
+        </DialogClose>
+        <DialogHeader className="px-2 pb-4">
+            <DialogTitle>Informe del Partido (PDF)</DialogTitle>
+            <DialogDescription>
+              Este es un resumen del partido para generar un PDF. Puedes descargarlo.
+            </DialogDescription>
+        </DialogHeader>
+
       <div 
         ref={reportRef} 
         className="p-6 bg-white text-black font-sans shadow-lg"
@@ -161,7 +173,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
         </table>
       </div>
 
-      <div className="mt-4 flex justify-end sticky bottom-0 bg-gray-200 py-2 pr-2">
+      <div className="sticky bottom-0 -mx-4 -mb-4 mt-4 flex justify-end bg-gray-200/80 p-4 backdrop-blur-sm border-t border-gray-300">
         <Button onClick={handleDownloadPdf}>
           <Download className="mr-2 h-4 w-4" />
           Descargar como PDF
