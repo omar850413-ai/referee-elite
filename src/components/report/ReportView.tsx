@@ -323,14 +323,14 @@ export function ReportView({ matchState }: ReportViewProps) {
           </text>
 
           {/* Main Content */}
-          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="56" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
-          <text x="200" y="470" fontFamily="Inter, sans-serif" fontSize="240" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
+          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
+          <text x="200" y="470" fontFamily="Inter, sans-serif" fontSize="220" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
           <text x="200" y="530" textAnchor="middle" fill="#FDBA74" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
           <text x="200" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.home}</text>
 
 
-          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="56" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
-          <text x="600" y="470" fontFamily="Inter, sans-serif" fontSize="240" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
+          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
+          <text x="600" y="470" fontFamily="Inter, sans-serif" fontSize="220" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
           <text x="600" y="530" textAnchor="middle" fill="#22D3EE" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
           <text x="600" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
 
