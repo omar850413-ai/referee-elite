@@ -45,6 +45,12 @@ export interface MatchInfo {
   avar?: string;
 }
 
+export interface PenaltyShootout {
+  home: number;
+  away: number;
+  active: boolean;
+}
+
 export interface MatchState {
   scores: Scores;
   fouls: Fouls;
@@ -52,6 +58,7 @@ export interface MatchState {
   events: MatchEvent[];
   teamNames: TeamNames;
   matchInfo: MatchInfo;
+  penaltyShootout?: PenaltyShootout;
 }
 
 export interface UserProfile {

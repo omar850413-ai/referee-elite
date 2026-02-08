@@ -14,7 +14,7 @@ interface PdfReportViewProps {
 }
 
 export function PdfReportView({ matchState }: PdfReportViewProps) {
-  const { matchInfo, teamNames, scores, events } = matchState;
+  const { matchInfo, teamNames, scores, events, penaltyShootout } = matchState;
   const reportRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadPdf = () => {
@@ -101,6 +101,11 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           <span className="text-3xl font-bold uppercase">{teamNames.home}</span>
           <span className="text-4xl font-bold mx-4 p-2 bg-gray-200 rounded-md">{scores.home} - {scores.away}</span>
           <span className="text-3xl font-bold uppercase">{teamNames.away}</span>
+          {penaltyShootout && penaltyShootout.active && (
+            <div className="mt-2 text-lg font-semibold">
+              (Penales: {penaltyShootout.home} - {penaltyShootout.away})
+            </div>
+          )}
         </div>
         <hr className="my-4 border-black" />
 

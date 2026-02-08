@@ -43,6 +43,7 @@ export default function Home() {
             events: [],
             matchInfo: { advisor: advisorName, league: '', round: '', place: '', date: '', referee: '', assistant1: '', assistant2: '', fourthOfficial: '', var: '', avar: '' },
             timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
+            penaltyShootout: { home: 0, away: 0, active: false },
         };
         // Use setDoc to create the new match document
         setDoc(ref, initialState).then(() => {

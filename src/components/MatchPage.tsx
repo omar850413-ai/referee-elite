@@ -20,6 +20,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls, UserProfile, Timer, MatchState } from '@/lib/types';
 import { formatTime, cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -69,6 +70,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isPdfReportOpen, setIsPdfReportOpen] = useState(false);
   const [manualScores, setManualScores] = useState<Scores>({ home: 0, away: 0 });
+  const [manualPenaltyScores, setManualPenaltyScores] = useState<Scores>({ home: 0, away: 0 });
   const [selectedGoalType, setSelectedGoalType] = useState<'GOL' | 'PENAL' | 'AUTOGOL' | null>(null);
   const [selectedCausal, setSelectedCausal] = useState<string | null>(null);
 
@@ -294,6 +296,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         events: [],
         matchInfo: { advisor: userProfile?.email || '', league: '', round: '', place: '', date: '', referee: '', assistant1: '', assistant2: '', fourthOfficial: '', var: '', avar: '' },
         timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
+        penaltyShootout: { home: 0, away: 0, active: false },
       };
       setDoc(matchDocRef, initialState).catch((error) => {
         const permissionError = new FirestorePermissionError({
@@ -504,6 +507,28 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     addEvent('pegi', message, capturedTimeRef.current);
     setModal(null);
   };
+  
+  const openPenaltyModal = () => {
+    if (!matchState) return;
+    if (matchState.timer.status !== 'FINISHED') {
+        toast({
+            title: 'Partido no ha finalizado',
+            description: 'La tanda de penales solo se registra al finalizar el partido.',
+            variant: 'destructive',
+        });
+        return;
+    }
+    if (matchState.scores.home !== matchState.scores.away) {
+         toast({
+            title: 'El partido no está empatado',
+            description: 'La tanda de penales es para definir un ganador en caso de empate.',
+            variant: 'default',
+            duration: 4000,
+        });
+    }
+    setManualPenaltyScores(matchState.penaltyShootout ?? { home: 0, away: 0 });
+    setModal('penalties');
+  };
 
   const openScoreEditor = () => {
     setManualScores(matchState?.scores ?? { home: 0, away: 0 });
@@ -643,7 +668,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                       {teamNames.home}
                     </p>
                   </div>
-                  <div className="text-center text-6xl font-black text-gray-800 leading-none py-2">
+                  <div className="text-center text-5xl font-black text-gray-800 leading-none py-2">
                     {scores.home}
                   </div>
                  <Button
@@ -676,7 +701,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                       {teamNames.away}
                     </p>
                   </div>
-                  <div className="text-center text-6xl font-black text-gray-800 leading-none py-2">
+                  <div className="text-center text-5xl font-black text-gray-800 leading-none py-2">
                     {scores.away}
                   </div>
                 <Button
@@ -733,7 +758,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
               onClick={() => openCardSubMenu('away', 'roja')}
               className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl font-black text-[9px] border-b-4 border-red-800 uppercase italic"
             >
-              🟥 Expulsión {teamNames.away}
+              🟥 Expulsión {teamNames.home}
             </Button>
           </div>
         </div>
@@ -759,6 +784,12 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
           >
             📝 Anotación de Asesor
+          </Button>
+          <Button
+            onClick={openPenaltyModal}
+            className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
+          >
+            🥅 Tanda de Penales
           </Button>
           <Button
             onClick={() => setModal('info')}
@@ -998,7 +1029,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           <DialogHeader>
             <DialogTitle className="text-center uppercase italic text-gray-400">Editar Nombre</DialogTitle>
           </DialogHeader>
-          <Input value={newTeamName} onChange={e => setNewTeamName(e.target.value)} className="w-full text-center text-2xl font-black border-2 p-4 rounded-2xl uppercase h-auto my-4" maxLength={15} />
+          <Input value={newTeamName} onChange={e => setNewTeamName(e.target.value)} className="w-full text-center text-xl font-black border-2 p-4 rounded-2xl uppercase h-auto my-4" maxLength={15} />
           <Button onClick={() => { updateMatch({ teamNames: { ...teamNames, [currentSide]: newTeamName }}); setModal(null); }} className="w-full shadow-lg">Actualizar</Button>
         </DialogContent>
       </Dialog>
@@ -1132,9 +1163,15 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       </Dialog>
       
       <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
-        <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none">
-          <ReportView matchState={matchState} />
-        </DialogContent>
+        <div className="w-full h-full p-4 overflow-auto">
+            <div className="relative w-full max-w-[800px] mx-auto">
+                <DialogClose className="absolute -top-2 -right-2 z-10 rounded-full bg-black/30 p-1 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white">
+                    <X className="h-5 w-5" />
+                    <span className="sr-only">Cerrar</span>
+                </DialogClose>
+                <ReportView matchState={matchState} />
+            </div>
+        </div>
       </Dialog>
 
       <Dialog open={isPdfReportOpen} onOpenChange={setIsPdfReportOpen}>
@@ -1193,6 +1230,60 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 <Button onClick={() => handleSetValuation('correcta')} className="bg-emerald-600 hover:bg-emerald-700 text-white">Correcta</Button>
                 <Button onClick={() => handleSetValuation('incorrecta')} variant="destructive">Incorrecta</Button>
             </div>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={modal === 'penalties'} onOpenChange={() => setModal(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle className="text-center uppercase italic text-cyan-600">Tanda de Penales</DialogTitle>
+                <DialogDescription className="text-center pt-2">
+                    Registra el resultado de la tanda de penales para el desempate.
+                    Este resultado solo se mostrará en los informes si se activa.
+                </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex items-center justify-center space-x-3 my-4">
+                <Label htmlFor="penalty-active" className="font-bold">Mostrar en Informe</Label>
+                <Switch
+                    id="penalty-active"
+                    checked={matchState?.penaltyShootout?.active ?? false}
+                    onCheckedChange={(checked) => {
+                        const currentScores = matchState?.penaltyShootout ?? { home: 0, away: 0 };
+                        updateMatch({ penaltyShootout: { ...currentScores, active: checked } });
+                    }}
+                />
+            </div>
+            <div className="grid grid-cols-2 gap-4 my-4">
+                <div className="text-center">
+                    <Label htmlFor="home-penalty-score" className="text-xs font-black text-primary/80 uppercase mb-3">{teamNames.home}</Label>
+                    <Input
+                        id="home-penalty-score"
+                        type="number"
+                        value={manualPenaltyScores.home}
+                        onChange={(e) => setManualPenaltyScores(s => ({ ...s, home: Math.max(0, parseInt(e.target.value) || 0) }))}
+                        className="w-full text-center text-5xl font-black border-2 p-4 rounded-2xl my-2 h-auto"
+                    />
+                </div>
+                <div className="text-center">
+                    <Label htmlFor="away-penalty-score" className="text-xs font-black text-primary/80 uppercase mb-3">{teamNames.away}</Label>
+                    <Input
+                        id="away-penalty-score"
+                        type="number"
+                        value={manualPenaltyScores.away}
+                        onChange={(e) => setManualPenaltyScores(s => ({ ...s, away: Math.max(0, parseInt(e.target.value) || 0) }))}
+                        className="w-full text-center text-5xl font-black border-2 p-4 rounded-2xl my-2 h-auto"
+                    />
+                </div>
+            </div>
+
+            <Button onClick={() => {
+                addEvent('general', `🥅 Tanda de Penales: ${manualPenaltyScores.home} - ${manualPenaltyScores.away}`, 'PEN');
+                updateMatch({ penaltyShootout: { ...manualPenaltyScores, active: matchState?.penaltyShootout?.active ?? false } });
+                setModal(null);
+            }} className="w-full shadow-lg">
+                Actualizar Marcador de Penales
+            </Button>
         </DialogContent>
       </Dialog>
 

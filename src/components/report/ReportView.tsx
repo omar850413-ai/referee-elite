@@ -5,7 +5,7 @@ import { MatchState, MatchEvent } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { DialogClose, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogClose } from '@/components/ui/dialog';
 import { parseTimeToMinutes } from '@/lib/utils';
 
 interface ReportViewProps {
@@ -13,7 +13,7 @@ interface ReportViewProps {
 }
 
 export function ReportView({ matchState }: ReportViewProps) {
-  const { scores, teamNames, matchInfo, events, fouls } = matchState;
+  const { scores, teamNames, matchInfo, events, fouls, penaltyShootout } = matchState;
   const svgRef = useRef<SVGSVGElement>(null);
 
   const localBg = PlaceHolderImages.find(p => p.id === 'local-team-bg')?.imageUrl;
@@ -109,55 +109,55 @@ export function ReportView({ matchState }: ReportViewProps) {
   const renderEventSection = (title: string, items: MatchEvent[], x: number, y: number, textColor: string, titleColor: string) => {
     const elements: JSX.Element[] = [];
     if (!items || items.length === 0) return { elements, endY: y };
-
+  
     elements.push(
       <text key={`${title}-${x}`} x={x} y={y} fontSize="22" fontFamily="Inter, sans-serif" fontWeight="900" fill={titleColor} textAnchor="middle" style={{ textTransform: 'uppercase' }}>
         {title}
       </text>
     );
-
-    let currentY = y + 40;
+  
+    let currentY = y + 25; // Compact spacing
     items.forEach((item, index) => {
       const parsed = parseEventMessage(item);
-      
       const mainText = parsed.isCard ? parsed.targetInfo : parsed.text;
+  
       elements.push(
-          <text key={`${item.id}-main-${index}`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
-            {mainText}
-          </text>
+        <text key={`${item.id}-main-${index}`} x={x} y={currentY} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
+          {mainText}
+        </text>
       );
-      currentY += 18; // Move down for the next line (main text height)
-
+      currentY += 18;
+  
       if (parsed.isCard && parsed.causal) {
-        const causalHeight = 60; // Increased height
+        const causalHeight = 60; // Height for up to 3 lines
         elements.push(
           <foreignObject key={`${item.id}-causal-${index}`} x={x - 175} y={currentY} width="350" height={causalHeight}>
-            <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#A1A1AA', fontSize: '14px', fontStyle: 'italic', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2, margin: 0 }}>
+            <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#A1A1AA', fontSize: '14px', fontStyle: 'italic', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2, margin: 0, padding: '0 4px' }}>
               {parsed.causal}
             </p>
           </foreignObject>
         );
-        currentY += 40; // Adjusted increment for potentially 3 lines
+        // Increment based on potential lines. A bit of trial and error.
+        const assumedLines = Math.min(3, Math.ceil((parsed.causal.length || 0) / 35));
+        currentY += (assumedLines * 14) + 4; // 14px line height + padding
       }
-
+  
       if (item.pdfDescription) {
         const descriptionHeight = 55;
         elements.push(
           <foreignObject key={`${item.id}-pdfdesc-${index}`} x={x - 175} y={currentY} width="350" height={descriptionHeight}>
-              <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#94A3B8', fontSize: '13px', fontStyle: 'italic', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.3, margin: 0, borderTop: '1px dashed #475569', paddingTop: '6px', marginTop: '6px' }}>
+            <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#94A3B8', fontSize: '13px', fontStyle: 'italic', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.3, margin: 0, borderTop: '1px dashed #475569', paddingTop: '6px', marginTop: '6px' }}>
               {item.pdfDescription}
             </p>
           </foreignObject>
         );
-        currentY += 40;
+        const assumedLines = Math.min(3, Math.ceil((item.pdfDescription.length || 0) / 40));
+        currentY += (assumedLines * 13) + 10;
       }
-      
-      currentY += 4;
+  
+      currentY += 4; // small gap between items
     });
-    
-    if (items.length > 0) {
-        currentY -= 4;
-    }
+  
     return { elements, endY: currentY };
   };
 
@@ -166,35 +166,35 @@ export function ReportView({ matchState }: ReportViewProps) {
   let awayColumnY = 640;
   
   const homeGoalsSection = renderEventSection('GOLES', homeGoals, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
-  if(homeGoals.length > 0) homeColumnY = homeGoalsSection.endY + 30;
+  homeColumnY = homeGoalsSection.endY + (homeGoals.length > 0 ? 15 : 0);
   allRenderedElements.push(...homeGoalsSection.elements);
   
   const homeYellowsSection = renderEventSection('AMONESTACIONES', homeYellowCards, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
-  if(homeYellowCards.length > 0) homeColumnY = homeYellowsSection.endY + 30;
+  homeColumnY = homeYellowsSection.endY + (homeYellowCards.length > 0 ? 15 : 0);
   allRenderedElements.push(...homeYellowsSection.elements);
 
   const homeRedsSection = renderEventSection('EXPULSIONES', homeRedCards, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
-  if(homeRedCards.length > 0) homeColumnY = homeRedsSection.endY + 30;
+  homeColumnY = homeRedsSection.endY + (homeRedCards.length > 0 ? 15 : 0);
   allRenderedElements.push(...homeRedsSection.elements);
   
   const homeSubsSection = renderEventSection('SUSTITUCIONES', homeSubs, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
-  if(homeSubs.length > 0) homeColumnY = homeSubsSection.endY;
+  homeColumnY = homeSubsSection.endY;
   allRenderedElements.push(...homeSubsSection.elements);
   
   const awayGoalsSection = renderEventSection('GOLES', awayGoals, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
-  if(awayGoals.length > 0) awayColumnY = awayGoalsSection.endY + 30;
+  awayColumnY = awayGoalsSection.endY + (awayGoals.length > 0 ? 15 : 0);
   allRenderedElements.push(...awayGoalsSection.elements);
 
   const awayYellowsSection = renderEventSection('AMONESTACIONES', awayYellowCards, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
-  if(awayYellowCards.length > 0) awayColumnY = awayYellowsSection.endY + 30;
+  awayColumnY = awayYellowsSection.endY + (awayYellowCards.length > 0 ? 15 : 0);
   allRenderedElements.push(...awayYellowsSection.elements);
   
   const awayRedsSection = renderEventSection('EXPULSIONES', awayRedCards, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
-  if(awayRedCards.length > 0) awayColumnY = awayRedsSection.endY + 30;
+  awayColumnY = awayRedsSection.endY + (awayRedCards.length > 0 ? 15 : 0);
   allRenderedElements.push(...awayRedsSection.elements);
 
   const awaySubsSection = renderEventSection('SUSTITUCIONES', awaySubs, 600, awayColumnY, '#E2E8F0', '#FFFFFF');
-  if(awaySubs.length > 0) awayColumnY = awaySubsSection.endY;
+  awayColumnY = awaySubsSection.endY;
   allRenderedElements.push(...awaySubsSection.elements);
 
   const maxEventsY = Math.max(homeColumnY, awayColumnY);
@@ -205,19 +205,12 @@ export function ReportView({ matchState }: ReportViewProps) {
   const svgHeight = Math.max(1200, calculatedHeight);
 
   return (
-    <div className="relative bg-slate-900 rounded-lg border border-slate-700 max-h-[85vh] flex flex-col">
-      <DialogHeader className="p-4 flex-shrink-0 text-white text-center relative z-10">
-        <DialogTitle>Informe del Partido</DialogTitle>
-        <DialogDescription className="text-white/70 text-sm">
-          Puedes pellizcar la pantalla para hacer zoom en la imagen.
-        </DialogDescription>
-        <DialogClose className="absolute top-3 right-3 rounded-full bg-black/30 p-1 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white">
+    <div className="w-full h-full p-4 overflow-auto bg-slate-900 rounded-lg">
+      <div className="relative w-full max-w-[800px] mx-auto">
+        <DialogClose className="absolute -top-2 -right-2 z-10 rounded-full bg-black/30 p-1 text-white/70 backdrop-blur-sm transition-all hover:bg-black/50 hover:text-white">
           <X className="h-5 w-5" />
           <span className="sr-only">Cerrar</span>
         </DialogClose>
-      </DialogHeader>
-    
-      <div className="flex-grow overflow-auto p-4 rounded-lg">
         <svg
           ref={svgRef}
           viewBox={`0 0 800 ${svgHeight}`}
@@ -286,16 +279,23 @@ export function ReportView({ matchState }: ReportViewProps) {
           </text>
 
           {/* Main Content */}
-          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="24" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
-          <text x="200" y="450" fontFamily="Inter, sans-serif" fontSize="140" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
+          <text x="200" y="280" fontFamily="Inter, sans-serif" fontSize="22" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.home}</text>
+          <text x="200" y="450" fontFamily="Inter, sans-serif" fontSize="120" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
           <text x="200" y="530" textAnchor="middle" fill="#FDBA74" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
           <text x="200" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.home}</text>
 
 
-          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="24" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
-          <text x="600" y="450" fontFamily="Inter, sans-serif" fontSize="140" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
+          <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="22" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" style={{ textTransform: 'uppercase' }} textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away}</text>
+          <text x="600" y="450" fontFamily="Inter, sans-serif" fontSize="120" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
           <text x="600" y="530" textAnchor="middle" fill="#22D3EE" fontSize="22" fontWeight="900" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faltas</text>
           <text x="600" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
+
+          {/* Penalty shootout score */}
+          {penaltyShootout && penaltyShootout.active && (
+              <text x="400" y="485" textAnchor="middle" fill="white" fontSize="22" fontWeight="700" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Penales ({penaltyShootout.home} - {penaltyShootout.away})
+              </text>
+          )}
 
           {/* Event Columns */}
           {allRenderedElements}
@@ -344,13 +344,12 @@ export function ReportView({ matchState }: ReportViewProps) {
           <text x="20" y={svgHeight - 20} fontFamily="Inter, sans-serif" fontSize="14" fontWeight="900" fill="hsl(var(--primary))" style={{ fontStyle: 'italic', textTransform: 'uppercase' }}>Asesor Pro</text>
 
         </svg>
-      </div>
-
-      <div className="flex-shrink-0 p-4 border-t border-slate-700">
-        <Button onClick={handleDownload} className="w-full">
-          <Download className="mr-2 h-4 w-4" />
-          Descargar como JPEG
-        </Button>
+        <div className="absolute bottom-4 right-4">
+          <Button onClick={handleDownload} className="w-full">
+            <Download className="mr-2 h-4 w-4" />
+            Descargar como JPEG
+          </Button>
+        </div>
       </div>
     </div>
   );
