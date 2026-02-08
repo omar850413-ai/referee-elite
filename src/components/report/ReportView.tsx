@@ -129,7 +129,7 @@ export function ReportView({ matchState }: ReportViewProps) {
       currentY += 22;
 
       if (parsed.isCard && parsed.causal) {
-        const causalHeight = 45; // Generous height for 2-3 lines
+        const causalHeight = 60; // Increased height for up to 3 lines
         elements.push(
           <foreignObject key={`${item.id}-causal-${index}`} x={x - 175} y={currentY - 15} width="350" height={causalHeight}>
             <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#A1A1AA', fontSize: '14px', fontStyle: 'italic', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2, margin: 0 }}>
@@ -137,11 +137,11 @@ export function ReportView({ matchState }: ReportViewProps) {
             </p>
           </foreignObject>
         );
-        currentY += 40; // Incremented to provide enough space
+        currentY += 60; // Incremented to provide enough space (height of foreign object + padding)
       }
 
       if (item.pdfDescription) {
-        const descriptionHeight = 60; // Increased height for up to 3-4 lines
+        const descriptionHeight = 70; // Increased height for up to 4 lines
         elements.push(
           <foreignObject key={`${item.id}-pdfdesc-${index}`} x={x - 175} y={currentY - 15} width="350" height={descriptionHeight}>
               <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#94A3B8', fontSize: '13px', fontStyle: 'italic', whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.3, margin: 0, borderTop: '1px dashed #475569', paddingTop: '6px', marginTop: '6px' }}>
@@ -149,7 +149,7 @@ export function ReportView({ matchState }: ReportViewProps) {
             </p>
           </foreignObject>
         );
-        currentY += 55; // Incremented to provide enough space
+        currentY += 65; // Incremented to provide enough space
       }
       currentY += 5;
     });
