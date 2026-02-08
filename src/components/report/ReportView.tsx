@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { DialogClose, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { parseTimeToMinutes } from '@/lib/utils';
 
 interface ReportViewProps {
   matchState: MatchState;
@@ -61,14 +62,13 @@ export function ReportView({ matchState }: ReportViewProps) {
   // --- Definitive Event Classification Logic ---
   const safeEvents = events || [];
 
-  const homeGoals = safeEvents.filter(e => e.category === 'goals' && e.side === 'home');
-  const awayGoals = safeEvents.filter(e => e.category === 'goals' && e.side === 'away');
-  const homeYellows = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟨') && e.side === 'home');
-  const awayYellows = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟨') && e.side === 'away');
-  const homeReds = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟥') && e.side === 'home');
-  const awayReds = safeEvents.filter(e => e.category === 'cards' && e.message.includes('🟥') && e.side === 'away');
-  const homeSubs = safeEvents.filter(e => e.category === 'subs' && e.side === 'home');
-  const awaySubs = safeEvents.filter(e => e.category === 'subs' && e.side === 'away');
+  const homeEvents = safeEvents
+    .filter(e => e.side === 'home' && ['goals', 'cards', 'subs'].includes(e.category))
+    .sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+
+  const awayEvents = safeEvents
+    .filter(e => e.side === 'away' && ['goals', 'cards', 'subs'].includes(e.category))
+    .sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
 
   // Events for the bottom section
   const noteEvents = safeEvents.filter(e => e.category === 'notes');
@@ -92,25 +92,28 @@ export function ReportView({ matchState }: ReportViewProps) {
 
         return {
             isCard: true,
-            targetInfo: `${target} min ${time}`,
+            targetInfo: `${symbol} ${target} min ${time}`,
             causal: causal || null,
             pdfDescription: event.pdfDescription || null,
         };
     }
     
+    let icon = '';
     if (event.category === 'subs') {
-        message = message.replace('🔄', '').replace('Cambio:', '').trim();
+        icon = '🔄';
+        message = message.replace(icon, '').replace('Cambio:', '').trim();
         const parts = message.split(' ');
         const pIn = parts.find(p => p.startsWith('↑'))?.replace('↑', '');
         const pOut = parts.find(p => p.startsWith('↓'))?.replace('↓', '');
         message = `Entra ${pIn || '?'} Sale ${pOut || '?'}`;
     } else if (event.category === 'goals') {
-        message = message.replace('⚽', '').replace('GOL', '').replace('PENAL', '(P)').replace('AUTOGOL', '(AG)').trim();
+        icon = '⚽';
+        message = message.replace(icon, '').replace('GOL', '').replace('PENAL', '(P)').replace('AUTOGOL', '(AG)').trim();
     }
     
     return {
         isCard: false,
-        text: `${message} min ${time}`.trim(),
+        text: `${icon} ${message} min ${time}`.trim(),
         pdfDescription: event.pdfDescription || null,
     };
   };
@@ -120,7 +123,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     if (!items || items.length === 0) return { elements, endY: y };
 
     elements.push(
-      <text key={`${title}-${x}`} x={x} y={y} fontSize="22" fontFamily="Inter, sans-serif" fontWeight="900" fill={titleColor} textAnchor="middle">
+      <text key={`${title}-${x}`} x={x} y={y} fontSize="22" fontFamily="Inter, sans-serif" fontWeight="900" fill={titleColor} textAnchor="middle" textTransform="uppercase">
         {title}
       </text>
     );
@@ -183,61 +186,13 @@ export function ReportView({ matchState }: ReportViewProps) {
     return { elements, endY: currentY };
   };
 
-  const homeColumn: JSX.Element[] = [];
-  let yHome = 640;
+  const homeColumn = renderEventList('INCIDENTES', homeEvents, 200, 640, '#E2E8F0', '#FFFFFF');
+  const awayColumn = renderEventList('INCIDENTES', awayEvents, 600, 640, '#E2E8F0', '#FFFFFF');
 
-  const homeGoalsSection = renderEventList('Anotadores', homeGoals, 200, yHome, '#E2E8F0', '#FFFFFF');
-  if (homeGoals.length > 0) {
-    homeColumn.push(...homeGoalsSection.elements);
-    yHome = homeGoalsSection.endY + 40;
-  }
+  const yHome = homeColumn.endY;
+  const yAway = awayColumn.endY;
 
-  const homeYellowsSection = renderEventList('Amonestaciones', homeYellows, 200, yHome, '#E2E8F0', '#FFFFFF');
-  if (homeYellows.length > 0) {
-    homeColumn.push(...homeYellowsSection.elements);
-    yHome = homeYellowsSection.endY + 40;
-  }
-
-  const homeRedsSection = renderEventList('Expulsiones', homeReds, 200, yHome, '#E2E8F0', '#FFFFFF');
-   if (homeReds.length > 0) {
-    homeColumn.push(...homeRedsSection.elements);
-    yHome = homeRedsSection.endY + 40;
-  }
-
-  const homeSubsSection = renderEventList('Sustituciones', homeSubs, 200, yHome, '#E2E8F0', '#FFFFFF');
-   if (homeSubs.length > 0) {
-    homeColumn.push(...homeSubsSection.elements);
-    yHome = homeSubsSection.endY + 40;
-  }
-  
-  const awayColumn: JSX.Element[] = [];
-  let yAway = 640;
-
-  const awayGoalsSection = renderEventList('Anotadores', awayGoals, 600, yAway, '#E2E8F0', '#FFFFFF');
-  if (awayGoals.length > 0) {
-    awayColumn.push(...awayGoalsSection.elements);
-    yAway = awayGoalsSection.endY + 40;
-  }
-  
-  const awayYellowsSection = renderEventList('Amonestaciones', awayYellows, 600, yAway, '#E2E8F0', '#FFFFFF');
-  if (awayYellows.length > 0) {
-    awayColumn.push(...awayYellowsSection.elements);
-    yAway = awayYellowsSection.endY + 40;
-  }
-
-  const awayRedsSection = renderEventList('Expulsiones', awayReds, 600, yAway, '#E2E8F0', '#FFFFFF');
-  if (awayReds.length > 0) {
-    awayColumn.push(...awayRedsSection.elements);
-    yAway = awayRedsSection.endY + 40;
-  }
-  
-  const awaySubsSection = renderEventList('Sustituciones', awaySubs, 600, yAway, '#E2E8F0', '#FFFFFF');
-  if (awaySubs.length > 0) {
-    awayColumn.push(...awaySubsSection.elements);
-    yAway = awaySubsSection.endY + 40;
-  }
-
-  const noEventsInColumns = homeGoals.length === 0 && awayGoals.length === 0 && homeYellows.length === 0 && awayYellows.length === 0 && homeReds.length === 0 && awayReds.length === 0 && homeSubs.length === 0 && awaySubs.length === 0;
+  const noEventsInColumns = homeEvents.length === 0 && awayEvents.length === 0;
   const noNotes = noteEvents.length === 0 && pegiPlays.length === 0;
 
   // --- Dynamic Height Calculation ---
@@ -342,11 +297,11 @@ export function ReportView({ matchState }: ReportViewProps) {
           <text x="600" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
 
           {/* Event Columns */}
-          {homeColumn}
-          {awayColumn}
+          {homeColumn.elements}
+          {awayColumn.elements}
           
           {noEventsInColumns && noNotes && (
-            <text x="400" y="650" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="20" fontStyle="italic">No hay eventos para mostrar en el informe.</text>
+            <text x="400" y="650" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="20" fontStyle="italic">No hay incidentes para mostrar en el informe.</text>
           )}
 
           {/* Footer */}
