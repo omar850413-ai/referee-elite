@@ -25,16 +25,19 @@ export default function Home() {
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
   
-  // Effect to prepare the match document reference
+  // Effect to prepare the match document reference.
+  // This was refactored to prevent an infinite loop. It now runs only once when the user is available.
   useEffect(() => {
-    if (!user || !firestore || !userProfile) return;
+    // This effect should only run once when the user is available and the ref isn't set.
+    if (!user || !firestore || matchDocRef) return;
 
     // Use a predictable ID for the match document, tied to the user
     const ref = doc(firestore, 'matches', user.uid);
 
     getDoc(ref).then(docSnap => {
       if (!docSnap.exists()) {
-        const advisorName = userProfile.email || '';
+        // Use user.email which is stable, removing the need for userProfile dependency
+        const advisorName = user.email || '';
         // Document doesn't exist, create it with initial state
         const initialState: MatchState = {
             scores: { home: 0, away: 0 },
@@ -68,7 +71,7 @@ export default function Home() {
         errorEmitter.emit('permission-error', permissionError);
     });
 
-  }, [user, firestore, userProfile]);
+  }, [user, firestore, matchDocRef]);
 
   // This combined effect handles all session state logic: auth, approval, token freshness, and multi-device logout.
   React.useEffect(() => {
