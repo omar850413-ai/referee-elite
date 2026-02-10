@@ -1,13 +1,18 @@
 
 export const causalesAmarilla = [
-  'CONDUCTA ANTIDEPORTIVA',
-  'DESAPROBACIÓN CON PALABRAS O ACCIONES',
-  'INFRIGIR CON INSISTENCIA LAS REGLAS DE JUEGO',
-  'RETARDAR LA REANUDACIÓN DEL JUEGO',
-  'NO RESPETAR LA DISTANCIA REGLAMENTARIA',
-  'ENTRAR O VOLVER A ENTRAR AL TERRENO SIN PERMISO',
-  'ABANDONAR EL TERRENO DE JUEGO SIN PERMISO',
-  'SACARSE LA PLAYERA',
+  'Por dar un golpe temerario',
+  'Por dar una patada temeraria',
+  'Por realizar una zancadilla temeraria',
+  'Por realizar una carga temeraria',
+  'Por provocar a un adversario',
+  'Por evitar un SPA',
+  'Por retardar la reanudación del juego',
+  'Por desaprobar una decisión arbitral',
+  'Por quitarse la camiseta en la celebración de un gol.',
+  'Por infringir reiteradamente las reglas de juego',
+  'Por falta táctica',
+  'Por no respetar la distancia reglamentaria.',
+  'Simulación',
 ];
 
 export const causalesRoja = [
