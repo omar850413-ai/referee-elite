@@ -1,10 +1,13 @@
 
 export const causalesAmarilla = [
-  'Conducta antideportiva',
-  'Desaprobar con palabras o acciones',
-  'Infringir persistentemente las Reglas',
-  'Retardar la reanudación del juego',
-  'No respetar la distancia reglamentaria',
+  'CONDUCTA ANTIDEPORTIVA',
+  'DESAPROBACIÓN CON PALABRAS O ACCIONES',
+  'INFRIGIR CON INSISTENCIA LAS REGLAS DE JUEGO',
+  'RETARDAR LA REANUDACIÓN DEL JUEGO',
+  'NO RESPETAR LA DISTANCIA REGLAMENTARIA',
+  'ENTRAR O VOLVER A ENTRAR AL TERRENO SIN PERMISO',
+  'ABANDONAR EL TERRENO DE JUEGO SIN PERMISO',
+  'SACARSE LA PLAYERA',
 ];
 
 export const causalesRoja = [
