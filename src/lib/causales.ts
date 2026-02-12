@@ -13,6 +13,7 @@ export const causalesAmarilla = [
   'Por falta táctica',
   'Por no respetar la distancia reglamentaria.',
   'Simulación',
+  'Por evitar un DOGSO con tentativa de jugar el balon cometiendo un penal',
 ];
 
 export const causalesRoja = [
