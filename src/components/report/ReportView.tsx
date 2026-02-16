@@ -73,7 +73,7 @@ export function ReportView({ matchState }: ReportViewProps) {
   const awayRedCards = safeEvents.filter(e => e.side === 'away' && e.category === 'cards' && e.message.includes('🟥')).sort(sorter);
   const awaySubs = safeEvents.filter(e => e.side === 'away' && e.category === 'subs').sort(sorter);
   
-  const noteEvents = safeEvents.filter(e => e.category === 'notes');
+  const noteEvents = safeEvents.filter(e => e.category === 'notes').sort(sorter);
   const pegiPlays = safeEvents.filter(e => e.category === 'pegi');
 
   const parseEventMessage = (event: MatchEvent) => {
@@ -191,46 +191,63 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const notesAndPegiElements: JSX.Element[] = [];
   let footerContentHeight = 0;
+  let footerCurrentY = footerStartY;
 
   if (noteEvents.length > 0 || pegiPlays.length > 0) {
-      let footerCurrentY = footerStartY + 40; 
-      
-      if (noteEvents.length > 0) {
-        notesAndPegiElements.push(<text key="notes-title" x="400" y={footerCurrentY} textAnchor='middle' fontSize="20" fontWeight="700" fill="#A1A1AA">{'Anotaciones del Asesor'.toUpperCase()}</text>);
-        footerCurrentY += 25;
-        notesAndPegiElements.push(
-            <foreignObject key="notes-fo" x="50" y={footerCurrentY} width="700" height="60">
-                <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E2E8F0', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
-                    {noteEvents.map(e => e.message.replace('📝 ', '')).join('; ')}
-                </p>
-            </foreignObject>
-        );
-        footerCurrentY += 70;
-      }
+    footerCurrentY += 40;
 
-      if (pegiPlays.length > 0) {
-        notesAndPegiElements.push(<text key="pegi-title" x="400" y={footerCurrentY} textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE">{'Jugadas PEGI'.toUpperCase()}</text>);
-        footerCurrentY += 25;
+    if (noteEvents.length > 0) {
+      notesAndPegiElements.push(<text key="notes-title" x="400" y={footerCurrentY} textAnchor="middle" fontSize="20" fontWeight="700" fill="#A1A1AA">{'Anotaciones del Asesor'.toUpperCase()}</text>);
+      footerCurrentY += 35; // Space after title
+
+      noteEvents.forEach((note, index) => {
+        const noteText = `${index + 1}. ${note.message.replace('📝 ', '')}`;
+        const timeText = `(min ${note.time})`;
+
+        const approxLines = Math.ceil(noteText.length / 60) || 1;
+        const requiredHeight = approxLines * 24 + 10;
+
         notesAndPegiElements.push(
-            <foreignObject key="pegi-fo" x="50" y={footerCurrentY} width="700" height="60">
-              <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E9D5FF', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
-                {pegiPlays.map(p => {
-                  const msg = p.message;
-                  if (msg.endsWith('No')) {
-                      return 'Jugadas pegi no';
-                  }
-                  const yesPrefix = '🔎 JUGADAS PEGI: Sí - ';
-                  if (msg.startsWith(yesPrefix)) {
-                      return msg.substring(yesPrefix.length);
-                  }
-                  return msg.replace(/🔎|JUGADAS PEGI: /g, '').trim();
-                }).join('; ')}
+          <foreignObject key={`note-fo-${note.id}`} x="50" y={footerCurrentY} width="700" height={requiredHeight}>
+            <div xmlns="http://www.w3.org/1999/xhtml" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', color: '#E2E8F0', fontSize: '16px', lineHeight: '1.5', padding: '0 20px' }}>
+              <p style={{ margin: 0, padding: 0, textAlign: 'left', flexGrow: 1, paddingRight: '20px', wordBreak: 'break-word' }}>
+                {noteText}
               </p>
-            </foreignObject>
+              <span style={{ margin: 0, padding: 0, whiteSpace: 'nowrap', color: '#A1A1AA', fontStyle: 'italic', fontSize: '14px' }}>
+                {timeText}
+              </span>
+            </div>
+          </foreignObject>
         );
-        footerCurrentY += 70;
-      }
-      footerContentHeight = footerCurrentY - footerStartY;
+        footerCurrentY += requiredHeight;
+      });
+
+      footerCurrentY += 20;
+    }
+
+    if (pegiPlays.length > 0) {
+      notesAndPegiElements.push(<text key="pegi-title" x="400" y={footerCurrentY} textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE">{'Jugadas PEGI'.toUpperCase()}</text>);
+      footerCurrentY += 25;
+      notesAndPegiElements.push(
+          <foreignObject key="pegi-fo" x="50" y={footerCurrentY} width="700" height="60">
+            <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E9D5FF', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
+              {pegiPlays.map(p => {
+                const msg = p.message;
+                if (msg.endsWith('No')) {
+                    return 'Jugadas pegi no';
+                }
+                const yesPrefix = '🔎 JUGADAS PEGI: Sí - ';
+                if (msg.startsWith(yesPrefix)) {
+                    return msg.substring(yesPrefix.length);
+                }
+                return msg.replace(/🔎|JUGADAS PEGI: /g, '').trim();
+              }).join('; ')}
+            </p>
+          </foreignObject>
+      );
+      footerCurrentY += 70;
+    }
+    footerContentHeight = footerCurrentY - footerStartY;
   }
 
   const bottomPadding = 60;
