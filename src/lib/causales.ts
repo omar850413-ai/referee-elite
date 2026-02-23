@@ -4,6 +4,7 @@ export const causalesAmarilla = [
   'Por dar una patada temeraria',
   'Por realizar una zancadilla temeraria',
   'Por realizar una carga temeraria',
+  'Hacer una entrada temeraria',
   'Por provocar a un adversario',
   'Por evitar un ataque prometedor SPA',
   'Por retardar la reanudación del juego',
