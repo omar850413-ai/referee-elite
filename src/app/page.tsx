@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -26,17 +27,24 @@ export default function Home() {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
   
   // Effect to prepare the match document reference.
-  // This was refactored to prevent an infinite loop. It now runs only once when the user is available.
+  // This refactored effect now waits for approval before attempting to read match data.
   useEffect(() => {
-    // This effect should only run once when the user is available and the ref isn't set.
-    if (!user || !firestore || matchDocRef) return;
+    // We only proceed if we have a user, firestore, and the profile is no longer loading.
+    // We also stop if the match reference is already set.
+    if (!user || !firestore || matchDocRef || isProfileLoading) return;
+
+    const isSuperAdmin = user.email === 'omar850413@gmail.com';
+    const isApproved = userProfile?.isApproved === true;
+
+    // IMPORTANT: Do not attempt to fetch match data if the user is not approved.
+    // This prevents triggering Firestore security rule errors.
+    if (!isSuperAdmin && !isApproved) return;
 
     // Use a predictable ID for the match document, tied to the user
     const ref = doc(firestore, 'matches', user.uid);
 
     getDoc(ref).then(docSnap => {
       if (!docSnap.exists()) {
-        // Use user.email which is stable, removing the need for userProfile dependency
         const advisorName = user.email || '';
         // Document doesn't exist, create it with initial state
         const initialState: MatchState = {
@@ -71,7 +79,7 @@ export default function Home() {
         errorEmitter.emit('permission-error', permissionError);
     });
 
-  }, [user, firestore, matchDocRef]);
+  }, [user, firestore, matchDocRef, userProfile, isProfileLoading]);
 
   // This combined effect handles all session state logic: auth, approval, token freshness, and multi-device logout.
   React.useEffect(() => {
@@ -109,17 +117,12 @@ export default function Home() {
     }
     
     // 4. For approved users (or super admin), ensure their auth token is fresh.
-    // This is crucial for security rules to recognize their approved status correctly.
-    // It will attempt to refresh, but if it fails (e.g., offline), it will
-    // proceed with the cached token, allowing offline startup.
     if ((isSuperAdmin || isApproved) && !hasTokenBeenRefreshed) {
       user.getIdToken(true).then(() => {
         console.log('Auth token has been refreshed to ensure up-to-date permissions.');
         setHasTokenBeenRefreshed(true); // Mark as refreshed for this app session.
       }).catch(error => {
         console.warn("Could not refresh token (likely offline). Proceeding with cached token.");
-        // We still mark as "refreshed" to allow the app to proceed.
-        // Firebase will use the cached user data which is sufficient for offline use.
         setHasTokenBeenRefreshed(true);
       });
     }
@@ -134,10 +137,8 @@ export default function Home() {
   ]);
 
   const isSuperAdmin = user?.email === 'omar850413@gmail.com';
-  // A user is considered "ready" if they are the super admin, or if their profile is approved AND their token has been refreshed.
   const isReady = (isSuperAdmin || (userProfile?.isApproved ?? false)) && hasTokenBeenRefreshed;
 
-  // Show loading skeleton if the user/profile is loading OR if they are not yet fully ready (e.g., token is refreshing) OR match doc not ready.
   if (isUserLoading || isProfileLoading || !isReady || !matchDocRef) {
     return (
       <div className="p-4 bg-sky-100 min-h-screen flex items-center justify-center">
@@ -170,7 +171,5 @@ export default function Home() {
     );
   }
 
-  // Once loading is complete and user is ready, render the actual match page.
-  // We can be sure user and matchDocRef are non-null here because of the checks above.
   return <MatchPage user={user!} userProfile={userProfile} matchDocRef={matchDocRef!} />;
 }
