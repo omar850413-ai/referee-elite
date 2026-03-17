@@ -14,7 +14,7 @@ interface PdfReportViewProps {
 }
 
 export function PdfReportView({ matchState }: PdfReportViewProps) {
-  const { matchInfo, teamNames, scores, events, penaltyShootout } = matchState;
+  const { matchInfo, teamNames, scores, events, penaltyShootout, reportSettings } = matchState;
   const reportRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadPdf = () => {
@@ -53,8 +53,13 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     });
   };
 
+  // Filtrar eventos basándose en la configuración del reporte
   const filteredAndSortedEvents = [...events]
-    .filter(e => ['goals', 'cards', 'notes'].includes(e.category))
+    .filter(e => {
+      const isStandard = ['goals', 'cards', 'notes'].includes(e.category);
+      const isFoulEnabled = reportSettings?.showFouls && (e.category === 'fouls' || (e.category === 'general' && e.message.includes('🚩 Falta')));
+      return isStandard || isFoulEnabled;
+    })
     .sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
 
   return (
@@ -138,6 +143,19 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                         case 'notes':
                             accion = 'Anotación';
                             descripcion = message.replace('📝 ', '').trim();
+                            break;
+                        case 'fouls':
+                            accion = 'Falta';
+                            descripcion = message.replace('🚩 ', '').trim();
+                            break;
+                        case 'general':
+                            if (message.includes('🚩 Falta')) {
+                                accion = 'Falta';
+                                descripcion = message.replace('🚩 ', '').trim();
+                            } else {
+                                accion = 'General';
+                                descripcion = message;
+                            }
                             break;
                         default:
                             accion = '';
