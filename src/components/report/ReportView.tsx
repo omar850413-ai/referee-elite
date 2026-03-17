@@ -149,9 +149,44 @@ export function ReportView({ matchState }: ReportViewProps) {
     return { elements, endY: currentY };
   };
 
+  const foulsHome = foulEvents.filter(e => e.side === 'home');
+  const foulsAway = foulEvents.filter(e => e.side === 'away');
+
+  const renderFoulList = (faltas: MatchEvent[], x: number, startY: number, color: string) => {
+    const elements: JSX.Element[] = [];
+    if (!reportSettings?.showFouls || faltas.length === 0) return { elements, endY: startY };
+
+    let currentY = startY;
+    faltas.forEach((f, i) => {
+        elements.push(
+            <text 
+                key={`foul-item-${f.id}`} 
+                x={x} 
+                y={currentY} 
+                fontSize="14" 
+                fontFamily="Inter, sans-serif" 
+                fontWeight="700" 
+                fill={color} 
+                textAnchor="middle"
+            >
+                {`${i + 1} min ${f.time}`}
+            </text>
+        );
+        currentY += 18;
+    });
+    return { elements, endY: currentY };
+  };
+
   const allRenderedElements: JSX.Element[] = [];
-  let homeColumnY = 640;
-  let awayColumnY = 640;
+  
+  // Render fouls lists under counts
+  const homeFoulList = renderFoulList(foulsHome, 200, 610, "#FDBA74");
+  const awayFoulList = renderFoulList(foulsAway, 600, 610, "#22D3EE");
+  allRenderedElements.push(...homeFoulList.elements, ...awayFoulList.elements);
+
+  const maxFoulY = Math.max(homeFoulList.endY, awayFoulList.endY);
+  let homeColumnY = Math.max(680, maxFoulY + 40);
+  let awayColumnY = Math.max(680, maxFoulY + 40);
   
   const homeGoalsSection = renderEventSection('GOLES', homeGoals, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
   homeColumnY = homeGoalsSection.endY + (homeGoals.length > 0 ? 30 : 0);
@@ -186,19 +221,15 @@ export function ReportView({ matchState }: ReportViewProps) {
   allRenderedElements.push(...awaySubsSection.elements);
 
   const maxEventsY = Math.max(homeColumnY, awayColumnY);
-  let footerCurrentY = maxEventsY < 640 ? 640 : maxEventsY;
+  let footerCurrentY = maxEventsY < 680 ? 680 : maxEventsY;
 
   const footerElements: JSX.Element[] = [];
 
-  // BITÁCORA DE FALTAS SECTION (Refined to match the requested handwritten style)
+  // BITÁCORA DE FALTAS SECTION (Refined summary at bottom if enabled)
   if (reportSettings?.showFouls && foulEvents.length > 0) {
     footerCurrentY += 50;
     
-    // Background plate for fouls bitácora
-    const foulsHome = foulEvents.filter(e => e.side === 'home');
-    const foulsAway = foulEvents.filter(e => e.side === 'away');
-    const maxFoulRows = Math.max(foulsHome.length, foulsAway.length);
-    const foulsHeight = 50 + (maxFoulRows * 30) + 40;
+    const foulsHeight = 50 + (Math.max(foulsHome.length, foulsAway.length) * 30) + 40;
 
     footerElements.push(
       <g key="fouls-bitacora">
@@ -212,8 +243,8 @@ export function ReportView({ matchState }: ReportViewProps) {
           {`FALTAS ${teamNames.home.toUpperCase()}`}
         </text>
         {foulsHome.map((f, i) => (
-           <text key={`home-foul-${f.id}`} x="225" y={footerCurrentY + 120 + (i * 30)} textAnchor="middle" fontSize="20" fontWeight="700" fill="#E2E8F0">
-             {`${f.time.replace(/:/g, "'")}'`}
+           <text key={`home-foul-sum-${f.id}`} x="225" y={footerCurrentY + 120 + (i * 30)} textAnchor="middle" fontSize="20" fontWeight="700" fill="#E2E8F0">
+             {`${i + 1} min ${f.time}`}
            </text>
         ))}
 
@@ -225,8 +256,8 @@ export function ReportView({ matchState }: ReportViewProps) {
           {`FALTAS ${teamNames.away.toUpperCase()}`}
         </text>
         {foulsAway.map((f, i) => (
-           <text key={`away-foul-${f.id}`} x="575" y={footerCurrentY + 120 + (i * 30)} textAnchor="middle" fontSize="20" fontWeight="700" fill="#E2E8F0">
-             {`${f.time.replace(/:/g, "'")}'`}
+           <text key={`away-foul-sum-${f.id}`} x="575" y={footerCurrentY + 120 + (i * 30)} textAnchor="middle" fontSize="20" fontWeight="700" fill="#E2E8F0">
+             {`${i + 1} min ${f.time}`}
            </text>
         ))}
       </g>

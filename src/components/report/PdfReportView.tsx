@@ -61,6 +61,10 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     })
     .sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
 
+  // Count fouls per team for enumeration
+  let homeFoulCount = 0;
+  let awayFoulCount = 0;
+
   return (
     <div className="bg-gray-200 p-4 max-h-[85vh] overflow-y-auto rounded-lg relative">
         <DialogClose className="absolute right-4 top-4 z-10 rounded-full bg-black/10 p-1 text-black/60 backdrop-blur-sm transition-all hover:bg-black/20 hover:text-black">
@@ -140,11 +144,14 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                             descripcion = message.replace(/🟨|🟥/g, '').trim();
                             break;
                         case 'fouls':
-                            accion = 'Falta';
-                            descripcion = message.replace('🚩 ', '').trim();
+                            if (event.side === 'home') homeFoulCount++;
+                            else awayFoulCount++;
+                            const currentNum = event.side === 'home' ? homeFoulCount : awayFoulCount;
+                            accion = `Falta ${currentNum}`;
+                            descripcion = `Falta cometida por ${event.side === 'home' ? teamNames.home : teamNames.away}`;
                             break;
                         case 'notes':
-                            accion = 'Anotación de Asesor';
+                            accion = 'Anotación';
                             descripcion = message.replace('📝 ', '').trim();
                             break;
                         default:
