@@ -75,7 +75,10 @@ export function ReportView({ matchState }: ReportViewProps) {
   
   const noteEvents = safeEvents.filter(e => e.category === 'notes').sort(sorter);
   const pegiPlays = safeEvents.filter(e => e.category === 'pegi');
-  const foulEvents = safeEvents.filter(e => e.category === 'fouls').sort(sorter);
+  const foulEvents = safeEvents.filter(e => 
+    e.category === 'fouls' || 
+    (e.category === 'general' && e.message.includes('🚩 Falta'))
+  ).sort(sorter);
 
   const parseEventMessage = (event: MatchEvent) => {
     let message = event.message;
@@ -152,26 +155,37 @@ export function ReportView({ matchState }: ReportViewProps) {
   const renderFoulListElements = (faltas: MatchEvent[], x: number, startY: number, color: string) => {
     if (!reportSettings?.showFouls || faltas.length === 0) return null;
 
-    const minutesList = faltas.map(f => {
-      const time = f.time;
-      const min = time.includes(':') ? time.split(':')[0] : time;
-      return `${min}'`;
-    }).join(' ');
+    // Split into chunks to handle multi-line if many fouls
+    const chunkSize = 2;
+    const lines: string[] = [];
+    for (let i = 0; i < faltas.length; i += chunkSize) {
+      const chunk = faltas.slice(i, i + chunkSize);
+      const line = chunk.map((f, idx) => {
+        const globalIdx = i + idx + 1;
+        return `${globalIdx} min ${f.time}`;
+      }).join(' , ');
+      lines.push(line);
+    }
 
     return (
-      <text
-        x={x}
-        y={startY + 12}
-        textAnchor="middle"
-        fill={color}
-        fontSize="12"
-        fontFamily="Inter, sans-serif"
-        fontWeight="700"
-        fontStyle="italic"
-        opacity="0.6"
-      >
-        {minutesList}
-      </text>
+      <g>
+        {lines.map((line, index) => (
+          <text
+            key={index}
+            x={x}
+            y={startY + 12 + (index * 15)}
+            textAnchor="middle"
+            fill="#A1A1AA"
+            fontSize="11"
+            fontFamily="Inter, sans-serif"
+            fontWeight="700"
+            fontStyle="italic"
+            opacity="0.6"
+          >
+            {line}
+          </text>
+        ))}
+      </g>
     );
   };
 
@@ -180,10 +194,8 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const allRenderedElements: JSX.Element[] = [];
   
-  // Dynamically calculate the starting Y for the event columns
-  // Faltas count is at y=580. List of minutes will be at y=600.
-  let homeColumnY = 650;
-  let awayColumnY = 650;
+  let homeColumnY = 680;
+  let awayColumnY = 680;
   
   const homeGoalsSection = renderEventSection('GOLES', homeGoals, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
   homeColumnY = homeGoalsSection.endY + (homeGoals.length > 0 ? 30 : 0);
@@ -218,7 +230,7 @@ export function ReportView({ matchState }: ReportViewProps) {
   allRenderedElements.push(...awaySubsSection.elements);
 
   const maxEventsY = Math.max(homeColumnY, awayColumnY);
-  let footerCurrentY = Math.max(680, maxEventsY);
+  let footerCurrentY = Math.max(720, maxEventsY);
 
   const footerElements: JSX.Element[] = [];
 
@@ -361,13 +373,13 @@ export function ReportView({ matchState }: ReportViewProps) {
           <text x="200" y="450" fontFamily="Inter, sans-serif" fontSize="120" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
           <text x="200" y="530" textAnchor="middle" fill="#FDBA74" fontSize="22" fontWeight="900" style={{ letterSpacing: '0.05em' }}>FALTAS</text>
           <text x="200" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.home}</text>
-          {renderFoulListElements(foulsHome, 200, 595, "#FDBA74")}
+          {renderFoulListElements(foulsHome, 200, 590, "#FDBA74")}
 
           <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away.toUpperCase()}</text>
           <text x="600" y="450" fontFamily="Inter, sans-serif" fontSize="120" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
           <text x="600" y="530" textAnchor="middle" fill="#22D3EE" fontSize="22" fontWeight="900" style={{ letterSpacing: '0.05em' }}>FALTAS</text>
           <text x="600" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
-          {renderFoulListElements(foulsAway, 600, 595, "#22D3EE")}
+          {renderFoulListElements(foulsAway, 600, 590, "#22D3EE")}
 
           {/* Penalty shootout score */}
           {penaltyShootout && penaltyShootout.active && (
@@ -382,7 +394,7 @@ export function ReportView({ matchState }: ReportViewProps) {
           {(homeGoals.length === 0 && homeYellowCards.length === 0 && homeRedCards.length === 0 && homeSubs.length === 0 &&
             awayGoals.length === 0 && awayYellowCards.length === 0 && awayRedCards.length === 0 && awaySubs.length === 0 &&
             noteEvents.length === 0 && pegiPlays.length === 0) && (
-            <text x="400" y="650" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="20" fontStyle="italic">No hay incidentes para mostrar en el informe.</text>
+            <text x="400" y="700" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="20" fontStyle="italic">No hay incidentes para mostrar en el informe.</text>
           )}
 
           {/* Footer Elements (Notes, PEGI) */}
