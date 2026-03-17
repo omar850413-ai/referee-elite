@@ -155,7 +155,6 @@ export function ReportView({ matchState }: ReportViewProps) {
   const renderFoulListElements = (faltas: MatchEvent[], x: number, startY: number, color: string) => {
     if (!reportSettings?.showFouls || faltas.length === 0) return null;
 
-    // Split into chunks to handle multi-line if many fouls
     const chunkSize = 2;
     const lines: string[] = [];
     for (let i = 0; i < faltas.length; i += chunkSize) {
@@ -192,10 +191,21 @@ export function ReportView({ matchState }: ReportViewProps) {
   const foulsHome = foulEvents.filter(e => e.side === 'home');
   const foulsAway = foulEvents.filter(e => e.side === 'away');
 
+  const getFoulSpaceHeight = (faltas: MatchEvent[]) => {
+    if (!reportSettings?.showFouls || faltas.length === 0) return 0;
+    const lines = Math.ceil(faltas.length / 2);
+    return lines * 15 + 15; // List height + small buffer
+  };
+
   const allRenderedElements: JSX.Element[] = [];
   
-  let homeColumnY = 680;
-  let awayColumnY = 680;
+  // Dynamic starting position for columns based on fouls
+  const homeFoulSpace = getFoulSpaceHeight(foulsHome);
+  const awayFoulSpace = getFoulSpaceHeight(foulsAway);
+  const extraBuffer = 40; // Extra separation to keep it clean
+
+  let homeColumnY = 680 + homeFoulSpace + (homeFoulSpace > 0 ? extraBuffer : 0);
+  let awayColumnY = 680 + awayFoulSpace + (awayFoulSpace > 0 ? extraBuffer : 0);
   
   const homeGoalsSection = renderEventSection('GOLES', homeGoals, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
   homeColumnY = homeGoalsSection.endY + (homeGoals.length > 0 ? 30 : 0);
@@ -373,13 +383,13 @@ export function ReportView({ matchState }: ReportViewProps) {
           <text x="200" y="450" fontFamily="Inter, sans-serif" fontSize="120" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
           <text x="200" y="530" textAnchor="middle" fill="#FDBA74" fontSize="22" fontWeight="900" style={{ letterSpacing: '0.05em' }}>FALTAS</text>
           <text x="200" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.home}</text>
-          {renderFoulListElements(foulsHome, 200, 590, "#FDBA74")}
+          {renderFoulListElements(foulsHome, 200, 580, "#FDBA74")}
 
           <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away.toUpperCase()}</text>
           <text x="600" y="450" fontFamily="Inter, sans-serif" fontSize="120" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
           <text x="600" y="530" textAnchor="middle" fill="#22D3EE" fontSize="22" fontWeight="900" style={{ letterSpacing: '0.05em' }}>FALTAS</text>
           <text x="600" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
-          {renderFoulListElements(foulsAway, 600, 590, "#22D3EE")}
+          {renderFoulListElements(foulsAway, 600, 580, "#22D3EE")}
 
           {/* Penalty shootout score */}
           {penaltyShootout && penaltyShootout.active && (
