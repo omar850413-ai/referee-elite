@@ -149,10 +149,8 @@ export function ReportView({ matchState }: ReportViewProps) {
     return { elements, endY: currentY };
   };
 
-  // Improved Foul List Rendering using simple <text> to ensure visibility
   const renderFoulListElements = (faltas: MatchEvent[], x: number, startY: number, color: string) => {
-    const elements: JSX.Element[] = [];
-    if (!reportSettings?.showFouls || faltas.length === 0) return { elements, endY: startY };
+    if (!reportSettings?.showFouls || faltas.length === 0) return null;
 
     const minutesList = faltas.map(f => {
       const time = f.time;
@@ -160,9 +158,8 @@ export function ReportView({ matchState }: ReportViewProps) {
       return `${min}'`;
     }).join(' ');
 
-    elements.push(
+    return (
       <text
-        key={`foul-list-text-${x}`}
         x={x}
         y={startY + 12}
         textAnchor="middle"
@@ -176,8 +173,6 @@ export function ReportView({ matchState }: ReportViewProps) {
         {minutesList}
       </text>
     );
-
-    return { elements, endY: startY + 30 };
   };
 
   const foulsHome = foulEvents.filter(e => e.side === 'home');
@@ -185,15 +180,10 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const allRenderedElements: JSX.Element[] = [];
   
-  // Render fouls lists directly under counts (counts are at y=580)
-  const homeFoulList = renderFoulListElements(foulsHome, 200, 600, "#FDBA74");
-  const awayFoulList = renderFoulListElements(foulsAway, 600, 600, "#22D3EE");
-  allRenderedElements.push(...homeFoulList.elements, ...awayFoulList.elements);
-
   // Dynamically calculate the starting Y for the event columns
-  const maxFoulY = Math.max(homeFoulList.endY, awayFoulList.endY);
-  let homeColumnY = Math.max(650, maxFoulY + 20);
-  let awayColumnY = Math.max(650, maxFoulY + 20);
+  // Faltas count is at y=580. List of minutes will be at y=600.
+  let homeColumnY = 650;
+  let awayColumnY = 650;
   
   const homeGoalsSection = renderEventSection('GOLES', homeGoals, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
   homeColumnY = homeGoalsSection.endY + (homeGoals.length > 0 ? 30 : 0);
@@ -371,12 +361,13 @@ export function ReportView({ matchState }: ReportViewProps) {
           <text x="200" y="450" fontFamily="Inter, sans-serif" fontSize="120" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
           <text x="200" y="530" textAnchor="middle" fill="#FDBA74" fontSize="22" fontWeight="900" style={{ letterSpacing: '0.05em' }}>FALTAS</text>
           <text x="200" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.home}</text>
-
+          {renderFoulListElements(foulsHome, 200, 595, "#FDBA74")}
 
           <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away.toUpperCase()}</text>
           <text x="600" y="450" fontFamily="Inter, sans-serif" fontSize="120" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
           <text x="600" y="530" textAnchor="middle" fill="#22D3EE" fontSize="22" fontWeight="900" style={{ letterSpacing: '0.05em' }}>FALTAS</text>
           <text x="600" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
+          {renderFoulListElements(foulsAway, 600, 595, "#22D3EE")}
 
           {/* Penalty shootout score */}
           {penaltyShootout && penaltyShootout.active && (
@@ -385,12 +376,12 @@ export function ReportView({ matchState }: ReportViewProps) {
               </text>
           )}
 
-          {/* Event Columns and Foul Lists */}
+          {/* Event Columns */}
           {allRenderedElements}
           
           {(homeGoals.length === 0 && homeYellowCards.length === 0 && homeRedCards.length === 0 && homeSubs.length === 0 &&
             awayGoals.length === 0 && awayYellowCards.length === 0 && awayRedCards.length === 0 && awaySubs.length === 0 &&
-            noteEvents.length === 0 && pegiPlays.length === 0 && (!reportSettings?.showFouls || foulEvents.length === 0)) && (
+            noteEvents.length === 0 && pegiPlays.length === 0) && (
             <text x="400" y="650" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="20" fontStyle="italic">No hay incidentes para mostrar en el informe.</text>
           )}
 

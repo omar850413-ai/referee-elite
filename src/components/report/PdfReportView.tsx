@@ -14,7 +14,7 @@ interface PdfReportViewProps {
 }
 
 export function PdfReportView({ matchState }: PdfReportViewProps) {
-  const { matchInfo, teamNames, scores, events, penaltyShootout, reportSettings } = matchState;
+  const { matchInfo, teamNames, scores, events, penaltyShootout } = matchState;
   const reportRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadPdf = () => {
@@ -54,16 +54,8 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
   };
 
   const filteredAndSortedEvents = [...events]
-    .filter(e => {
-        const categories = ['goals', 'cards', 'notes'];
-        if (reportSettings?.showFouls) categories.push('fouls');
-        return categories.includes(e.category);
-    })
+    .filter(e => ['goals', 'cards', 'notes'].includes(e.category))
     .sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
-
-  // Counters for foul numbering
-  let homeFoulCounter = 0;
-  let awayFoulCounter = 0;
 
   return (
     <div className="bg-gray-200 p-4 max-h-[85vh] overflow-y-auto rounded-lg relative">
@@ -142,17 +134,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                             if (message.includes('🟨')) accion = 'Amonestación';
                             else if (message.includes('🟥')) accion = 'Expulsión';
                             descripcion = message.replace(/🟨|🟥/g, '').trim();
-                            break;
-                        case 'fouls':
-                            const currentSideName = event.side === 'home' ? teamNames.home : teamNames.away;
-                            if (event.side === 'home') {
-                              homeFoulCounter++;
-                              accion = `Falta ${homeFoulCounter}`;
-                            } else {
-                              awayFoulCounter++;
-                              accion = `Falta ${awayFoulCounter}`;
-                            }
-                            descripcion = `Falta cometida por el equipo ${currentSideName}`;
                             break;
                         case 'notes':
                             accion = 'Anotación';
