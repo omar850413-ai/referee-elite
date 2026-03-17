@@ -194,18 +194,19 @@ export function ReportView({ matchState }: ReportViewProps) {
   const getFoulSpaceHeight = (faltas: MatchEvent[]) => {
     if (!reportSettings?.showFouls || faltas.length === 0) return 0;
     const lines = Math.ceil(faltas.length / 2);
-    return lines * 15 + 15; // List height + small buffer
+    return lines * 15 + 10; 
   };
 
   const allRenderedElements: JSX.Element[] = [];
   
-  // Dynamic starting position for columns based on fouls
+  // Dynamic starting position for columns - Optimized for "normal" spacing
   const homeFoulSpace = getFoulSpaceHeight(foulsHome);
   const awayFoulSpace = getFoulSpaceHeight(foulsAway);
-  const extraBuffer = 40; // Extra separation to keep it clean
+  const baseColumnY = 640; 
+  const extraBuffer = 15; 
 
-  let homeColumnY = 680 + homeFoulSpace + (homeFoulSpace > 0 ? extraBuffer : 0);
-  let awayColumnY = 680 + awayFoulSpace + (awayFoulSpace > 0 ? extraBuffer : 0);
+  let homeColumnY = baseColumnY + homeFoulSpace + (homeFoulSpace > 0 ? extraBuffer : 0);
+  let awayColumnY = baseColumnY + awayFoulSpace + (awayFoulSpace > 0 ? extraBuffer : 0);
   
   const homeGoalsSection = renderEventSection('GOLES', homeGoals, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
   homeColumnY = homeGoalsSection.endY + (homeGoals.length > 0 ? 30 : 0);
@@ -240,17 +241,17 @@ export function ReportView({ matchState }: ReportViewProps) {
   allRenderedElements.push(...awaySubsSection.elements);
 
   const maxEventsY = Math.max(homeColumnY, awayColumnY);
-  let footerCurrentY = Math.max(720, maxEventsY);
+  let footerCurrentY = Math.max(baseColumnY + 50, maxEventsY);
 
   const footerElements: JSX.Element[] = [];
 
   // Notes and PEGI Section
   if (noteEvents.length > 0 || pegiPlays.length > 0) {
-    footerCurrentY += 40;
+    footerCurrentY += 30;
 
     if (noteEvents.length > 0) {
       footerElements.push(<text key="notes-title" x="400" y={footerCurrentY} textAnchor="middle" fontSize="20" fontWeight="700" fill="#A1A1AA">{'Anotaciones del Asesor'.toUpperCase()}</text>);
-      footerCurrentY += 35;
+      footerCurrentY += 30;
 
       noteEvents.forEach((note, index) => {
         const noteText = `${index + 1}. ${note.message.replace('📝 ', '')}`;
@@ -274,7 +275,7 @@ export function ReportView({ matchState }: ReportViewProps) {
         footerCurrentY += requiredHeight;
       });
 
-      footerCurrentY += 20;
+      footerCurrentY += 15;
     }
 
     if (pegiPlays.length > 0) {
@@ -297,11 +298,11 @@ export function ReportView({ matchState }: ReportViewProps) {
             </p>
           </foreignObject>
       );
-      footerCurrentY += 70;
+      footerCurrentY += 60;
     }
   }
 
-  const bottomPadding = 60;
+  const bottomPadding = 40;
   const svgHeight = Math.max(1200, footerCurrentY + bottomPadding);
 
   return (
