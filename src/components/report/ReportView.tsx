@@ -156,38 +156,46 @@ export function ReportView({ matchState }: ReportViewProps) {
     const elements: JSX.Element[] = [];
     if (!reportSettings?.showFouls || faltas.length === 0) return { elements, endY: startY };
 
-    let currentY = startY;
-    faltas.forEach((f, i) => {
-        elements.push(
-            <text 
-                key={`foul-item-${f.id}`} 
-                x={x} 
-                y={currentY} 
-                fontSize="15" 
-                fontFamily="Inter, sans-serif" 
-                fontWeight="700" 
-                fill={color} 
-                textAnchor="middle"
-            >
-                {`${i + 1} min ${f.time}`}
-            </text>
-        );
-        currentY += 20;
-    });
-    return { elements, endY: currentY };
+    const minutesList = faltas.map(f => {
+      const time = f.time;
+      const min = time.includes(':') ? time.split(':')[0] : time;
+      return `${min}'`;
+    }).join(' ');
+
+    const width = 350;
+    const height = 45;
+
+    elements.push(
+      <foreignObject key={`foul-list-${x}`} x={x - width / 2} y={startY} width={width} height={height}>
+        <div xmlns="http://www.w3.org/1999/xhtml" style={{ 
+          color: color, 
+          fontSize: '14px', 
+          fontWeight: '700', 
+          textAlign: 'center', 
+          fontFamily: 'Inter, sans-serif',
+          lineHeight: '1.2',
+          opacity: 0.8,
+          fontStyle: 'italic'
+        }}>
+          {minutesList}
+        </div>
+      </foreignObject>
+    );
+
+    return { elements, endY: startY + height };
   };
 
   const allRenderedElements: JSX.Element[] = [];
   
-  // Render fouls lists under counts (starts at y=610)
-  const homeFoulList = renderFoulList(foulsHome, 200, 610, "#FDBA74");
-  const awayFoulList = renderFoulList(foulsAway, 600, 610, "#22D3EE");
+  // Render fouls lists under counts (starts at y=600)
+  const homeFoulList = renderFoulList(foulsHome, 200, 600, "#FDBA74");
+  const awayFoulList = renderFoulList(foulsAway, 600, 600, "#22D3EE");
   allRenderedElements.push(...homeFoulList.elements, ...awayFoulList.elements);
 
   // Dynamically calculate the starting Y for the event columns (goals, cards, etc)
   const maxFoulY = Math.max(homeFoulList.endY, awayFoulList.endY);
-  let homeColumnY = Math.max(650, maxFoulY + 40);
-  let awayColumnY = Math.max(650, maxFoulY + 40);
+  let homeColumnY = Math.max(650, maxFoulY + 20);
+  let awayColumnY = Math.max(650, maxFoulY + 20);
   
   const homeGoalsSection = renderEventSection('GOLES', homeGoals, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
   homeColumnY = homeGoalsSection.endY + (homeGoals.length > 0 ? 30 : 0);
