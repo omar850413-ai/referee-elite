@@ -190,45 +190,49 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const footerElements: JSX.Element[] = [];
 
-  // Bitácora de Faltas Section
+  // BITÁCORA DE FALTAS SECTION (Refined to match the requested handwritten style)
   if (reportSettings?.showFouls && foulEvents.length > 0) {
     footerCurrentY += 50;
+    
+    // Background plate for fouls bitácora
+    const foulsHome = foulEvents.filter(e => e.side === 'home');
+    const foulsAway = foulEvents.filter(e => e.side === 'away');
+    const maxFoulRows = Math.max(foulsHome.length, foulsAway.length);
+    const foulsHeight = 50 + (maxFoulRows * 30) + 40;
+
     footerElements.push(
-      <text key="fouls-title" x="400" y={footerCurrentY} textAnchor="middle" fontSize="22" fontWeight="900" fill="#FFFFFF">
-        {'Bitácora de Faltas'.toUpperCase()}
-      </text>
+      <g key="fouls-bitacora">
+        <rect x="50" y={footerCurrentY} width="700" height={foulsHeight} rx="20" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+        <text x="400" y={footerCurrentY + 40} textAnchor="middle" fontSize="26" fontWeight="900" fill="#FFFFFF" style={{ letterSpacing: '0.1em' }}>
+          {'Bitácora de Faltas'.toUpperCase()}
+        </text>
+        
+        {/* Home Faltas */}
+        <text x="225" y={footerCurrentY + 85} textAnchor="middle" fontSize="18" fontWeight="900" fill="#FDBA74">
+          {`FALTAS ${teamNames.home.toUpperCase()}`}
+        </text>
+        {foulsHome.map((f, i) => (
+           <text key={`home-foul-${f.id}`} x="225" y={footerCurrentY + 120 + (i * 30)} textAnchor="middle" fontSize="20" fontWeight="700" fill="#E2E8F0">
+             {`${f.time.replace(/:/g, "'")}'`}
+           </text>
+        ))}
+
+        {/* Vertical Separator Line */}
+        <line x1="400" y1={footerCurrentY + 70} x2="400" y2={footerCurrentY + foulsHeight - 20} stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
+
+        {/* Away Faltas */}
+        <text x="575" y={footerCurrentY + 85} textAnchor="middle" fontSize="18" fontWeight="900" fill="#22D3EE">
+          {`FALTAS ${teamNames.away.toUpperCase()}`}
+        </text>
+        {foulsAway.map((f, i) => (
+           <text key={`away-foul-${f.id}`} x="575" y={footerCurrentY + 120 + (i * 30)} textAnchor="middle" fontSize="20" fontWeight="700" fill="#E2E8F0">
+             {`${f.time.replace(/:/g, "'")}'`}
+           </text>
+        ))}
+      </g>
     );
-    footerCurrentY += 35;
-
-    const homeFouls = foulEvents.filter(e => e.side === 'home');
-    const awayFouls = foulEvents.filter(e => e.side === 'away');
-
-    const renderFoulGroup = (title: string, items: MatchEvent[], x: number, startY: number) => {
-        const groupElements: JSX.Element[] = [];
-        groupElements.push(
-            <text key={`foul-sub-${title}`} x={x} y={startY} fontSize="18" fontWeight="700" fill="#A1A1AA" textAnchor="middle">
-                {title.toUpperCase()}
-            </text>
-        );
-        let y = startY + 25;
-        items.forEach((foul, idx) => {
-            groupElements.push(
-                <text key={`foul-item-${foul.id}`} x={x} y={y} fontSize="15" fill="#E2E8F0" textAnchor="middle">
-                    {`${idx + 1}. min ${foul.time}`}
-                </text>
-            );
-            y += 22;
-        });
-        return { elements: groupElements, endY: y };
-    };
-
-    const homeFoulsRender = renderFoulGroup(teamNames.home, homeFouls, 200, footerCurrentY);
-    const awayFoulsRender = renderFoulGroup(teamNames.away, awayFouls, 600, footerCurrentY);
     
-    footerElements.push(...homeFoulsRender.elements);
-    footerElements.push(...awayFoulsRender.elements);
-    
-    footerCurrentY = Math.max(homeFoulsRender.endY, awayFoulsRender.endY);
+    footerCurrentY += foulsHeight;
   }
 
   // Notes and PEGI Section
