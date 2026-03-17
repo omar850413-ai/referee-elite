@@ -13,7 +13,7 @@ interface ReportViewProps {
 }
 
 export function ReportView({ matchState }: ReportViewProps) {
-  const { scores, teamNames, matchInfo, events, fouls, penaltyShootout } = matchState;
+  const { scores, teamNames, matchInfo, events, fouls, penaltyShootout, reportSettings } = matchState;
   const svgRef = useRef<SVGSVGElement>(null);
 
   const localBg = PlaceHolderImages.find(p => p.id === 'local-team-bg')?.imageUrl;
@@ -75,6 +75,7 @@ export function ReportView({ matchState }: ReportViewProps) {
   
   const noteEvents = safeEvents.filter(e => e.category === 'notes').sort(sorter);
   const pegiPlays = safeEvents.filter(e => e.category === 'pegi');
+  const foulEvents = safeEvents.filter(e => e.category === 'fouls').sort(sorter);
 
   const parseEventMessage = (event: MatchEvent) => {
     let message = event.message;
@@ -123,14 +124,12 @@ export function ReportView({ matchState }: ReportViewProps) {
       
       let itemHeight = 20;
   
-      // Main text
       elements.push(
         <text key={`${item.id}-main`} x={x} y={currentY + 16} fontSize="16" fontFamily="Inter, sans-serif" fill={textColor} textAnchor="middle">
           {mainText}
         </text>
       );
   
-      // Causal text (if any)
       if (parsed.isCard && parsed.causal) {
         const causalText = parsed.causal;
         const foreignObjectHeight = 40;
@@ -187,18 +186,58 @@ export function ReportView({ matchState }: ReportViewProps) {
   allRenderedElements.push(...awaySubsSection.elements);
 
   const maxEventsY = Math.max(homeColumnY, awayColumnY);
-  let footerStartY = maxEventsY < 640 ? 640 : maxEventsY;
+  let footerCurrentY = maxEventsY < 640 ? 640 : maxEventsY;
 
-  const notesAndPegiElements: JSX.Element[] = [];
-  let footerContentHeight = 0;
-  let footerCurrentY = footerStartY;
+  const footerElements: JSX.Element[] = [];
 
+  // Bitácora de Faltas Section
+  if (reportSettings?.showFouls && foulEvents.length > 0) {
+    footerCurrentY += 50;
+    footerElements.push(
+      <text key="fouls-title" x="400" y={footerCurrentY} textAnchor="middle" fontSize="22" fontWeight="900" fill="#FFFFFF">
+        {'Bitácora de Faltas'.toUpperCase()}
+      </text>
+    );
+    footerCurrentY += 35;
+
+    const homeFouls = foulEvents.filter(e => e.side === 'home');
+    const awayFouls = foulEvents.filter(e => e.side === 'away');
+
+    const renderFoulGroup = (title: string, items: MatchEvent[], x: number, startY: number) => {
+        const groupElements: JSX.Element[] = [];
+        groupElements.push(
+            <text key={`foul-sub-${title}`} x={x} y={startY} fontSize="18" fontWeight="700" fill="#A1A1AA" textAnchor="middle">
+                {title.toUpperCase()}
+            </text>
+        );
+        let y = startY + 25;
+        items.forEach((foul, idx) => {
+            groupElements.push(
+                <text key={`foul-item-${foul.id}`} x={x} y={y} fontSize="15" fill="#E2E8F0" textAnchor="middle">
+                    {`${idx + 1}. min ${foul.time}`}
+                </text>
+            );
+            y += 22;
+        });
+        return { elements: groupElements, endY: y };
+    };
+
+    const homeFoulsRender = renderFoulGroup(teamNames.home, homeFouls, 200, footerCurrentY);
+    const awayFoulsRender = renderFoulGroup(teamNames.away, awayFouls, 600, footerCurrentY);
+    
+    footerElements.push(...homeFoulsRender.elements);
+    footerElements.push(...awayFoulsRender.elements);
+    
+    footerCurrentY = Math.max(homeFoulsRender.endY, awayFoulsRender.endY);
+  }
+
+  // Notes and PEGI Section
   if (noteEvents.length > 0 || pegiPlays.length > 0) {
     footerCurrentY += 40;
 
     if (noteEvents.length > 0) {
-      notesAndPegiElements.push(<text key="notes-title" x="400" y={footerCurrentY} textAnchor="middle" fontSize="20" fontWeight="700" fill="#A1A1AA">{'Anotaciones del Asesor'.toUpperCase()}</text>);
-      footerCurrentY += 35; // Space after title
+      footerElements.push(<text key="notes-title" x="400" y={footerCurrentY} textAnchor="middle" fontSize="20" fontWeight="700" fill="#A1A1AA">{'Anotaciones del Asesor'.toUpperCase()}</text>);
+      footerCurrentY += 35;
 
       noteEvents.forEach((note, index) => {
         const noteText = `${index + 1}. ${note.message.replace('📝 ', '')}`;
@@ -207,7 +246,7 @@ export function ReportView({ matchState }: ReportViewProps) {
         const approxLines = Math.ceil(noteText.length / 60) || 1;
         const requiredHeight = approxLines * 24 + 10;
 
-        notesAndPegiElements.push(
+        footerElements.push(
           <foreignObject key={`note-fo-${note.id}`} x="50" y={footerCurrentY} width="700" height={requiredHeight}>
             <div xmlns="http://www.w3.org/1999/xhtml" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', color: '#E2E8F0', fontSize: '16px', lineHeight: '1.5', padding: '0 20px' }}>
               <p style={{ margin: 0, padding: 0, textAlign: 'left', flexGrow: 1, paddingRight: '20px', wordBreak: 'break-word' }}>
@@ -226,9 +265,9 @@ export function ReportView({ matchState }: ReportViewProps) {
     }
 
     if (pegiPlays.length > 0) {
-      notesAndPegiElements.push(<text key="pegi-title" x="400" y={footerCurrentY} textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE">{'Jugadas PEGI'.toUpperCase()}</text>);
+      footerElements.push(<text key="pegi-title" x="400" y={footerCurrentY} textAnchor='middle' fontSize="20" fontWeight="700" fill="#D8B4FE">{'Jugadas PEGI'.toUpperCase()}</text>);
       footerCurrentY += 25;
-      notesAndPegiElements.push(
+      footerElements.push(
           <foreignObject key="pegi-fo" x="50" y={footerCurrentY} width="700" height="60">
             <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#E9D5FF', fontSize: '16px', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
               {pegiPlays.map(p => {
@@ -247,12 +286,10 @@ export function ReportView({ matchState }: ReportViewProps) {
       );
       footerCurrentY += 70;
     }
-    footerContentHeight = footerCurrentY - footerStartY;
   }
 
   const bottomPadding = 60;
-  const calculatedHeight = footerStartY + footerContentHeight + bottomPadding;
-  const svgHeight = Math.max(1200, calculatedHeight);
+  const svgHeight = Math.max(1200, footerCurrentY + bottomPadding);
 
   return (
     <div className="w-full max-h-[90vh] overflow-y-auto p-4 bg-slate-900 rounded-lg">
@@ -352,12 +389,12 @@ export function ReportView({ matchState }: ReportViewProps) {
           
           {(homeGoals.length === 0 && homeYellowCards.length === 0 && homeRedCards.length === 0 && homeSubs.length === 0 &&
             awayGoals.length === 0 && awayYellowCards.length === 0 && awayRedCards.length === 0 && awaySubs.length === 0 &&
-            noteEvents.length === 0 && pegiPlays.length === 0) && (
+            noteEvents.length === 0 && pegiPlays.length === 0 && (!reportSettings?.showFouls || foulEvents.length === 0)) && (
             <text x="400" y="650" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="20" fontStyle="italic">No hay incidentes para mostrar en el informe.</text>
           )}
 
-          {/* Footer */}
-          {notesAndPegiElements}
+          {/* Footer Elements (Fouls, Notes, PEGI) */}
+          {footerElements}
 
           <text x="20" y={svgHeight - 20} fontFamily="Inter, sans-serif" fontSize="14" fontWeight="900" fill="hsl(var(--primary))" style={{ fontStyle: 'italic' }}>{'Asesor Pro'.toUpperCase()}</text>
 

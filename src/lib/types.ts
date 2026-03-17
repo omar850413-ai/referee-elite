@@ -51,6 +51,10 @@ export interface PenaltyShootout {
   active: boolean;
 }
 
+export interface ReportSettings {
+  showFouls: boolean;
+}
+
 export interface MatchState {
   scores: Scores;
   fouls: Fouls;
@@ -59,6 +63,7 @@ export interface MatchState {
   teamNames: TeamNames;
   matchInfo: MatchInfo;
   penaltyShootout?: PenaltyShootout;
+  reportSettings?: ReportSettings;
 }
 
 export interface UserProfile {

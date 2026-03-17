@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -26,27 +25,19 @@ export default function Home() {
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
   
-  // Effect to prepare the match document reference.
-  // This refactored effect now waits for approval before attempting to read match data.
   useEffect(() => {
-    // We only proceed if we have a user, firestore, and the profile is no longer loading.
-    // We also stop if the match reference is already set.
     if (!user || !firestore || matchDocRef || isProfileLoading) return;
 
     const isSuperAdmin = user.email === 'omar850413@gmail.com';
     const isApproved = userProfile?.isApproved === true;
 
-    // IMPORTANT: Do not attempt to fetch match data if the user is not approved.
-    // This prevents triggering Firestore security rule errors.
     if (!isSuperAdmin && !isApproved) return;
 
-    // Use a predictable ID for the match document, tied to the user
     const ref = doc(firestore, 'matches', user.uid);
 
     getDoc(ref).then(docSnap => {
       if (!docSnap.exists()) {
         const advisorName = user.email || '';
-        // Document doesn't exist, create it with initial state
         const initialState: MatchState = {
             scores: { home: 0, away: 0 },
             fouls: { home: 0, away: 0 },
@@ -55,8 +46,8 @@ export default function Home() {
             matchInfo: { advisor: advisorName, league: '', round: '', place: '', date: '', referee: '', assistant1: '', assistant2: '', fourthOfficial: '', var: '', avar: '' },
             timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
             penaltyShootout: { home: 0, away: 0, active: false },
+            reportSettings: { showFouls: false },
         };
-        // Use setDoc to create the new match document
         setDoc(ref, initialState).then(() => {
           setMatchDocRef(ref);
         }).catch(err => {
@@ -68,7 +59,6 @@ export default function Home() {
             errorEmitter.emit('permission-error', permissionError);
         });
       } else {
-        // Document already exists, just set the reference
         setMatchDocRef(ref);
       }
     }).catch(err => {
@@ -81,14 +71,11 @@ export default function Home() {
 
   }, [user, firestore, matchDocRef, userProfile, isProfileLoading]);
 
-  // This combined effect handles all session state logic: auth, approval, token freshness, and multi-device logout.
   React.useEffect(() => {
-    // Wait until we have all the necessary information
     if (isUserLoading || isProfileLoading) {
       return;
     }
 
-    // 1. If no user is logged in, redirect to login page.
     if (!user) {
       router.push('/login');
       return;
@@ -97,32 +84,25 @@ export default function Home() {
     const isSuperAdmin = user.email === 'omar850413@gmail.com';
     const isApproved = userProfile?.isApproved === true;
 
-    // 2. Multi-device logout check. If session ID doesn't match, log this device out.
     const localSessionId = localStorage.getItem('sessionId');
     if (userProfile?.sessionId && localSessionId !== userProfile.sessionId) {
-      console.warn('Stale session detected. Logging out from this device.');
       signOut(auth).then(() => {
         localStorage.removeItem('sessionId');
-        localStorage.removeItem('matchSession'); // Also clear old match data
+        localStorage.removeItem('matchSession');
         router.push('/login');
       });
-      return; // Stop further execution
+      return;
     }
 
-    // 3. Handle unapproved users.
     if (!isSuperAdmin && !isApproved) {
-      // This covers both users with `isApproved: false` and users without a profile document yet.
       router.push('/pending-approval');
       return;
     }
     
-    // 4. For approved users (or super admin), ensure their auth token is fresh.
     if ((isSuperAdmin || isApproved) && !hasTokenBeenRefreshed) {
       user.getIdToken(true).then(() => {
-        console.log('Auth token has been refreshed to ensure up-to-date permissions.');
-        setHasTokenBeenRefreshed(true); // Mark as refreshed for this app session.
+        setHasTokenBeenRefreshed(true);
       }).catch(error => {
-        console.warn("Could not refresh token (likely offline). Proceeding with cached token.");
         setHasTokenBeenRefreshed(true);
       });
     }

@@ -80,8 +80,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
   // --- Firestore update helper ---
   const updateMatch = (data: Partial<MatchState>) => {
-    // Firestore does not allow 'undefined' as a value.
-    // This helper recursively removes any keys with 'undefined' values.
     const sanitizeData = (obj: any): any => {
       if (obj === null || typeof obj !== 'object') {
         return obj;
@@ -114,22 +112,16 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       });
   };
 
-
-  // --- Timer Sync & Display Logic ---
   useEffect(() => {
     if (!matchState) return;
 
     const { timer } = matchState;
 
-    // This function calculates the current total elapsed seconds based on server data.
-    // It's the single source of truth for time.
     const calculateTotalElapsedSeconds = () => {
         if (!timer.isRunning) {
             return timer.elapsedSeconds;
         }
-        // Time elapsed since the timer was last started.
         const timeSinceStart = (Date.now() - timer.startTime) / 1000;
-        // Total time is the previously recorded elapsed time plus the new interval.
         return timer.elapsedSeconds + timeSinceStart;
     };
 
@@ -137,23 +129,20 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         clearInterval(timerIntervalRef.current);
     }
     
-    // Set the initial display time when the component loads or timer state changes.
     setDisplaySeconds(calculateTotalElapsedSeconds());
 
-    // If the timer is running, set up an interval to update the display every second.
     if (timer.isRunning) {
         timerIntervalRef.current = setInterval(() => {
             setDisplaySeconds(calculateTotalElapsedSeconds());
         }, 1000);
     }
 
-    // Cleanup interval on component unmount or when timer state changes.
     return () => {
         if (timerIntervalRef.current) {
             clearInterval(timerIntervalRef.current);
         }
     };
-}, [matchState?.timer]); // This effect re-runs whenever the timer object from Firestore changes.
+}, [matchState?.timer]);
 
 
   const getSmartTime = () => {
@@ -211,7 +200,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     const now = Date.now();
     let newTimerState: Partial<Timer> = {};
 
-    // This function calculates the most up-to-date elapsed time.
     const calculateCurrentElapsed = () => {
         if (!timer.isRunning) return timer.elapsedSeconds;
         return timer.elapsedSeconds + (now - timer.startTime) / 1000;
@@ -231,7 +219,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             newTimerState = {
                 status: 'HALF_TIME',
                 isRunning: false,
-                startTime: 0, // Reset startTime
+                startTime: 0,
                 elapsedSeconds: firstHalfElapsed,
                 firstHalfEndSeconds: firstHalfElapsed,
             };
@@ -253,7 +241,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             };
             break;
         case 'FINISHED':
-            // No action when the match is finished.
             return;
     }
     updateMatch({ timer: { ...timer, ...newTimerState } });
@@ -274,7 +261,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           elapsedSeconds: 0,
           isRunning: false,
         };
-      } else { // SECOND_HALF or FINISHED
+      } else {
         newTimerState = {
           status: 'HALF_TIME',
           startTime: 0,
@@ -299,6 +286,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         matchInfo: { advisor: userProfile?.email || '', league: '', round: '', place: '', date: '', referee: '', assistant1: '', assistant2: '', fourthOfficial: '', var: '', avar: '' },
         timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
         penaltyShootout: { home: 0, away: 0, active: false },
+        reportSettings: { showFouls: false },
       };
       setDoc(matchDocRef, initialState).catch((error) => {
         const permissionError = new FirestorePermissionError({
@@ -321,7 +309,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       return;
     }
     const newFoulsCount = (matchState.fouls[side] ?? 0) + 1;
-    addEvent('general', `🚩 Falta ${matchState.teamNames[side]}`, getSmartTime(), side);
+    addEvent('fouls', `🚩 Falta ${matchState.teamNames[side]}`, getSmartTime(), side);
     updateMatch({ fouls: { ...matchState.fouls, [side]: newFoulsCount }});
   };
 
@@ -520,14 +508,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         });
         return;
     }
-    if (matchState.scores.home !== matchState.scores.away) {
-         toast({
-            title: 'El partido no está empatado',
-            description: 'La tanda de penales es para definir un ganador en caso de empate.',
-            variant: 'default',
-            duration: 4000,
-        });
-    }
     setManualPenaltyScores(matchState.penaltyShootout ?? { home: 0, away: 0, active: false });
     setModal('penalties');
   };
@@ -580,7 +560,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     );
   }
 
-  const { scores, fouls, teamNames, events, matchInfo, timer, penaltyShootout } = matchState;
+  const { scores, fouls, teamNames, events, matchInfo, timer, penaltyShootout, reportSettings } = matchState;
   const matchStatus = timer.status;
   const timerButtonLabel = {
     'NOT_STARTED': 'Iniciar Partido',
@@ -1157,6 +1137,22 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                     className="mt-2"
                 />
             )}
+            
+            <div className="mt-6 border-t pt-4">
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="show-fouls" className="font-bold text-gray-700">Bitácora de Faltas en Informe</Label>
+                    <Switch
+                        id="show-fouls"
+                        checked={reportSettings?.showFouls ?? false}
+                        onCheckedChange={(checked) => {
+                            updateMatch({ reportSettings: { showFouls: checked } });
+                        }}
+                    />
+                </div>
+                <p className="text-[10px] text-gray-500 mt-1 italic italic">
+                    Si se activa, se listará el minuto de cada falta registrada en el reporte.
+                </p>
+            </div>
             
             <DialogFooter className="mt-4">
                 <Button onClick={handleSavePegi} className="w-full shadow-lg">Aceptar</Button>

@@ -14,7 +14,7 @@ interface PdfReportViewProps {
 }
 
 export function PdfReportView({ matchState }: PdfReportViewProps) {
-  const { matchInfo, teamNames, scores, events, penaltyShootout } = matchState;
+  const { matchInfo, teamNames, scores, events, penaltyShootout, reportSettings } = matchState;
   const reportRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadPdf = () => {
@@ -22,7 +22,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     if (!input) return;
 
     html2canvas(input, {
-      scale: 2, // Higher scale for better resolution
+      scale: 2,
       useCORS: true, 
       logging: false
     }).then((canvas) => {
@@ -54,7 +54,11 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
   };
 
   const filteredAndSortedEvents = [...events]
-    .filter(e => ['goals', 'cards', 'notes'].includes(e.category))
+    .filter(e => {
+        const categories = ['goals', 'cards', 'notes'];
+        if (reportSettings?.showFouls) categories.push('fouls');
+        return categories.includes(e.category);
+    })
     .sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
 
   return (
@@ -72,13 +76,12 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
       <div 
         ref={reportRef} 
-        className="p-6 bg-white text-black font-sans shadow-lg"
-        style={{ width: '210mm', minHeight: '297mm' }} // A4 size
+        className="p-6 bg-white text-black font-sans shadow-lg mx-auto"
+        style={{ width: '210mm', minHeight: '297mm' }}
       >
         <h1 className="text-2xl font-bold text-center mb-2">Informe de Asesor de Árbitros</h1>
         <hr className="my-4 border-black" />
 
-        {/* Match Info */}
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
           <div><strong>Torneo:</strong> {matchInfo.league || 'N/A'}</div>
           <div><strong>Jornada:</strong> {matchInfo.round || 'N/A'}</div>
@@ -96,7 +99,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
         </div>
         <hr className="my-4 border-black" />
 
-        {/* Score */}
         <div className="text-center my-6">
           <span className="text-3xl font-bold uppercase">{teamNames.home}</span>
           <span className="text-4xl font-bold mx-4 p-2 bg-gray-200 rounded-md">{scores.home} - {scores.away}</span>
@@ -109,7 +111,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
         </div>
         <hr className="my-4 border-black" />
 
-        {/* Incidents Table */}
         <h2 className="text-xl font-bold mb-4">Incidentes del Partido</h2>
         <table className="w-full text-sm border-collapse">
             <thead>
@@ -137,6 +138,10 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                             if (message.includes('🟨')) accion = 'Amonestación';
                             else if (message.includes('🟥')) accion = 'Expulsión';
                             descripcion = message.replace(/🟨|🟥/g, '').trim();
+                            break;
+                        case 'fouls':
+                            accion = 'Falta';
+                            descripcion = message.replace('🚩 ', '').trim();
                             break;
                         case 'notes':
                             accion = 'Anotación de Asesor';
@@ -170,7 +175,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 {filteredAndSortedEvents.length === 0 && (
                     <tr>
                         <td colSpan={4} className="text-center text-gray-500 p-4">
-                            No hay incidentes (goles, tarjetas, notas) para reportar.
+                            No hay incidentes para reportar.
                         </td>
                     </tr>
                 )}
