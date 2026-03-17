@@ -308,9 +308,25 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       });
       return;
     }
+    
+    const time = getSmartTime();
     const newFoulsCount = (matchState.fouls[side] ?? 0) + 1;
-    addEvent('fouls', `🚩 Falta ${matchState.teamNames[side]}`, getSmartTime(), side);
-    updateMatch({ fouls: { ...matchState.fouls, [side]: newFoulsCount }});
+    const newEvent: MatchEvent = { 
+      id: Date.now(), 
+      time, 
+      category: 'fouls', 
+      message: `🚩 Falta ${matchState.teamNames[side]}`, 
+      side 
+    };
+    
+    // Combine both updates into one atomic updateDoc call to avoid race conditions
+    const updatedEvents = [newEvent, ...(matchState.events ?? [])];
+    const updatedFouls = { ...matchState.fouls, [side]: newFoulsCount };
+    
+    updateMatch({ 
+      events: updatedEvents,
+      fouls: updatedFouls
+    });
   };
 
   const captureTimeAndTrigger = (type: string, side: 'home' | 'away') => {

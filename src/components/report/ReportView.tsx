@@ -163,7 +163,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                 key={`foul-item-${f.id}`} 
                 x={x} 
                 y={currentY} 
-                fontSize="14" 
+                fontSize="15" 
                 fontFamily="Inter, sans-serif" 
                 fontWeight="700" 
                 fill={color} 
@@ -172,21 +172,22 @@ export function ReportView({ matchState }: ReportViewProps) {
                 {`${i + 1} min ${f.time}`}
             </text>
         );
-        currentY += 18;
+        currentY += 20;
     });
     return { elements, endY: currentY };
   };
 
   const allRenderedElements: JSX.Element[] = [];
   
-  // Render fouls lists under counts
+  // Render fouls lists under counts (starts at y=610)
   const homeFoulList = renderFoulList(foulsHome, 200, 610, "#FDBA74");
   const awayFoulList = renderFoulList(foulsAway, 600, 610, "#22D3EE");
   allRenderedElements.push(...homeFoulList.elements, ...awayFoulList.elements);
 
+  // Dynamically calculate the starting Y for the event columns (goals, cards, etc)
   const maxFoulY = Math.max(homeFoulList.endY, awayFoulList.endY);
-  let homeColumnY = Math.max(680, maxFoulY + 40);
-  let awayColumnY = Math.max(680, maxFoulY + 40);
+  let homeColumnY = Math.max(650, maxFoulY + 40);
+  let awayColumnY = Math.max(650, maxFoulY + 40);
   
   const homeGoalsSection = renderEventSection('GOLES', homeGoals, 200, homeColumnY, '#E2E8F0', '#FFFFFF');
   homeColumnY = homeGoalsSection.endY + (homeGoals.length > 0 ? 30 : 0);
@@ -221,50 +222,9 @@ export function ReportView({ matchState }: ReportViewProps) {
   allRenderedElements.push(...awaySubsSection.elements);
 
   const maxEventsY = Math.max(homeColumnY, awayColumnY);
-  let footerCurrentY = maxEventsY < 680 ? 680 : maxEventsY;
+  let footerCurrentY = Math.max(680, maxEventsY);
 
   const footerElements: JSX.Element[] = [];
-
-  // BITÁCORA DE FALTAS SECTION (Refined summary at bottom if enabled)
-  if (reportSettings?.showFouls && foulEvents.length > 0) {
-    footerCurrentY += 50;
-    
-    const foulsHeight = 50 + (Math.max(foulsHome.length, foulsAway.length) * 30) + 40;
-
-    footerElements.push(
-      <g key="fouls-bitacora">
-        <rect x="50" y={footerCurrentY} width="700" height={foulsHeight} rx="20" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
-        <text x="400" y={footerCurrentY + 40} textAnchor="middle" fontSize="26" fontWeight="900" fill="#FFFFFF" style={{ letterSpacing: '0.1em' }}>
-          {'Bitácora de Faltas'.toUpperCase()}
-        </text>
-        
-        {/* Home Faltas */}
-        <text x="225" y={footerCurrentY + 85} textAnchor="middle" fontSize="18" fontWeight="900" fill="#FDBA74">
-          {`FALTAS ${teamNames.home.toUpperCase()}`}
-        </text>
-        {foulsHome.map((f, i) => (
-           <text key={`home-foul-sum-${f.id}`} x="225" y={footerCurrentY + 120 + (i * 30)} textAnchor="middle" fontSize="20" fontWeight="700" fill="#E2E8F0">
-             {`${i + 1} min ${f.time}`}
-           </text>
-        ))}
-
-        {/* Vertical Separator Line */}
-        <line x1="400" y1={footerCurrentY + 70} x2="400" y2={footerCurrentY + foulsHeight - 20} stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
-
-        {/* Away Faltas */}
-        <text x="575" y={footerCurrentY + 85} textAnchor="middle" fontSize="18" fontWeight="900" fill="#22D3EE">
-          {`FALTAS ${teamNames.away.toUpperCase()}`}
-        </text>
-        {foulsAway.map((f, i) => (
-           <text key={`away-foul-sum-${f.id}`} x="575" y={footerCurrentY + 120 + (i * 30)} textAnchor="middle" fontSize="20" fontWeight="700" fill="#E2E8F0">
-             {`${i + 1} min ${f.time}`}
-           </text>
-        ))}
-      </g>
-    );
-    
-    footerCurrentY += foulsHeight;
-  }
 
   // Notes and PEGI Section
   if (noteEvents.length > 0 || pegiPlays.length > 0) {
@@ -419,7 +379,7 @@ export function ReportView({ matchState }: ReportViewProps) {
               </text>
           )}
 
-          {/* Event Columns */}
+          {/* Event Columns and Foul Lists */}
           {allRenderedElements}
           
           {(homeGoals.length === 0 && homeYellowCards.length === 0 && homeRedCards.length === 0 && homeSubs.length === 0 &&
@@ -428,7 +388,7 @@ export function ReportView({ matchState }: ReportViewProps) {
             <text x="400" y="650" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="20" fontStyle="italic">No hay incidentes para mostrar en el informe.</text>
           )}
 
-          {/* Footer Elements (Fouls, Notes, PEGI) */}
+          {/* Footer Elements (Notes, PEGI) */}
           {footerElements}
 
           <text x="20" y={svgHeight - 20} fontFamily="Inter, sans-serif" fontSize="14" fontWeight="900" fill="hsl(var(--primary))" style={{ fontStyle: 'italic' }}>{'Asesor Pro'.toUpperCase()}</text>

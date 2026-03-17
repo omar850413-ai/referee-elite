@@ -61,9 +61,9 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     })
     .sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
 
-  // Count fouls per team for enumeration
-  let homeFoulCount = 0;
-  let awayFoulCount = 0;
+  // State to track foul numbering for display
+  let homeFoulCounter = 0;
+  let awayFoulCounter = 0;
 
   return (
     <div className="bg-gray-200 p-4 max-h-[85vh] overflow-y-auto rounded-lg relative">
@@ -144,11 +144,12 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                             descripcion = message.replace(/🟨|🟥/g, '').trim();
                             break;
                         case 'fouls':
-                            if (event.side === 'home') homeFoulCount++;
-                            else awayFoulCount++;
-                            const currentNum = event.side === 'home' ? homeFoulCount : awayFoulCount;
+                            const currentSideName = event.side === 'home' ? teamNames.home : teamNames.away;
+                            if (event.side === 'home') homeFoulCounter++;
+                            else awayFoulCounter++;
+                            const currentNum = event.side === 'home' ? homeFoulCounter : awayFoulCounter;
                             accion = `Falta ${currentNum}`;
-                            descripcion = `Falta cometida por ${event.side === 'home' ? teamNames.home : teamNames.away}`;
+                            descripcion = `Falta cometida por el equipo ${currentSideName}`;
                             break;
                         case 'notes':
                             accion = 'Anotación';
@@ -161,7 +162,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                     
                     return (
                         <tr key={event.id} className="border-b border-gray-300 align-top">
-                            <td className="p-2">{event.time}'</td>
+                            <td className="p-2">{event.time}</td>
                             <td className="p-2 font-semibold">{accion}</td>
                             <td className="p-2">
                                 {descripcion}
