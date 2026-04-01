@@ -23,6 +23,7 @@ export const causalesRoja = [
   'Escupir a un adversario',
   'Impedir un gol o una oportunidad manifiesta de gol',
   'Recibir una segunda amonestación',
+  'emplear lenguaje o actuar de modo ofensivo, insultante o humillante',
 ];
 
 export const causalesStaff = [
