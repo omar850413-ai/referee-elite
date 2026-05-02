@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -18,15 +28,20 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetLoading, setIsResetLoading] = useState(false);
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+
   const router = useRouter();
   const auth = useAuth();
   const firestore = useFirestore();
+  const { toast } = useToast();
   const adminEmail = 'omar850413@gmail.com';
   
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    // If the user is already logged in, redirect them to the home page.
     if (user && !isUserLoading) {
       router.push('/');
     }
@@ -44,18 +59,16 @@ export default function LoginPage() {
       localStorage.setItem('sessionId', sessionId);
       const userDocRef = doc(firestore, 'users', user.uid);
 
-      // Check if user profile exists
       const userDoc = await getDoc(userDocRef).catch(err => {
         const permissionError = new FirestorePermissionError({
           path: userDocRef.path,
           operation: 'get',
         });
         errorEmitter.emit('permission-error', permissionError);
-        throw err; // Re-throw to be caught by the outer try-catch
+        throw err;
       });
 
       if (userDoc.exists()) {
-        // Profile exists, just update the session ID
         const sessionData = { sessionId };
         await updateDoc(userDocRef, sessionData).catch(err => {
             const permissionError = new FirestorePermissionError({
@@ -67,8 +80,6 @@ export default function LoginPage() {
             throw err;
         });
       } else {
-        // Profile does not exist: this is a re-activated user. 
-        // Create a new profile with default non-approved, non-admin status.
         const isSuperAdmin = user.email === adminEmail;
         const profileData = {
           email: user.email,
@@ -90,8 +101,6 @@ export default function LoginPage() {
       router.push('/');
     } catch (err: any) {
       if (err.code === 'permission-denied') {
-        // This is a Firestore security rule error. The detailed error is already
-        // handled by the FirebaseErrorListener. We just show a generic message here.
         setError('Error de permisos al actualizar la sesión. Contacta al administrador.');
       } else if (err.code && err.code.startsWith('auth/')) {
         setError('Correo o contraseña incorrectos. Por favor, inténtalo de nuevo.');
@@ -104,8 +113,36 @@ export default function LoginPage() {
     }
   };
 
-  // While checking user auth state, show a loading screen.
-  // Also, if the user is logged in, this will show until the redirect happens.
+  const handleResetPassword = async () => {
+    if (!resetEmail) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Por favor, ingresa tu correo electrónico.",
+      });
+      return;
+    }
+
+    setIsResetLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      toast({
+        title: "Correo enviado",
+        description: "Revisa tu bandeja de entrada para restablecer tu contraseña.",
+      });
+      setIsResetDialogOpen(false);
+      setResetEmail('');
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo enviar el correo. Verifica que el email sea correcto.",
+      });
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+
   if (isUserLoading || user) {
      return (
       <div className="flex items-center justify-center min-h-screen bg-sky-100">
@@ -133,7 +170,6 @@ export default function LoginPage() {
     );
   }
 
-  // Only show login page if user is not logged in.
   return (
     <div className="flex items-center justify-center min-h-screen bg-sky-100">
       <Card className="w-full max-w-md">
@@ -155,7 +191,41 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Contraseña</Label>
+                <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+                  <DialogTrigger asChild>
+                    <button type="button" className="text-xs text-primary hover:underline font-semibold">
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Restablecer Contraseña</DialogTitle>
+                      <DialogDescription>
+                        Ingresa tu correo electrónico y te enviaremos un enlace para que puedas cambiar tu contraseña.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="reset-email">Correo Electrónico</Label>
+                        <Input
+                          id="reset-email"
+                          type="email"
+                          placeholder="tu@email.com"
+                          value={resetEmail}
+                          onChange={(e) => setResetEmail(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={handleResetPassword} disabled={isResetLoading}>
+                        {isResetLoading ? 'Enviando...' : 'Enviar enlace'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
               <div className="relative">
                 <Input
                   id="password"
