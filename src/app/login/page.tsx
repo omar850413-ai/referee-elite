@@ -113,11 +113,13 @@ export default function LoginPage() {
     }
   };
 
-  const handleResetPassword = async () => {
+  const handleResetPassword = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
     if (!resetEmail) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Correo requerido",
         description: "Por favor, ingresa tu correo electrónico.",
       });
       return;
@@ -128,15 +130,23 @@ export default function LoginPage() {
       await sendPasswordResetEmail(auth, resetEmail);
       toast({
         title: "Correo enviado",
-        description: "Revisa tu bandeja de entrada para restablecer tu contraseña.",
+        description: `Se ha enviado un enlace de recuperación a ${resetEmail}. Revisa tu bandeja de entrada y carpeta de SPAM.`,
       });
       setIsResetDialogOpen(false);
       setResetEmail('');
     } catch (err: any) {
+      let errorMessage = "No se pudo enviar el correo de recuperación.";
+      
+      if (err.code === 'auth/user-not-found') {
+        errorMessage = "No existe ninguna cuenta con este correo electrónico.";
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = "El formato del correo electrónico no es válido.";
+      }
+
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo enviar el correo. Verifica que el email sea correcto.",
+        description: errorMessage,
       });
     } finally {
       setIsResetLoading(false);
@@ -206,23 +216,26 @@ export default function LoginPage() {
                         Ingresa tu correo electrónico y te enviaremos un enlace para que puedas cambiar tu contraseña.
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="reset-email">Correo Electrónico</Label>
-                        <Input
-                          id="reset-email"
-                          type="email"
-                          placeholder="tu@email.com"
-                          value={resetEmail}
-                          onChange={(e) => setResetEmail(e.target.value)}
-                        />
+                    <form onSubmit={handleResetPassword}>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="reset-email">Correo Electrónico</Label>
+                          <Input
+                            id="reset-email"
+                            type="email"
+                            placeholder="tu@email.com"
+                            value={resetEmail}
+                            onChange={(e) => setResetEmail(e.target.value)}
+                            required
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleResetPassword} disabled={isResetLoading}>
-                        {isResetLoading ? 'Enviando...' : 'Enviar enlace'}
-                      </Button>
-                    </DialogFooter>
+                      <DialogFooter>
+                        <Button type="submit" disabled={isResetLoading} className="w-full sm:w-auto">
+                          {isResetLoading ? 'Enviando...' : 'Enviar enlace'}
+                        </Button>
+                      </DialogFooter>
+                    </form>
                   </DialogContent>
                 </Dialog>
               </div>
