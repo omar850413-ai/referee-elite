@@ -53,6 +53,8 @@ export interface PenaltyShootout {
 
 export interface ReportSettings {
   showFouls: boolean;
+  homeColor?: string;
+  awayColor?: string;
 }
 
 export interface MatchState {

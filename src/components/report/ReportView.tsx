@@ -199,7 +199,6 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const allRenderedElements: JSX.Element[] = [];
   
-  // Dynamic starting position for columns - Optimized for "normal" spacing
   const homeFoulSpace = getFoulSpaceHeight(foulsHome);
   const awayFoulSpace = getFoulSpaceHeight(foulsAway);
   const baseColumnY = 640; 
@@ -245,7 +244,6 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const footerElements: JSX.Element[] = [];
 
-  // Notes and PEGI Section
   if (noteEvents.length > 0 || pegiPlays.length > 0) {
     footerCurrentY += 30;
 
@@ -305,6 +303,10 @@ export function ReportView({ matchState }: ReportViewProps) {
   const bottomPadding = 40;
   const svgHeight = Math.max(1200, footerCurrentY + bottomPadding);
 
+  // Colores personalizados
+  const homeColor = reportSettings?.homeColor || '#064E3B';
+  const awayColor = reportSettings?.awayColor || '#1E40AF';
+
   return (
     <div className="w-full max-h-[90vh] overflow-y-auto p-4 bg-slate-900 rounded-lg">
        <DialogHeader className="px-2 pb-4 text-left">
@@ -341,8 +343,8 @@ export function ReportView({ matchState }: ReportViewProps) {
 
           {/* Backgrounds */}
           <rect x="0" y="0" width="800" height={svgHeight} fill="#0F172A" />
-          <rect x="0" y="0" width="400" height={svgHeight} fill="#064E3B" />
-          <rect x="400" y="0" width="400" height={svgHeight} fill="#1E40AF" />
+          <rect x="0" y="0" width="400" height={svgHeight} fill={homeColor} />
+          <rect x="400" y="0" width="400" height={svgHeight} fill={awayColor} />
 
           {localBg && <image href={localBg} data-ai-hint="jaguar pattern" x="-200" y="150" width="800" height="800" opacity="0.05" />}
           {awayBg && <image href={awayBg} data-ai-hint="gopher animal" x="200" y="150" width="800" height="800" opacity="0.05" />}

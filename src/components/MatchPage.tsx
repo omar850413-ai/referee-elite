@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import Link from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { User, signOut } from 'firebase/auth';
 import { DocumentReference, updateDoc, setDoc } from 'firebase/firestore';
@@ -37,6 +37,16 @@ interface MatchPageProps {
   userProfile: UserProfile | null;
   matchDocRef: DocumentReference;
 }
+
+const PRESET_COLORS = [
+  { name: 'Verde', value: '#064E3B' },
+  { name: 'Azul', value: '#1E40AF' },
+  { name: 'Rojo', value: '#991B1B' },
+  { name: 'Negro', value: '#111827' },
+  { name: 'Gris', value: '#374151' },
+  { name: 'Naranja', value: '#9A3412' },
+  { name: 'Blanco', value: '#F8FAFC' },
+];
 
 export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageProps) {
   const { toast } = useToast();
@@ -286,7 +296,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         matchInfo: { advisor: userProfile?.email || '', league: '', round: '', place: '', date: '', referee: '', assistant1: '', assistant2: '', fourthOfficial: '', var: '', avar: '' },
         timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
         penaltyShootout: { home: 0, away: 0, active: false },
-        reportSettings: { showFouls: false },
+        reportSettings: { showFouls: false, homeColor: '#064E3B', awayColor: '#1E40AF' },
       };
       setDoc(matchDocRef, initialState).catch((error) => {
         const permissionError = new FirestorePermissionError({
@@ -319,7 +329,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       side 
     };
     
-    // Combine both updates into one atomic updateDoc call to avoid race conditions
     const updatedEvents = [newEvent, ...(matchState.events ?? [])];
     const updatedFouls = { ...matchState.fouls, [side]: newFoulsCount };
     
@@ -800,7 +809,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             onClick={openPegiModal}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
           >
-            🔎 JUGADAS PEGI
+            🔎 JUGADAS PEGI / CONFIG
           </Button>
           
           <div className="grid grid-cols-2 gap-4">
@@ -1127,51 +1136,103 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       </Dialog>
       
       <Dialog open={modal === 'pegi'} onOpenChange={() => setModal(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-                <DialogTitle className="text-center uppercase italic text-purple-600">Análisis PEGI</DialogTitle>
-                <DialogDescription className="text-center pt-2">
-                    ¿La jugada es un incidente claro y obvio que el árbitro omitió o erró? (PEGI)
-                </DialogDescription>
+                <DialogTitle className="text-center uppercase italic text-purple-600">Configuración del Reporte</DialogTitle>
             </DialogHeader>
-            <RadioGroup value={pegiDecision ?? undefined} onValueChange={(value: 'yes' | 'no') => setPegiDecision(value)} className="my-4 grid grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="pegi-yes" />
-                    <Label htmlFor="pegi-yes" className="text-2xl font-black text-emerald-600">SÍ</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="pegi-no" />
-                    <Label htmlFor="pegi-no" className="text-2xl font-black text-red-600">NO</Label>
-                </div>
-            </RadioGroup>
-
-            {pegiDecision === 'yes' && (
-                <Textarea 
-                    value={pegiDescription}
-                    onChange={e => setPegiDescription(e.target.value)}
-                    placeholder="Describe brevemente la jugada..."
-                    className="mt-2"
-                />
-            )}
             
-            <div className="mt-6 border-t pt-4">
-                <div className="flex items-center justify-between">
-                    <Label htmlFor="show-fouls" className="font-bold text-gray-700">Bitácora de Faltas en Informe</Label>
-                    <Switch
-                        id="show-fouls"
-                        checked={reportSettings?.showFouls ?? false}
-                        onCheckedChange={(checked) => {
-                            updateMatch({ reportSettings: { showFouls: checked } });
-                        }}
+            <div className="space-y-6 my-4">
+              <div>
+                <Label className="text-[11px] font-black uppercase text-gray-400 mb-2 block">Análisis PEGI</Label>
+                <RadioGroup value={pegiDecision ?? undefined} onValueChange={(value: 'yes' | 'no') => setPegiDecision(value)} className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="pegi-yes" />
+                        <Label htmlFor="pegi-yes" className="text-2xl font-black text-emerald-600">SÍ</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="pegi-no" />
+                        <Label htmlFor="pegi-no" className="text-2xl font-black text-red-600">NO</Label>
+                    </div>
+                </RadioGroup>
+                {pegiDecision === 'yes' && (
+                    <Textarea 
+                        value={pegiDescription}
+                        onChange={e => setPegiDescription(e.target.value)}
+                        placeholder="Describe brevemente la jugada..."
+                        className="mt-2"
                     />
-                </div>
-                <p className="text-[10px] text-gray-500 mt-1 italic italic">
-                    Si se activa, se listará el minuto de cada falta registrada en el reporte.
-                </p>
+                )}
+              </div>
+
+              <div className="border-t pt-4">
+                  <div className="flex items-center justify-between">
+                      <Label htmlFor="show-fouls" className="font-bold text-gray-700">Bitácora de Faltas en Informe</Label>
+                      <Switch
+                          id="show-fouls"
+                          checked={reportSettings?.showFouls ?? false}
+                          onCheckedChange={(checked) => {
+                              updateMatch({ reportSettings: { ...reportSettings, showFouls: checked } });
+                          }}
+                      />
+                  </div>
+              </div>
+
+              <div className="border-t pt-4">
+                  <Label className="text-[11px] font-black uppercase text-gray-400 mb-3 block">Colores del Informe (Imagen)</Label>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-xs font-bold mb-2 block">{teamNames.home} (Local)</Label>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {PRESET_COLORS.map(c => (
+                          <button
+                            key={c.value}
+                            onClick={() => updateMatch({ reportSettings: { ...reportSettings, homeColor: c.value } })}
+                            className={cn(
+                              "w-6 h-6 rounded-full border border-gray-300",
+                              reportSettings?.homeColor === c.value && "ring-2 ring-primary ring-offset-1"
+                            )}
+                            style={{ backgroundColor: c.value }}
+                            title={c.name}
+                          />
+                        ))}
+                      </div>
+                      <Input 
+                        type="color" 
+                        value={reportSettings?.homeColor || '#064E3B'} 
+                        onChange={e => updateMatch({ reportSettings: { ...reportSettings, homeColor: e.target.value } })}
+                        className="h-8 p-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-bold mb-2 block">{teamNames.away} (Visita)</Label>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {PRESET_COLORS.map(c => (
+                          <button
+                            key={c.value}
+                            onClick={() => updateMatch({ reportSettings: { ...reportSettings, awayColor: c.value } })}
+                            className={cn(
+                              "w-6 h-6 rounded-full border border-gray-300",
+                              reportSettings?.awayColor === c.value && "ring-2 ring-primary ring-offset-1"
+                            )}
+                            style={{ backgroundColor: c.value }}
+                            title={c.name}
+                          />
+                        ))}
+                      </div>
+                      <Input 
+                        type="color" 
+                        value={reportSettings?.awayColor || '#1E40AF'} 
+                        onChange={e => updateMatch({ reportSettings: { ...reportSettings, awayColor: e.target.value } })}
+                        className="h-8 p-1"
+                      />
+                    </div>
+                  </div>
+              </div>
             </div>
             
             <DialogFooter className="mt-4">
-                <Button onClick={handleSavePegi} className="w-full shadow-lg">Aceptar</Button>
+                <Button onClick={handleSavePegi} className="w-full shadow-lg">Aceptar PEGI</Button>
+                <Button onClick={() => setModal(null)} variant="outline" className="w-full mt-2">Cerrar</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
