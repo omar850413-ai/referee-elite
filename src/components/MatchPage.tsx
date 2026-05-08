@@ -4,10 +4,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, signOut } from 'firebase/auth';
 import { DocumentReference, updateDoc, setDoc } from 'firebase/firestore';
-import { X } from 'lucide-react';
 
 import { useAuth, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,11 +18,10 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
-import { MatchEvent, MatchInfo, TeamNames, Scores, Fouls, UserProfile, Timer, MatchState } from '@/lib/types';
+import { MatchEvent, MatchInfo, TeamNames, Scores, UserProfile, Timer, MatchState } from '@/lib/types';
 import { formatTime, cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ReportView } from '@/components/report/ReportView';
@@ -37,16 +35,6 @@ interface MatchPageProps {
   userProfile: UserProfile | null;
   matchDocRef: DocumentReference;
 }
-
-const PRESET_COLORS = [
-  { name: 'Verde', value: '#064E3B' },
-  { name: 'Azul', value: '#1E40AF' },
-  { name: 'Rojo', value: '#991B1B' },
-  { name: 'Negro', value: '#111827' },
-  { name: 'Gris', value: '#374151' },
-  { name: 'Naranja', value: '#9A3412' },
-  { name: 'Blanco', value: '#F8FAFC' },
-];
 
 export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageProps) {
   const { toast } = useToast();
@@ -296,7 +284,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         matchInfo: { advisor: userProfile?.email || '', league: '', round: '', place: '', date: '', referee: '', assistant1: '', assistant2: '', fourthOfficial: '', var: '', avar: '' },
         timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
         penaltyShootout: { home: 0, away: 0, active: false },
-        reportSettings: { showFouls: false, homeColor: '#064E3B', awayColor: '#1E40AF' },
+        reportSettings: { showFouls: false },
       };
       setDoc(matchDocRef, initialState).catch((error) => {
         const permissionError = new FirestorePermissionError({
@@ -1174,58 +1162,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                               updateMatch({ reportSettings: { ...reportSettings, showFouls: checked } });
                           }}
                       />
-                  </div>
-              </div>
-
-              <div className="border-t pt-4">
-                  <Label className="text-[11px] font-black uppercase text-gray-400 mb-3 block">Colores del Informe (Imagen)</Label>
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-xs font-bold mb-2 block">{teamNames.home} (Local)</Label>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {PRESET_COLORS.map(c => (
-                          <button
-                            key={c.value}
-                            onClick={() => updateMatch({ reportSettings: { ...reportSettings, homeColor: c.value } })}
-                            className={cn(
-                              "w-6 h-6 rounded-full border border-gray-300",
-                              reportSettings?.homeColor === c.value && "ring-2 ring-primary ring-offset-1"
-                            )}
-                            style={{ backgroundColor: c.value }}
-                            title={c.name}
-                          />
-                        ))}
-                      </div>
-                      <Input 
-                        type="color" 
-                        value={reportSettings?.homeColor || '#064E3B'} 
-                        onChange={e => updateMatch({ reportSettings: { ...reportSettings, homeColor: e.target.value } })}
-                        className="h-8 p-1"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs font-bold mb-2 block">{teamNames.away} (Visita)</Label>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {PRESET_COLORS.map(c => (
-                          <button
-                            key={c.value}
-                            onClick={() => updateMatch({ reportSettings: { ...reportSettings, awayColor: c.value } })}
-                            className={cn(
-                              "w-6 h-6 rounded-full border border-gray-300",
-                              reportSettings?.awayColor === c.value && "ring-2 ring-primary ring-offset-1"
-                            )}
-                            style={{ backgroundColor: c.value }}
-                            title={c.name}
-                          />
-                        ))}
-                      </div>
-                      <Input 
-                        type="color" 
-                        value={reportSettings?.awayColor || '#1E40AF'} 
-                        onChange={e => updateMatch({ reportSettings: { ...reportSettings, awayColor: e.target.value } })}
-                        className="h-8 p-1"
-                      />
-                    </div>
                   </div>
               </div>
             </div>

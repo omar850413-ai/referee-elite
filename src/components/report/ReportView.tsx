@@ -100,8 +100,10 @@ export function ReportView({ matchState }: ReportViewProps) {
         message = message.replace(icon, '').replace('Cambio:', '').trim();
         const parts = message.split(' ');
         const pIn = parts.find(p => p.startsWith('↑'))?.replace('↑', '');
+        const pInFormatted = pIn ? `#${pIn}` : '?';
         const pOut = parts.find(p => p.startsWith('↓'))?.replace('↓', '');
-        message = `Entra ${pIn || '?'} Sale ${pOut || '?'}`;
+        const pOutFormatted = pOut ? `#${pOut}` : '?';
+        message = `Entra ${pInFormatted} Sale ${pOutFormatted}`;
     } else if (event.category === 'goals') {
         icon = '⚽';
         message = message.replace(icon, '').replace('GOL', '').replace('PENAL', '(P)').replace('AUTOGOL', '(AG)').trim();
@@ -152,7 +154,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     return { elements, endY: currentY };
   };
 
-  const renderFoulListElements = (faltas: MatchEvent[], x: number, startY: number, color: string) => {
+  const renderFoulListElements = (faltas: MatchEvent[], x: number, startY: number) => {
     if (!reportSettings?.showFouls || faltas.length === 0) return null;
 
     const chunkSize = 2;
@@ -303,9 +305,9 @@ export function ReportView({ matchState }: ReportViewProps) {
   const bottomPadding = 40;
   const svgHeight = Math.max(1200, footerCurrentY + bottomPadding);
 
-  // Colores personalizados
-  const homeColor = reportSettings?.homeColor || '#064E3B';
-  const awayColor = reportSettings?.awayColor || '#1E40AF';
+  // Colores originales fijos
+  const homeColor = '#064E3B';
+  const awayColor = '#1E40AF';
 
   return (
     <div className="w-full max-h-[90vh] overflow-y-auto p-4 bg-slate-900 rounded-lg">
@@ -386,13 +388,13 @@ export function ReportView({ matchState }: ReportViewProps) {
           <text x="200" y="450" fontFamily="Inter, sans-serif" fontSize="120" fontWeight="900" fill="url(#orangeScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.home}</text>
           <text x="200" y="530" textAnchor="middle" fill="#FDBA74" fontSize="22" fontWeight="900" style={{ letterSpacing: '0.05em' }}>FALTAS</text>
           <text x="200" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.home}</text>
-          {renderFoulListElements(foulsHome, 200, 580, "#FDBA74")}
+          {renderFoulListElements(foulsHome, 200, 580)}
 
           <text x="600" y="280" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" textLength="380" lengthAdjust="spacingAndGlyphs">{teamNames.away.toUpperCase()}</text>
           <text x="600" y="450" fontFamily="Inter, sans-serif" fontSize="120" fontWeight="900" fill="url(#turquoiseScoreGradient)" textAnchor="middle" filter="url(#text-shadow)">{scores.away}</text>
           <text x="600" y="530" textAnchor="middle" fill="#22D3EE" fontSize="22" fontWeight="900" style={{ letterSpacing: '0.05em' }}>FALTAS</text>
           <text x="600" y="580" textAnchor="middle" fill="white" fontSize="48" fontWeight="900" filter="url(#text-shadow)">{fouls.away}</text>
-          {renderFoulListElements(foulsAway, 600, 580, "#22D3EE")}
+          {renderFoulListElements(foulsAway, 600, 580)}
 
           {/* Penalty shootout score */}
           {penaltyShootout && penaltyShootout.active && (
