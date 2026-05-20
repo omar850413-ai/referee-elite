@@ -132,13 +132,11 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
               return (
                 <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100 py-0.5">
-                  <span>
-                    {p.number}.- {p.name}
+                  <span className="flex items-center gap-1">
+                    {hasRed && '🟥'}{hasYellow && '🟨'}{p.number}.- {p.name}
                   </span>
                   <span className="flex gap-2 font-bold min-w-[30px] justify-end">
                     {goalsCount > 0 && `⚽${goalsCount}`}
-                    {hasYellow && ' 🟨'}
-                    {hasRed && ' 🟥'}
                   </span>
                 </div>
               );
@@ -153,13 +151,11 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
               return (
                 <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100 py-0.5">
-                  <span>
-                    {p.number}.- {p.name}
+                  <span className="flex items-center gap-1">
+                    {hasRed && '🟥'}{hasYellow && '🟨'}{p.number}.- {p.name}
                   </span>
                   <span className="flex gap-2 font-bold min-w-[30px] justify-end">
                     {goalsCount > 0 && `⚽${goalsCount}`}
-                    {hasYellow && ' 🟨'}
-                    {hasRed && ' 🟥'}
                   </span>
                 </div>
               );
@@ -174,7 +170,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
             <h3 className="text-[11px] font-black border-b border-black mb-2 uppercase">{teamNames.home} (LOCAL)</h3>
             <div className="space-y-4 text-[10px]">
               <div>
-                <p className="font-bold underline mb-1">AMONESTACIONES:</p>
+                <p className="font-bold underline mb-1">🟨 AMONESTACIONES:</p>
                 {homeSanciones.yellows.length > 0 ? (
                   homeSanciones.yellows.map(e => (
                     <div key={e.id} className="border-b pb-1">
@@ -186,7 +182,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 )}
               </div>
               <div>
-                <p className="font-bold underline mb-1">EXPULSIONES:</p>
+                <p className="font-bold underline mb-1">🟥 EXPULSIONES:</p>
                 {homeSanciones.reds.length > 0 ? (
                   homeSanciones.reds.map(e => (
                     <div key={e.id} className="border-b pb-1">
@@ -204,7 +200,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
             <h3 className="text-[11px] font-black border-b border-black mb-2 uppercase">{teamNames.away} (VISITANTE)</h3>
             <div className="space-y-4 text-[10px]">
               <div>
-                <p className="font-bold underline mb-1">AMONESTACIONES:</p>
+                <p className="font-bold underline mb-1">🟨 AMONESTACIONES:</p>
                 {awaySanciones.yellows.length > 0 ? (
                   awaySanciones.yellows.map(e => (
                     <div key={e.id} className="border-b pb-1">
@@ -216,7 +212,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 )}
               </div>
               <div>
-                <p className="font-bold underline mb-1">EXPULSIONES:</p>
+                <p className="font-bold underline mb-1">🟥 EXPULSIONES:</p>
                 {awaySanciones.reds.length > 0 ? (
                   awaySanciones.reds.map(e => (
                     <div key={e.id} className="border-b pb-1">
