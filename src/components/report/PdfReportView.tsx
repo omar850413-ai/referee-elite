@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef } from 'react';
@@ -170,7 +169,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               {homeCards.length > 0 ? (
                 homeCards.map(e => (
                   <div key={e.id} className="border-b pb-1">
-                    <strong>#{e.playerNumber} {e.playerName}</strong>: {e.message.split(' - ')[0]} - {e.message.split(' - ')[1]}
+                    <strong>#{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ')[0]} - {e.message.split(' - ')[1]}
                   </div>
                 ))
               ) : (
@@ -185,7 +184,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               {awayCards.length > 0 ? (
                 awayCards.map(e => (
                   <div key={e.id} className="border-b pb-1">
-                    <strong>#{e.playerNumber} {e.playerName}</strong>: {e.message.split(' - ')[0]} - {e.message.split(' - ')[1]}
+                    <strong>#{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ')[0]} - {e.message.split(' - ')[1]}
                   </div>
                 ))
               ) : (

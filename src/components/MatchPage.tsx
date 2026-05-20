@@ -24,7 +24,7 @@ import { PdfReportView } from '@/components/report/PdfReportView';
 import { ReportView } from '@/components/report/ReportView';
 import { Logo } from '@/components/ui/Logo';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check, Pencil, AlertCircle, Image as ImageIcon, ShieldAlert } from 'lucide-react';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check, Pencil, AlertCircle, Image as ImageIcon, ShieldAlert, Clock } from 'lucide-react';
 import { causalesAmarilla, causalesRoja } from '@/lib/causales';
 
 interface MatchPageProps {
@@ -54,6 +54,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   
   const [isListening, setIsListening] = useState(false);
   const [tempIncidents, setTempIncidents] = useState('');
+  const [currentMinute, setCurrentMinute] = useState('');
 
   // Signature drawing refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -184,11 +185,12 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     const currentScores = matchState.scores || { home: 0, away: 0 };
     const newScores = { ...currentScores, [side]: (currentScores[side] || 0) + 1 };
     
+    const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
     const newEvent: MatchEvent = {
       id: Date.now(),
-      time: '--',
+      time: timeDisplay,
       category: 'goals',
-      message: `⚽ GOL #${player.number} ${player.name}`,
+      message: `⚽ GOL #${player.number} ${player.name}${currentMinute ? ` (${currentMinute}')` : ''}`,
       side: side,
       playerNumber: player.number,
       playerName: player.name
@@ -199,16 +201,18 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       events: [newEvent, ...(matchState.events || [])]
     });
     
+    setCurrentMinute('');
     toast({ title: `Gol registrado para #${player.number}` });
   };
 
   const handleAddCard = (side: 'home' | 'away', player: Player, type: 'yellow' | 'red', causalIdx: number, causalText: string) => {
     const symbol = type === 'yellow' ? '🟨' : '🟥';
+    const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
     const newEvent: MatchEvent = {
       id: Date.now(),
-      time: '--',
+      time: timeDisplay,
       category: 'cards',
-      message: `${symbol} #${player.number} ${player.name} - #${causalIdx + 1} ${causalText}`,
+      message: `${symbol} #${player.number} ${player.name} - #${causalIdx + 1} ${causalText}${currentMinute ? ` (${currentMinute}')` : ''}`,
       side: side,
       playerNumber: player.number,
       playerName: player.name
@@ -218,6 +222,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       events: [newEvent, ...(matchState.events || [])]
     });
     
+    setCurrentMinute('');
     setModal('player-actions');
     toast({ title: `Tarjeta registrada para #${player.number}` });
   };
@@ -377,6 +382,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 className="border-b hover:bg-slate-50 cursor-pointer active:bg-slate-100"
                 onClick={() => {
                   setSelectedPlayer({ player: p, side });
+                  setCurrentMinute('');
                   setModal('player-actions');
                 }}
               >
@@ -384,7 +390,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 <td className="p-2">
                   <div className="flex justify-between items-center pr-2">
                     <p className="font-bold uppercase text-slate-700 text-xs truncate max-w-[150px]">{p.name}</p>
-                    <div className="flex gap-4 items-center ml-4">
+                    <div className="flex gap-6 items-center ml-8">
                       {goalsCount > 0 && <span className="text-[11px] font-black text-emerald-600">⚽{goalsCount}</span>}
                       {yellowCount > 0 && <span className="text-[11px]">🟨</span>}
                       {redCount > 0 && <span className="text-[11px]">🟥</span>}
@@ -420,21 +426,21 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="grid grid-cols-2 gap-2">
-              <Button onClick={() => setModal('info')} variant="outline" size="sm" className="font-bold border-2 h-11">
-                <Settings2 className="h-4 w-4 mr-2" /> DATOS PARTIDO
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Button onClick={() => setModal('info')} variant="default" size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white font-black h-12 shadow-md">
+                <Settings2 className="h-5 w-5 mr-2" /> DATOS PARTIDO
               </Button>
-              <Button onClick={() => { setTempIncidents(currentIncidents); setModal('incidents'); }} variant="outline" size="sm" className="font-bold border-2 h-11">
-                <AlertCircle className="h-4 w-4 mr-2" /> INCIDENTES
+              <Button onClick={() => { setTempIncidents(currentIncidents); setModal('incidents'); }} variant="default" size="sm" className="bg-rose-500 hover:bg-rose-600 text-white font-black h-12 shadow-md">
+                <AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES
               </Button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Button onClick={() => setIsPdfReportOpen(true)} variant="default" size="sm" className="bg-slate-800 font-bold h-11">
-                <FileText className="h-4 w-4 mr-2" /> CÉDULA PDF
+            <div className="grid grid-cols-2 gap-3">
+              <Button onClick={() => setIsPdfReportOpen(true)} variant="default" size="sm" className="bg-slate-900 hover:bg-black text-white font-black h-12 shadow-md">
+                <FileText className="h-5 w-5 mr-2" /> CÉDULA PDF
               </Button>
-              <Button onClick={() => setIsImageReportOpen(true)} variant="secondary" size="sm" className="bg-primary text-white font-bold hover:bg-primary/90 h-11">
-                <ImageIcon className="h-4 w-4 mr-2" /> INFORME IMAGEN
+              <Button onClick={() => setIsImageReportOpen(true)} variant="default" size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white font-black h-12 shadow-md">
+                <ImageIcon className="h-5 w-5 mr-2" /> INFORME IMAGEN
               </Button>
             </div>
           </div>
@@ -463,7 +469,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                     </Button>
                   </div>
                   <div className="text-center bg-black/20 rounded-lg p-2">
-                     <p className="text-[10px] font-bold opacity-70 uppercase">Marcador Manual</p>
+                     <p className="text-[10px] font-bold opacity-70 uppercase">Marcador</p>
                      <p className="text-4xl font-black">{scores[side]}</p>
                   </div>
                 </CardHeader>
@@ -577,6 +583,19 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
               </div>
               
               <div className="p-6 space-y-4 bg-white">
+                <div className="space-y-2 mb-4">
+                  <Label className="flex items-center gap-2 text-xs font-black uppercase text-slate-400">
+                    <Clock size={14} /> Minuto del suceso (Opcional)
+                  </Label>
+                  <Input 
+                    type="number" 
+                    placeholder="Min" 
+                    className="h-10 text-center font-bold text-lg"
+                    value={currentMinute}
+                    onChange={e => setCurrentMinute(e.target.value)}
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 gap-3">
                   <Button 
                     onClick={() => handleAddGoal(selectedPlayer.side, selectedPlayer.player)}
@@ -609,7 +628,10 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                     ) : (
                       getPlayerEvents(selectedPlayer.side, selectedPlayer.player.number).map(ev => (
                         <div key={ev.id} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg border">
-                          <span className="text-[11px] font-bold text-slate-600">{ev.message.split(' - ')[0]}</span>
+                          <span className="text-[11px] font-bold text-slate-600">
+                            {ev.message.split(' - ')[0]} 
+                            {ev.time !== '--' && <span className="ml-1 text-primary">({ev.time})</span>}
+                          </span>
                           <Button 
                             variant="ghost" 
                             size="icon" 

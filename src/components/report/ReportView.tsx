@@ -165,7 +165,7 @@ export function ReportView({ matchState }: ReportViewProps) {
               <text fontSize="14" fontWeight="900" fill="white" textAnchor="start">TARJETAS LOCAL ({teamNames.home})</text>
               {homeCards.map((e, idx) => (
                 <text key={e.id} y={30 + (idx * 20)} x="0" fill="white" fontSize="11" opacity="0.9">
-                  {e.message}
+                   #{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()}
                 </text>
               ))}
             </g>
@@ -173,7 +173,7 @@ export function ReportView({ matchState }: ReportViewProps) {
               <text fontSize="14" fontWeight="900" fill="white" textAnchor="start">TARJETAS VISITA ({teamNames.away})</text>
               {awayCards.map((e, idx) => (
                 <text key={e.id} y={30 + (idx * 20)} x="0" fill="white" fontSize="11" opacity="0.9">
-                  {e.message}
+                  #{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()}
                 </text>
               ))}
             </g>
