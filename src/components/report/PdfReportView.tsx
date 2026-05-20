@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef } from 'react';
@@ -117,32 +118,46 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
         <div className="text-center font-bold text-[12px] mb-2">REGISTRO DE JUGADORES Y ACCIONES</div>
         <div className="grid grid-cols-2 gap-10 mb-8">
           <div className="space-y-1">
-            {homePlayers.map(p => (
-              <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100">
-                <span>{p.number}.- {p.name}</span>
-                <div className="flex gap-2">
-                  {getPlayerEvents('home', p.number).map(e => (
-                    <span key={e.id} className="text-[9px] font-bold">
-                      {e.category === 'goals' ? `⚽` : e.message.includes('🟨') ? '🟨' : '🟥'}
+            {homePlayers.map(p => {
+              const playerEvs = getPlayerEvents('home', p.number);
+              const goalsCount = playerEvs.filter(e => e.category === 'goals').length;
+              const hasYellow = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟨'));
+              const hasRed = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟥'));
+
+              return (
+                <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100">
+                  <span>
+                    {p.number}.- {p.name}
+                    <span className="ml-2">
+                      {goalsCount > 0 && `⚽${goalsCount}`}
+                      {hasYellow && ' 🟨'}
+                      {hasRed && ' 🟥'}
                     </span>
-                  ))}
+                  </span>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="space-y-1">
-            {awayPlayers.map(p => (
-              <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100">
-                <span>{p.number}.- {p.name}</span>
-                <div className="flex gap-2">
-                  {getPlayerEvents('away', p.number).map(e => (
-                    <span key={e.id} className="text-[9px] font-bold">
-                      {e.category === 'goals' ? `⚽` : e.message.includes('🟨') ? '🟨' : '🟥'}
+            {awayPlayers.map(p => {
+              const playerEvs = getPlayerEvents('away', p.number);
+              const goalsCount = playerEvs.filter(e => e.category === 'goals').length;
+              const hasYellow = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟨'));
+              const hasRed = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟥'));
+
+              return (
+                <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100">
+                  <span>
+                    {p.number}.- {p.name}
+                    <span className="ml-2">
+                      {goalsCount > 0 && `⚽${goalsCount}`}
+                      {hasYellow && ' 🟨'}
+                      {hasRed && ' 🟥'}
                     </span>
-                  ))}
+                  </span>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

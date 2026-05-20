@@ -1,10 +1,10 @@
+
 'use client';
 
 import React, { useRef } from 'react';
 import { MatchState, MatchEvent, Player } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { DialogClose, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { numberToSpanishWords } from '@/lib/utils';
 
@@ -67,22 +67,34 @@ export function ReportView({ matchState }: ReportViewProps) {
   const awayCards = safeEvents.filter(e => e.side === 'away' && e.category === 'cards');
   const incidents = safeEvents.find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
+  const getPlayerEventIcons = (side: 'home' | 'away', number: string) => {
+    const playerEvs = safeEvents.filter(e => e.side === side && e.playerNumber === number);
+    const goalsCount = playerEvs.filter(e => e.category === 'goals').length;
+    const yellowCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟨')).length;
+    const redCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟥')).length;
+    
+    let icons = '';
+    if (goalsCount > 0) icons += ` ⚽${goalsCount}`;
+    if (yellowCount > 0) icons += ' 🟨';
+    if (redCount > 0) icons += ' 🟥';
+    return icons;
+  };
+
   // Helper to render player list text
-  const renderPlayerBlock = (players: Player[], x: number, y: number, title: string) => (
+  const renderPlayerBlock = (side: 'home' | 'away', players: Player[], x: number, y: number, title: string) => (
     <g transform={`translate(${x}, ${y})`}>
       <text x="0" y="-10" fontSize="12" fontWeight="900" fill="white" opacity="0.6" textAnchor="start">{title}</text>
       {players.map((p, i) => (
         <text key={p.id} x="0" y={15 + (i * 16)} fontSize="11" fill="white" fontWeight="700">
-          {`#${p.number} ${p.name}`}
+          {`#${p.number} ${p.name}${getPlayerEventIcons(side, p.number)}`}
         </text>
       ))}
     </g>
   );
 
-  const homeColor = '#064E3B'; // Emerald 900 (Fondo Local)
-  const awayColor = '#1E3A8A'; // Blue 900 (Fondo Visita)
+  const homeColor = '#064E3B'; // Emerald 900
+  const awayColor = '#1E3A8A'; // Blue 900
   
-  // Calculate dynamic height
   const maxPlayersCount = Math.max(homePlayers.length, awayPlayers.length);
   const playersSecHeight = (maxPlayersCount * 18) + 80;
   const cardsSecHeight = (Math.max(homeCards.length, awayCards.length) * 22) + 100;
@@ -106,11 +118,9 @@ export function ReportView({ matchState }: ReportViewProps) {
           xmlns="http://www.w3.org/2000/svg"
           className="max-w-full h-auto bg-white"
         >
-          {/* Fondo por equipo */}
           <rect x="0" y="0" width="400" height={svgHeight} fill={homeColor} />
           <rect x="400" y="0" width="400" height={svgHeight} fill={awayColor} />
 
-          {/* Encabezado General (Info Partido) */}
           <rect x="0" y="0" width="800" height="180" fill="rgba(0,0,0,0.3)" />
           <g transform="translate(400, 50)">
             <text textAnchor="middle" fill="white" fontSize="24" fontWeight="900" style={{ letterSpacing: '0.1em' }}>
@@ -130,7 +140,6 @@ export function ReportView({ matchState }: ReportViewProps) {
             </g>
           </g>
 
-          {/* Marcador Central */}
           <g transform="translate(200, 280)">
              <text textAnchor="middle" fill="white" fontSize="36" fontWeight="900" style={{ letterSpacing: '-0.02em' }}>{teamNames.home.toUpperCase()}</text>
              <text y="100" textAnchor="middle" fill="white" fontSize="130" fontWeight="900">{scores.home}</text>
@@ -143,17 +152,15 @@ export function ReportView({ matchState }: ReportViewProps) {
              <text y="140" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="20" fontWeight="800">{`(${numberToSpanishWords(scores.away)})`}</text>
           </g>
 
-          {/* Alineaciones (Titulares y Suplentes) */}
           <g transform="translate(40, 480)">
-             {renderPlayerBlock(homeStarters, 0, 30, 'TITULARES')}
-             {renderPlayerBlock(homeSubs, 0, 240, 'SUPLENTES')}
+             {renderPlayerBlock('home', homeStarters, 0, 30, 'TITULARES')}
+             {renderPlayerBlock('home', homeSubs, 0, 240, 'SUPLENTES')}
           </g>
           <g transform="translate(440, 480)">
-             {renderPlayerBlock(awayStarters, 0, 30, 'TITULARES')}
-             {renderPlayerBlock(awaySubs, 0, 240, 'SUPLENTES')}
+             {renderPlayerBlock('away', awayStarters, 0, 30, 'TITULARES')}
+             {renderPlayerBlock('away', awaySubs, 0, 240, 'SUPLENTES')}
           </g>
 
-          {/* Detalle de Tarjetas */}
           <g transform={`translate(0, ${480 + playersSecHeight})`}>
             <rect width="800" height={cardsSecHeight} fill="rgba(0,0,0,0.2)" />
             <g transform="translate(40, 40)">
@@ -174,7 +181,6 @@ export function ReportView({ matchState }: ReportViewProps) {
             </g>
           </g>
 
-          {/* Incidentes del Partido */}
           <g transform={`translate(400, ${480 + playersSecHeight + cardsSecHeight + 50})`}>
              <text textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16" fontWeight="900">INCIDENTES DEL PARTIDO</text>
              <foreignObject x="-350" y="20" width="700" height="200">
@@ -184,23 +190,19 @@ export function ReportView({ matchState }: ReportViewProps) {
              </foreignObject>
           </g>
 
-          {/* Firmas (Local - Arbitro - Visitante) */}
           <g transform={`translate(0, ${svgHeight - 160})`}>
-            {/* Local */}
             <g transform="translate(150, 0)">
               {signatures.captainHome && <image href={signatures.captainHome} x="-70" y="-80" width="140" height="70" />}
               <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="1.5" opacity="0.5" />
               <text y="20" textAnchor="middle" fill="white" fontSize="11" fontWeight="900">CAPITÁN / DELEGADO LOCAL</text>
             </g>
 
-            {/* Árbitro */}
             <g transform="translate(400, 0)">
               {signatures.referee && <image href={signatures.referee} x="-70" y="-80" width="140" height="70" />}
               <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="1.5" opacity="0.5" />
               <text y="20" textAnchor="middle" fill="white" fontSize="11" fontWeight="900">ÁRBITRO CENTRAL</text>
             </g>
 
-            {/* Visitante */}
             <g transform="translate(650, 0)">
               {signatures.captainAway && <image href={signatures.captainAway} x="-70" y="-80" width="140" height="70" />}
               <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="1.5" opacity="0.5" />
@@ -208,7 +210,6 @@ export function ReportView({ matchState }: ReportViewProps) {
             </g>
           </g>
 
-          {/* Pie de página */}
           <text x="400" y={svgHeight - 30} textAnchor="middle" fill="white" opacity="0.4" fontSize="11" fontWeight="900" style={{ letterSpacing: '0.3em' }}>
             CEDULA DIGITAL GENERADA POR ASESOR PRO
           </text>

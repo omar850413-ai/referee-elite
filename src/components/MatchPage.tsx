@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useRef } from 'react';
 import Link from 'next/link';
@@ -324,7 +325,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       <table className="w-full text-left border-collapse">
         <tbody className="text-sm">
           {players.length === 0 && (
-            <tr><td colSpan={3} className="p-4 text-center text-slate-300 italic text-[10px]">Sin jugadores</td></tr>
+            <tr><td colSpan={2} className="p-4 text-center text-slate-300 italic text-[10px]">Sin jugadores</td></tr>
           )}
           {players.map((p) => {
             const playerEvs = getPlayerEvents(side, p.number);
@@ -343,13 +344,13 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
               >
                 <td className="p-2 text-center font-bold text-slate-500 w-10">#{p.number}</td>
                 <td className="p-2">
-                  <p className="font-bold uppercase text-slate-700 text-xs">{p.name}</p>
-                </td>
-                <td className="p-2 w-16">
-                  <div className="flex gap-1 justify-center items-center">
-                    {goalsCount > 0 && <span className="text-[10px] font-bold text-emerald-600">⚽{goalsCount}</span>}
-                    {yellowCount > 0 && <span className="text-[10px]">🟨</span>}
-                    {redCount > 0 && <span className="text-[10px]">🟥</span>}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-bold uppercase text-slate-700 text-xs">{p.name}</p>
+                    <div className="flex gap-1 items-center">
+                      {goalsCount > 0 && <span className="text-[10px] font-bold text-emerald-600">⚽{goalsCount}</span>}
+                      {yellowCount > 0 && <span className="text-[10px]">🟨</span>}
+                      {redCount > 0 && <span className="text-[10px]">🟥</span>}
+                    </div>
                   </div>
                 </td>
               </tr>
