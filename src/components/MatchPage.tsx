@@ -21,9 +21,10 @@ import {
 import { MatchEvent, MatchState, Player, UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { PdfReportView } from '@/components/report/PdfReportView';
+import { ReportView } from '@/components/report/ReportView';
 import { Logo } from '@/components/ui/Logo';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check, Pencil, AlertCircle, X } from 'lucide-react';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check, Pencil, AlertCircle, Image as ImageIcon } from 'lucide-react';
 import { causalesAmarilla, causalesRoja } from '@/lib/causales';
 
 interface MatchPageProps {
@@ -42,6 +43,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const [modal, setModal] = useState<string | null>(null);
   const [currentSide, setCurrentSide] = useState<'home' | 'away'>('home');
   const [isPdfReportOpen, setIsPdfReportOpen] = useState(false);
+  const [isImageReportOpen, setIsImageReportOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<{player: Player, side: 'home' | 'away'} | null>(null);
   const [cardType, setCardType] = useState<'yellow' | 'red' | null>(null);
 
@@ -55,6 +57,16 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+
+  if (isMatchLoading || !matchState) {
+    return (
+      <div className="p-4 bg-sky-50 min-h-screen flex items-center justify-center">
+        <Skeleton className="h-40 w-full max-w-4xl" />
+      </div>
+    );
+  }
+
+  const { teamNames, matchInfo, lineups = { home: [], away: [] }, events = [], signatures = {}, scores } = matchState;
 
   const updateMatch = (data: Partial<MatchState>) => {
     return updateDoc(matchDocRef, data)
@@ -109,11 +121,11 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   };
 
   const handleAddPlayer = (side: 'home' | 'away') => {
-    if (!matchState || !newPlayerNumber || !newPlayerName) return;
-    const lineups = matchState.lineups || { home: [], away: [] };
-    const playerType = lineups[side].length < 11 ? 'starter' : 'substitute';
+    if (!newPlayerNumber || !newPlayerName) return;
+    const currentLineups = matchState.lineups || { home: [], away: [] };
+    const playerType = currentLineups[side].length < 11 ? 'starter' : 'substitute';
     const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: playerType };
-    const updatedLineups = { ...lineups, [side]: [...lineups[side], player] };
+    const updatedLineups = { ...currentLineups, [side]: [...currentLineups[side], player] };
     updateMatch({ lineups: updatedLineups });
     setNewPlayerNumber('');
     setNewPlayerName('');
@@ -121,11 +133,11 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   };
 
   const handleUpdatePlayer = () => {
-    if (!matchState || !selectedPlayer || !editPlayerNumber || !editPlayerName) return;
+    if (!selectedPlayer || !editPlayerNumber || !editPlayerName) return;
     const { side, player } = selectedPlayer;
-    const lineups = matchState.lineups || { home: [], away: [] };
+    const currentLineups = matchState.lineups || { home: [], away: [] };
     
-    const updatedPlayers = lineups[side].map(p => 
+    const updatedPlayers = currentLineups[side].map(p => 
       p.id === player.id ? { ...p, number: editPlayerNumber, name: editPlayerName.toUpperCase() } : p
     );
 
@@ -142,7 +154,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     });
 
     updateMatch({ 
-      lineups: { ...lineups, [side]: updatedPlayers },
+      lineups: { ...currentLineups, [side]: updatedPlayers },
       events: updatedEvents
     });
     
@@ -151,15 +163,14 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   };
 
   const handleRemovePlayer = (side: 'home' | 'away', id: string) => {
-    const lineups = matchState!.lineups || { home: [], away: [] };
-    const updatedPlayers = lineups[side].filter(p => p.id !== id);
-    updateMatch({ lineups: { ...lineups, [side]: updatedPlayers } });
+    const currentLineups = matchState.lineups || { home: [], away: [] };
+    const updatedPlayers = currentLineups[side].filter(p => p.id !== id);
+    updateMatch({ lineups: { ...currentLineups, [side]: updatedPlayers } });
     setModal(null);
     toast({ title: "Jugador eliminado" });
   };
 
   const handleAddGoal = (side: 'home' | 'away', player: Player) => {
-    if (!matchState) return;
     const currentScores = matchState.scores || { home: 0, away: 0 };
     const newScores = { ...currentScores, [side]: (currentScores[side] || 0) + 1 };
     
@@ -182,8 +193,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   };
 
   const handleAddCard = (side: 'home' | 'away', player: Player, type: 'yellow' | 'red', causalIdx: number, causalText: string) => {
-    if (!matchState) return;
-    
     const symbol = type === 'yellow' ? '🟨' : '🟥';
     const newEvent: MatchEvent = {
       id: Date.now(),
@@ -204,7 +213,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   };
 
   const handleRemoveEvent = (eventId: number) => {
-    if (!matchState) return;
     const event = matchState.events.find(e => e.id === eventId);
     if (!event) return;
 
@@ -225,7 +233,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   };
 
   const handleSaveIncidents = () => {
-    if (!matchState) return;
     const otherEvents = (matchState.events || []).filter(e => e.category !== 'notes');
     const incidentEvent: MatchEvent = {
       id: Date.now(),
@@ -290,8 +297,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     const canvas = canvasRef.current;
     if (!canvas) return;
     const dataUrl = canvas.toDataURL();
-    const signatures = matchState?.signatures || {};
-    updateMatch({ signatures: { ...signatures, [type]: dataUrl } });
+    const currentSignatures = matchState.signatures || {};
+    updateMatch({ signatures: { ...currentSignatures, [type]: dataUrl } });
     setModal(null);
     toast({ title: "Firma guardada correctamente" });
   };
@@ -302,18 +309,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     router.push('/login');
   };
   
-  const isAdmin = userProfile?.isAdmin || user?.email === 'omar850413@gmail.com';
-
-  if (isMatchLoading || !matchState) {
-    return (
-      <div className="p-4 bg-sky-50 min-h-screen flex items-center justify-center">
-        <Skeleton className="h-40 w-full max-w-4xl" />
-      </div>
-    );
-  }
-
-  const { teamNames, matchInfo, lineups = { home: [], away: [] }, events = [], signatures = {}, scores } = matchState;
   const currentIncidents = events.find(e => e.category === 'notes')?.message.replace('📝 ', '') || '';
+  const isAdmin = userProfile?.isAdmin || user?.email === 'omar850413@gmail.com';
 
   const getPlayerEvents = (side: 'home' | 'away', number: string) => {
     return events.filter(e => e.side === side && e.playerNumber === number);
@@ -379,6 +376,9 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             <Button onClick={() => setIsPdfReportOpen(true)} variant="default" size="sm" className="bg-slate-800 font-bold">
               <FileText className="h-4 w-4 mr-2" /> CÉDULA PDF
             </Button>
+            <Button onClick={() => setIsImageReportOpen(true)} variant="secondary" size="sm" className="bg-primary text-white font-bold hover:bg-primary/90">
+              <ImageIcon className="h-4 w-4 mr-2" /> INFORME IMAGEN
+            </Button>
             {isAdmin && (
               <Link href="/admin">
                 <Button variant="secondary" size="sm">Admin</Button>
@@ -443,20 +443,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           
           <div className="text-center">
             <button 
-              onClick={() => setModal('sign-captainAway')}
-              className="border-2 border-dashed border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden rounded-xl bg-white"
-            >
-              {signatures.captainAway ? (
-                <img src={signatures.captainAway} alt="Firma Cap Visitante" className="max-h-full" />
-              ) : (
-                <span className="text-slate-300 italic text-[10px]">FIRMA CAPITÁN VISITANTE</span>
-              )}
-            </button>
-            <p className="text-[8px] font-black uppercase text-slate-400">Capitán / Delegado (VISITANTE)</p>
-          </div>
-
-          <div className="text-center">
-            <button 
               onClick={() => setModal('sign-referee')}
               className="border-2 border-dashed border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden rounded-xl bg-white"
             >
@@ -467,6 +453,20 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
               )}
             </button>
             <p className="text-[8px] font-black uppercase text-slate-400">Árbitro Central</p>
+          </div>
+
+          <div className="text-center">
+            <button 
+              onClick={() => setModal('sign-captainAway')}
+              className="border-2 border-dashed border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden rounded-xl bg-white"
+            >
+              {signatures.captainAway ? (
+                <img src={signatures.captainAway} alt="Firma Cap Visitante" className="max-h-full" />
+              ) : (
+                <span className="text-slate-300 italic text-[10px]">FIRMA CAPITÁN VISITANTE</span>
+              )}
+            </button>
+            <p className="text-[8px] font-black uppercase text-slate-400">Capitán / Delegado (VISITANTE)</p>
           </div>
         </div>
 
@@ -505,7 +505,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 </button>
               </div>
             </div>
-            <Button onClick={() => handleAddPlayer(currentSide)} className="w-full h-12 font-black uppercase italic bg-primary">
+            <Button onClick={() => handleAddPlayer(currentSide)} className="w-full h-12 font-black uppercase italic bg-primary text-white">
               <Plus className="h-5 w-5 mr-2" /> Agregar a Lista
             </Button>
           </div>
@@ -529,7 +529,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 <div className="grid grid-cols-1 gap-3">
                   <Button 
                     onClick={() => handleAddGoal(selectedPlayer.side, selectedPlayer.player)}
-                    className="h-16 text-xl font-black italic uppercase bg-emerald-600 hover:bg-emerald-700 shadow-lg"
+                    className="h-16 text-xl font-black italic uppercase bg-emerald-600 hover:bg-emerald-700 shadow-lg text-white"
                   >
                     ⚽ REGISTRAR GOL
                   </Button>
@@ -632,7 +632,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 </button>
               </div>
             </div>
-            <Button onClick={handleUpdatePlayer} className="w-full h-12 font-black uppercase bg-primary">
+            <Button onClick={handleUpdatePlayer} className="w-full h-12 font-black uppercase bg-primary text-white">
               Guardar Cambios
             </Button>
           </div>
@@ -673,7 +673,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
               value={tempIncidents}
               onChange={e => setTempIncidents(e.target.value)}
             />
-            <Button onClick={handleSaveIncidents} className="w-full font-bold bg-primary uppercase italic h-12">
+            <Button onClick={handleSaveIncidents} className="w-full font-bold bg-primary text-white uppercase italic h-12">
               Guardar Incidentes
             </Button>
           </div>
@@ -712,7 +712,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                                modal === 'sign-captainAway' ? 'captainAway' : 'referee';
                   saveSignature(type);
                 }} 
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
               >
                 <Check className="h-4 w-4 mr-2" /> Guardar Firma
               </Button>
@@ -767,6 +767,15 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             <DialogTitle>Vista Previa de Cédula</DialogTitle>
           </DialogHeader>
           <PdfReportView matchState={matchState} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isImageReportOpen} onOpenChange={setIsImageReportOpen}>
+        <DialogContent className="max-w-5xl p-0 bg-transparent border-none shadow-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Vista Previa de Informe Imagen</DialogTitle>
+          </DialogHeader>
+          <ReportView matchState={matchState} />
         </DialogContent>
       </Dialog>
     </div>
