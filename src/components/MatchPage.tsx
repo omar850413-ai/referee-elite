@@ -108,7 +108,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const handleAddPlayer = (side: 'home' | 'away') => {
     if (!matchState || !newPlayerNumber || !newPlayerName) return;
     const lineups = matchState.lineups || { home: [], away: [] };
-    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: 'starter' };
+    const playerType = lineups[side].length < 11 ? 'starter' : 'substitute';
+    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: playerType };
     const updatedLineups = { ...lineups, [side]: [...lineups[side], player] };
     updateMatch({ lineups: updatedLineups });
     setNewPlayerNumber('');
@@ -125,7 +126,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       p.id === player.id ? { ...p, number: editPlayerNumber, name: editPlayerName.toUpperCase() } : p
     );
 
-    // Update events that reference this player
     const updatedEvents = (matchState.events || []).map(e => {
       if (e.side === side && e.playerNumber === player.number) {
         return { 
@@ -316,9 +316,53 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     return events.filter(e => e.side === side && e.playerNumber === number);
   };
 
+  const renderPlayerTable = (side: 'home' | 'away', players: Player[], title: string) => (
+    <div className="mb-4">
+      <div className="bg-slate-100 p-2 border-y">
+        <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{title}</p>
+      </div>
+      <table className="w-full text-left border-collapse">
+        <tbody className="text-sm">
+          {players.length === 0 && (
+            <tr><td colSpan={3} className="p-4 text-center text-slate-300 italic text-[10px]">Sin jugadores</td></tr>
+          )}
+          {players.map((p) => {
+            const playerEvs = getPlayerEvents(side, p.number);
+            const goalsCount = playerEvs.filter(e => e.category === 'goals').length;
+            const yellowCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟨')).length;
+            const redCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟥')).length;
+            
+            return (
+              <tr 
+                key={p.id} 
+                className="border-b hover:bg-slate-50 cursor-pointer active:bg-slate-100"
+                onClick={() => {
+                  setSelectedPlayer({ player: p, side });
+                  setModal('player-actions');
+                }}
+              >
+                <td className="p-2 text-center font-bold text-slate-500 w-10">#{p.number}</td>
+                <td className="p-2">
+                  <p className="font-bold uppercase text-slate-700 text-xs">{p.name}</p>
+                </td>
+                <td className="p-2 w-16">
+                  <div className="flex gap-1 justify-center items-center">
+                    {goalsCount > 0 && <span className="text-[10px] font-bold text-emerald-600">⚽{goalsCount}</span>}
+                    {yellowCount > 0 && <span className="text-[10px]">🟨</span>}
+                    {redCount > 0 && <span className="text-[10px]">🟥</span>}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
     <div className="p-2 md:p-6 bg-slate-50 min-h-screen font-sans text-slate-900">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto space-y-4">
         
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border">
           <Logo className="scale-110" />
@@ -343,120 +387,83 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border-t-4 border-primary shadow-sm text-center">
-          <h1 className="text-xl font-black uppercase italic text-slate-700">Cédula Arbitral</h1>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+        <div className="bg-white p-3 rounded-xl border-t-4 border-primary shadow-sm text-center">
+          <h1 className="text-lg font-black uppercase italic text-slate-700">Cédula Arbitral</h1>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
             {matchInfo.league || 'LIGA'} | JORNADA {matchInfo.round || 'S/N'} | {matchInfo.date || 'FECHA'}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {(['home', 'away'] as const).map(side => (
-            <Card key={side} className="border-none shadow-md overflow-hidden">
-              <CardHeader className={`${side === 'home' ? 'bg-amber-500' : 'bg-blue-600'} text-white p-4`}>
-                <div className="flex justify-between items-center mb-2">
-                  <CardTitle className="text-lg font-black uppercase italic">{teamNames[side]}</CardTitle>
-                  <Button onClick={() => { setCurrentSide(side); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 hover:bg-white/90">
-                    <UserPlus className="h-4 w-4 mr-2" /> INSCRIBIR
-                  </Button>
-                </div>
-                <div className="text-center bg-black/20 rounded-lg p-2">
-                   <p className="text-[10px] font-bold opacity-70">MARCADOR ACTUAL</p>
-                   <p className="text-4xl font-black">{scores[side]}</p>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-100 text-[9px] font-black uppercase text-slate-500">
-                      <tr>
-                        <th className="p-2 border-b w-10 text-center">NO.</th>
-                        <th className="p-2 border-b">NOMBRE DEL JUGADOR</th>
-                        <th className="p-2 border-b w-16 text-center">ESTS</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-sm">
-                      {lineups[side].length === 0 && (
-                        <tr><td colSpan={3} className="p-8 text-center text-slate-300 italic">No hay jugadores registrados</td></tr>
-                      )}
-                      {lineups[side].map(p => {
-                        const playerEvs = getPlayerEvents(side, p.number);
-                        const goalsCount = playerEvs.filter(e => e.category === 'goals').length;
-                        const yellowCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟨')).length;
-                        const redCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟥')).length;
-                        
-                        return (
-                          <tr 
-                            key={p.id} 
-                            className="border-b hover:bg-slate-50 cursor-pointer active:bg-slate-100"
-                            onClick={() => {
-                              setSelectedPlayer({ player: p, side });
-                              setModal('player-actions');
-                            }}
-                          >
-                            <td className="p-3 text-center font-bold text-slate-500">#{p.number}</td>
-                            <td className="p-3">
-                              <p className="font-bold uppercase text-slate-700">{p.name}</p>
-                            </td>
-                            <td className="p-3">
-                              <div className="flex gap-1 justify-center items-center">
-                                {goalsCount > 0 && <span className="text-xs font-bold text-emerald-600">⚽{goalsCount}</span>}
-                                {yellowCount > 0 && <span className="text-[10px]">🟨</span>}
-                                {redCount > 0 && <span className="text-[10px]">🟥</span>}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {(['home', 'away'] as const).map(side => {
+            const sideLineups = lineups[side] || [];
+            const starters = sideLineups.slice(0, 11);
+            const substitutes = sideLineups.slice(11);
+
+            return (
+              <Card key={side} className="border-none shadow-md overflow-hidden">
+                <CardHeader className={`${side === 'home' ? 'bg-amber-500' : 'bg-blue-600'} text-white p-4`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <CardTitle className="text-lg font-black uppercase italic">{teamNames[side]}</CardTitle>
+                    <Button onClick={() => { setCurrentSide(side); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 hover:bg-white/90 font-bold text-[10px]">
+                      <UserPlus className="h-3 w-3 mr-1" /> ALINEACIONES
+                    </Button>
+                  </div>
+                  <div className="text-center bg-black/20 rounded-lg p-2">
+                     <p className="text-[10px] font-bold opacity-70">MARCADOR ACTUAL</p>
+                     <p className="text-4xl font-black">{scores[side]}</p>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {renderPlayerTable(side, starters, "Titulares")}
+                  {renderPlayerTable(side, substitutes, "Suplentes")}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10 pb-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-6 pb-10">
           <div className="text-center">
             <button 
               onClick={() => setModal('sign-captainHome')}
-              className="border-2 border-dashed border-slate-300 w-full h-32 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden rounded-xl bg-white"
+              className="border-2 border-dashed border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden rounded-xl bg-white"
             >
               {signatures.captainHome ? (
                 <img src={signatures.captainHome} alt="Firma Cap Local" className="max-h-full" />
               ) : (
-                <span className="text-slate-300 italic text-xs">FIRMA CAPITÁN LOCAL</span>
+                <span className="text-slate-300 italic text-[10px]">FIRMA CAPITÁN LOCAL</span>
               )}
             </button>
-            <p className="text-[10px] font-black uppercase text-slate-400">Capitán / Delegado (LOCAL)</p>
+            <p className="text-[8px] font-black uppercase text-slate-400">Capitán / Delegado (LOCAL)</p>
           </div>
           
           <div className="text-center">
             <button 
               onClick={() => setModal('sign-captainAway')}
-              className="border-2 border-dashed border-slate-300 w-full h-32 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden rounded-xl bg-white"
+              className="border-2 border-dashed border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden rounded-xl bg-white"
             >
               {signatures.captainAway ? (
                 <img src={signatures.captainAway} alt="Firma Cap Visitante" className="max-h-full" />
               ) : (
-                <span className="text-slate-300 italic text-xs">FIRMA CAPITÁN VISITANTE</span>
+                <span className="text-slate-300 italic text-[10px]">FIRMA CAPITÁN VISITANTE</span>
               )}
             </button>
-            <p className="text-[10px] font-black uppercase text-slate-400">Capitán / Delegado (VISITANTE)</p>
+            <p className="text-[8px] font-black uppercase text-slate-400">Capitán / Delegado (VISITANTE)</p>
           </div>
 
           <div className="text-center">
             <button 
               onClick={() => setModal('sign-referee')}
-              className="border-2 border-dashed border-slate-300 w-full h-32 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden rounded-xl bg-white"
+              className="border-2 border-dashed border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden rounded-xl bg-white"
             >
               {signatures.referee ? (
                 <img src={signatures.referee} alt="Firma Árbitro" className="max-h-full" />
               ) : (
-                <span className="text-slate-300 italic text-xs">FIRMA ÁRBITRO CENTRAL</span>
+                <span className="text-slate-300 italic text-[10px]">FIRMA ÁRBITRO CENTRAL</span>
               )}
             </button>
-            <p className="text-[10px] font-black uppercase text-slate-400">Árbitro Central</p>
+            <p className="text-[8px] font-black uppercase text-slate-400">Árbitro Central</p>
           </div>
         </div>
 
