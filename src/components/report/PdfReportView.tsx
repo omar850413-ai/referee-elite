@@ -93,8 +93,8 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
       <div ref={reportRef} className="p-10 bg-white text-black font-sans mx-auto shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
         <div className="text-center space-y-1 mb-6">
+          <h1 className="text-2xl font-black uppercase">INFORME ARBITRAL</h1>
           <h2 className="text-lg font-bold uppercase tracking-widest">{matchInfo.league || 'TORNEO LIGA'} JORNADA {matchInfo.round || 'S/N'}</h2>
-          <h1 className="text-2xl font-black uppercase">INFORME DEL ÁRBITRO</h1>
           <div className="border-b-2 border-black w-full mt-2"></div>
         </div>
 

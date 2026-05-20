@@ -106,7 +106,7 @@ export default function Home() {
     if (!matchRef || !user) return;
     const advisorName = user.email?.toUpperCase() || '';
     const resetState: MatchState = {
-      title: `PARTIDO ${new Date().toLocaleDateString()}`,
+      title: 'INFORME ARBITRAL',
       scores: { home: 0, away: 0 },
       fouls: { home: 0, away: 0 },
       teamNames: { home: 'LOCAL', away: 'VISITA' },
@@ -223,7 +223,6 @@ export default function Home() {
   const handleAddCard = (side: 'home' | 'away', player: Player, type: 'yellow' | 'red', causalIdx: number, causalText: string) => {
     if (!matchState) return;
     const symbol = type === 'yellow' ? '🟨' : '🟥';
-    const label = type === 'yellow' ? 'AMONESTACION' : 'EXPULSION';
     const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
     const newEvent: MatchEvent = { id: Date.now(), time: timeDisplay, category: 'cards', message: `${symbol} #${player.number} ${player.name} - #${causalIdx + 1} ${causalText.toUpperCase()}${currentMinute ? ` (${currentMinute}')` : ''}`, side, playerNumber: player.number, playerName: player.name };
     updateMatch({ events: [newEvent, ...(matchState.events || [])] });
@@ -349,7 +348,6 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Botón Reiniciar al final */}
         <div className="flex justify-center pt-10 pb-10">
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -449,7 +447,6 @@ export default function Home() {
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-black uppercase">DATOS GENERALES</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2"><Label>TÍTULO DEL REPORTE</Label><Input value={matchState.title} onChange={e => updateMatch({title: e.target.value.toUpperCase()})} /></div>
             <div className="grid grid-cols-2 gap-4"><div><Label>LOCAL</Label><Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} /></div><div><Label>VISITA</Label><Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} /></div></div>
             <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value.toUpperCase()}})} placeholder="LIGA" />
             <div className="grid grid-cols-2 gap-4"><Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value.toUpperCase()}})} placeholder="JORNADA" /><Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value.toUpperCase()}})} placeholder="CAMPO" /></div>

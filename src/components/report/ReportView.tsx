@@ -133,14 +133,14 @@ export function ReportView({ matchState }: ReportViewProps) {
 
           <rect x="0" y="0" width="800" height="200" fill="rgba(0,0,0,0.3)" />
           <g transform="translate(400, 50)">
-            <text textAnchor="middle" fill="white" fontSize="24" fontWeight="900" style={{ letterSpacing: '0.1em' }} className="uppercase">
+            <text textAnchor="middle" fill="white" fontSize="30" fontWeight="900" style={{ letterSpacing: '0.1em' }} className="uppercase">
+              INFORME ARBITRAL
+            </text>
+            <text y="30" textAnchor="middle" fill="white" fontSize="18" fontWeight="800" className="uppercase">
               {matchInfo.league?.toUpperCase() || 'LIGA PROFESIONAL'}
             </text>
-            <text y="25" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="14" fontWeight="700" className="uppercase">
-              {`JORNADA ${matchInfo.round?.toUpperCase() || 'S/N'} | ${matchInfo.date || ''}`}
-            </text>
-            <text y="45" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="14" fontWeight="700" className="uppercase">
-              {matchInfo.place?.toUpperCase() || 'CAMPO POR DEFINIR'}
+            <text y="50" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="14" fontWeight="700" className="uppercase">
+              {`JORNADA ${matchInfo.round?.toUpperCase() || 'S/N'} | ${matchInfo.date || ''} | ${matchInfo.place?.toUpperCase() || '---'}`}
             </text>
             
             <g transform="translate(0, 85)">
