@@ -175,6 +175,22 @@ export default function Home() {
     setModal(null);
   };
 
+  const startListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'es-ES';
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setNewPlayerName(transcript.toUpperCase());
+      };
+      recognition.start();
+    } catch (e) { setIsListening(false); }
+  };
+
   const handleAddPlayer = (side: 'home' | 'away') => {
     if (!newPlayerNumber || !newPlayerName || !matchState) return;
     const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: 'starter' };
@@ -349,7 +365,12 @@ export default function Home() {
           <DialogHeader><DialogTitle className="text-center font-black uppercase">Inscribir Jugador</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <Input type="number" placeholder="00" className="text-2xl h-14 text-center font-black" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} />
-            <Input placeholder="Nombre completo" className="uppercase font-bold" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} />
+            <div className="relative">
+              <Input placeholder="Nombre completo" className="uppercase font-bold pr-10" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} />
+              <button onClick={startListening} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+              </button>
+            </div>
             <Button onClick={() => handleAddPlayer(currentSide)} className="w-full h-12 font-black bg-primary text-white">AGREGAR</Button>
           </div>
         </DialogContent>
@@ -385,7 +406,30 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={modal?.startsWith('sign-')} onOpenChange={() => setModal(null)}>
-        <DialogContent className="max-w-md p-0 overflow-hidden"><DialogHeader className="p-4 bg-slate-50 border-b"><DialogTitle className="text-center font-black uppercase">Firma</DialogTitle></DialogHeader><div className="p-4 space-y-4"><div className="bg-white border-2 border-dashed rounded-xl overflow-hidden touch-none relative"><canvas ref={canvasRef} width={800} height={400} className="w-full h-48 cursor-crosshair" onPointerDown={startDrawing} onPointerMove={draw} onPointerUp={() => isDrawingRef.current = false} style={{ touchAction: 'none' }} /></div><div className="flex gap-2"><Button variant="outline" onClick={initCanvas} className="flex-1 font-bold">LIMPIAR</Button><Button onClick={() => saveSignature(modal!.split('-')[1] as any)} className="flex-1 bg-emerald-600 text-white font-bold">GUARDAR</Button></div></div></DialogContent>
+        <DialogContent className="max-w-md p-0 overflow-hidden">
+          <DialogHeader className="p-4 bg-slate-50 border-b">
+            <DialogTitle className="text-center font-black uppercase">Firma</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 space-y-4">
+            <div className="bg-white border-2 border-dashed rounded-xl overflow-hidden touch-none relative">
+              <canvas 
+                ref={canvasRef} 
+                width={800} 
+                height={400} 
+                className="w-full h-48 cursor-crosshair" 
+                onPointerDown={startDrawing} 
+                onPointerMove={draw} 
+                onPointerUp={() => isDrawingRef.current = false} 
+                onPointerLeave={() => isDrawingRef.current = false}
+                style={{ touchAction: 'none' }} 
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={initCanvas} className="flex-1 font-bold">LIMPIAR</Button>
+              <Button onClick={() => saveSignature(modal!.split('-')[1] as any)} className="flex-1 bg-emerald-600 text-white font-bold">GUARDAR</Button>
+            </div>
+          </div>
+        </DialogContent>
       </Dialog>
 
       <Dialog open={modal === 'info'} onOpenChange={() => setModal(null)}>

@@ -16,7 +16,8 @@ service cloud.firestore {
     }
 
     match /matches/{matchId} {
-      allow read, write: if isApproved() && (isAdmin() || matchId == request.auth.uid || (resource != null && resource.data.ownerId == request.auth.uid) || (request.resource != null && request.resource.data.ownerId == request.auth.uid));
+      // El matchId en el setup de partido único es el UID del usuario.
+      allow read, write: if isSignedIn() && (request.auth.uid == matchId || isAdmin() || isApproved());
     }
   }
 }
