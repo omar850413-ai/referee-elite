@@ -88,6 +88,11 @@ export default function Home() {
       router.push('/login');
       return;
     }
+    
+    const isSuperAdmin = user.email === 'omar850413@gmail.com';
+    if (userProfile && !userProfile.isApproved && !isSuperAdmin) {
+      router.push('/pending-approval');
+    }
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
   useEffect(() => {
@@ -370,6 +375,9 @@ export default function Home() {
     </div>
   );
 
+  const isSuperAdmin = user?.email === 'omar850413@gmail.com';
+  const hasAdminRights = userProfile?.isAdmin || isSuperAdmin;
+
   return (
     <div className="p-2 md:p-6 bg-slate-50 min-h-screen font-sans text-slate-900">
       <div className="max-w-5xl mx-auto space-y-4">
@@ -425,6 +433,14 @@ export default function Home() {
         </div>
 
         <div className="flex justify-center gap-6 pt-10 pb-10">
+          {hasAdminRights && (
+            <Link href="/admin">
+              <Button variant="outline" size="sm" className="font-black gap-2 opacity-60 hover:opacity-100 transition-opacity uppercase text-primary border-primary">
+                <ShieldAlert className="h-4 w-4" /> PANEL DE CONTROL
+              </Button>
+            </Link>
+          )}
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm" className="font-black gap-2 opacity-60 hover:opacity-100 transition-opacity uppercase">
