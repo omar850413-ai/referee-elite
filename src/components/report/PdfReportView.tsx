@@ -121,7 +121,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           </div>
         </div>
 
-        <div className="text-center font-bold text-[12px] mb-2">REGISTRO DE JUGADORES Y ACCIONES</div>
+        <div className="text-center font-black text-[14px] mb-4 border-b pb-1">ALINEACIONES</div>
         <div className="grid grid-cols-2 gap-10 mb-8">
           <div className="space-y-1">
             {homePlayers.map(p => {
@@ -132,7 +132,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
               return (
                 <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100 py-0.5">
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1 uppercase">
                     {hasRed && '🟥'}{hasYellow && '🟨'}{p.number}.- {p.name}
                   </span>
                   <span className="flex gap-2 font-bold min-w-[30px] justify-end">
@@ -151,7 +151,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
               return (
                 <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100 py-0.5">
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1 uppercase">
                     {hasRed && '🟥'}{hasYellow && '🟨'}{p.number}.- {p.name}
                   </span>
                   <span className="flex gap-2 font-bold min-w-[30px] justify-end">
@@ -173,24 +173,24 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 <p className="font-bold underline mb-1">🟨 AMONESTACIONES:</p>
                 {homeSanciones.yellows.length > 0 ? (
                   homeSanciones.yellows.map(e => (
-                    <div key={e.id} className="border-b pb-1">
+                    <div key={e.id} className="border-b pb-1 uppercase">
                       <strong>#{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
                     </div>
                   ))
                 ) : (
-                  <p className="italic text-gray-400">Sin amonestaciones.</p>
+                  <p className="italic text-gray-400">SIN AMONESTACIONES.</p>
                 )}
               </div>
               <div>
                 <p className="font-bold underline mb-1">🟥 EXPULSIONES:</p>
                 {homeSanciones.reds.length > 0 ? (
                   homeSanciones.reds.map(e => (
-                    <div key={e.id} className="border-b pb-1">
+                    <div key={e.id} className="border-b pb-1 uppercase">
                       <strong>#{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
                     </div>
                   ))
                 ) : (
-                  <p className="italic text-gray-400">Sin expulsiones.</p>
+                  <p className="italic text-gray-400">SIN EXPULSIONES.</p>
                 )}
               </div>
             </div>
@@ -203,31 +203,31 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 <p className="font-bold underline mb-1">🟨 AMONESTACIONES:</p>
                 {awaySanciones.yellows.length > 0 ? (
                   awaySanciones.yellows.map(e => (
-                    <div key={e.id} className="border-b pb-1">
+                    <div key={e.id} className="border-b pb-1 uppercase">
                       <strong>#{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
                     </div>
                   ))
                 ) : (
-                  <p className="italic text-gray-400">Sin amonestaciones.</p>
+                  <p className="italic text-gray-400">SIN AMONESTACIONES.</p>
                 )}
               </div>
               <div>
                 <p className="font-bold underline mb-1">🟥 EXPULSIONES:</p>
                 {awaySanciones.reds.length > 0 ? (
                   awaySanciones.reds.map(e => (
-                    <div key={e.id} className="border-b pb-1">
+                    <div key={e.id} className="border-b pb-1 uppercase">
                       <strong>#{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
                     </div>
                   ))
                 ) : (
-                  <p className="italic text-gray-400">Sin expulsiones.</p>
+                  <p className="italic text-gray-400">SIN EXPULSIONES.</p>
                 )}
               </div>
             </div>
           </div>
 
           <h2 className="text-sm font-black mb-4 uppercase">INCIDENTES DEL PARTIDO:</h2>
-          <div className="text-[11px] p-4 border border-slate-200 rounded min-h-[150px] whitespace-pre-wrap">
+          <div className="text-[11px] p-4 border border-slate-200 rounded min-h-[150px] whitespace-pre-wrap uppercase">
             {incidentNote}
           </div>
         </div>
@@ -238,7 +238,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               {signatures.captainHome && <img src={signatures.captainHome} alt="Firma Cap Local" className="max-h-full" />}
             </div>
             <div className="border-t border-black w-full mb-1"></div>
-            <p className="text-[8px] font-bold uppercase">Capitán / Delegado LOCAL</p>
+            <p className="text-[8px] font-bold uppercase">CAPITÁN / DELEGADO LOCAL</p>
           </div>
           
           <div className="flex flex-col items-center">
@@ -246,7 +246,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               {signatures.referee && <img src={signatures.referee} alt="Firma Arb" className="max-h-full" />}
             </div>
             <div className="border-t border-black w-full mb-1"></div>
-            <p className="text-[8px] font-bold uppercase">Árbitro Central</p>
+            <p className="text-[8px] font-bold uppercase">ÁRBITRO CENTRAL</p>
           </div>
 
           <div className="flex flex-col items-center">
@@ -254,7 +254,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               {signatures.captainAway && <img src={signatures.captainAway} alt="Firma Cap Visitante" className="max-h-full" />}
             </div>
             <div className="border-t border-black w-full mb-1"></div>
-            <p className="text-[8px] font-bold uppercase">Capitán / Delegado VISITANTE</p>
+            <p className="text-[8px] font-bold uppercase">CAPITÁN / DELEGADO VISITANTE</p>
           </div>
         </div>
       </div>

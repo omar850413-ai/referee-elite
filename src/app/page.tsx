@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -105,9 +104,9 @@ export default function Home() {
 
   const handleResetMatch = () => {
     if (!matchRef || !user) return;
-    const advisorName = user.email || '';
+    const advisorName = user.email?.toUpperCase() || '';
     const resetState: MatchState = {
-      title: `Partido ${new Date().toLocaleDateString()}`,
+      title: `PARTIDO ${new Date().toLocaleDateString()}`,
       scores: { home: 0, away: 0 },
       fouls: { home: 0, away: 0 },
       teamNames: { home: 'LOCAL', away: 'VISITA' },
@@ -222,7 +221,7 @@ export default function Home() {
     if (!matchState) return;
     const symbol = type === 'yellow' ? '🟨' : '🟥';
     const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
-    const newEvent: MatchEvent = { id: Date.now(), time: timeDisplay, category: 'cards', message: `${symbol} #${player.number} ${player.name} - #${causalIdx + 1} ${causalText}${currentMinute ? ` (${currentMinute}')` : ''}`, side, playerNumber: player.number, playerName: player.name };
+    const newEvent: MatchEvent = { id: Date.now(), time: timeDisplay, category: 'cards', message: `${symbol} #${player.number} ${player.name} - #${causalIdx + 1} ${causalText.toUpperCase()}${currentMinute ? ` (${currentMinute}')` : ''}`, side, playerNumber: player.number, playerName: player.name };
     updateMatch({ events: [newEvent, ...(matchState.events || [])] });
     setCurrentMinute(''); setModal('player-actions');
   };
@@ -366,7 +365,7 @@ export default function Home() {
           <div className="space-y-4 py-4">
             <Input type="number" placeholder="00" className="text-2xl h-14 text-center font-black" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} />
             <div className="relative">
-              <Input placeholder="Nombre completo" className="uppercase font-bold pr-10" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} />
+              <Input placeholder="Nombre completo" className="uppercase font-bold pr-10" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value.toUpperCase())} />
               <button onClick={startListening} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
                 {isListening ? <MicOff size={20} /> : <Mic size={20} />}
               </button>
@@ -394,14 +393,14 @@ export default function Home() {
       <Dialog open={modal === 'causales'} onOpenChange={() => setModal('player-actions')}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-black uppercase">Causales - #{selectedPlayer?.player.number}</DialogTitle></DialogHeader>
-          <div className="space-y-2 py-4">{(cardType === 'yellow' ? causalesAmarilla : causalesRoja).map((causal, idx) => (<Button key={idx} variant="outline" className="w-full justify-start text-left h-auto py-2 text-xs" onClick={() => handleAddCard(selectedPlayer!.side, selectedPlayer!.player, cardType!, idx, causal)}><span className="font-bold mr-2 text-primary">#{idx + 1}</span> {causal}</Button>))}</div>
+          <div className="space-y-2 py-4">{(cardType === 'yellow' ? causalesAmarilla : causalesRoja).map((causal, idx) => (<Button key={idx} variant="outline" className="w-full justify-start text-left h-auto py-2 text-xs" onClick={() => handleAddCard(selectedPlayer!.side, selectedPlayer!.player, cardType!, idx, causal)}><span className="font-bold mr-2 text-primary">#{idx + 1}</span> {causal.toUpperCase()}</Button>))}</div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={modal === 'incidents'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-lg rounded-2xl">
           <DialogHeader><DialogTitle className="font-black uppercase">Incidentes</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4"><Textarea className="min-h-[200px]" value={tempIncidents} onChange={e => setTempIncidents(e.target.value)} /><Button onClick={() => { updateMatch({ events: [ { id: Date.now(), time: '--', category: 'notes', message: `📝 ${tempIncidents}` }, ...events.filter(e => e.category !== 'notes') ] }); setModal(null); }} className="w-full font-bold bg-primary text-white">GUARDAR</Button></div>
+          <div className="space-y-4 py-4"><Textarea className="min-h-[200px]" value={tempIncidents} onChange={e => setTempIncidents(e.target.value.toUpperCase())} /><Button onClick={() => { updateMatch({ events: [ { id: Date.now(), time: '--', category: 'notes', message: `📝 ${tempIncidents.toUpperCase()}` }, ...events.filter(e => e.category !== 'notes') ] }); setModal(null); }} className="w-full font-bold bg-primary text-white">GUARDAR</Button></div>
         </DialogContent>
       </Dialog>
 
@@ -436,12 +435,12 @@ export default function Home() {
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-black uppercase">Datos Generales</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2"><Label>Título del Reporte</Label><Input value={matchState.title} onChange={e => updateMatch({title: e.target.value})} /></div>
+            <div className="space-y-2"><Label>Título del Reporte</Label><Input value={matchState.title} onChange={e => updateMatch({title: e.target.value.toUpperCase()})} /></div>
             <div className="grid grid-cols-2 gap-4"><div><Label>Local</Label><Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} /></div><div><Label>Visita</Label><Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} /></div></div>
-            <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value}})} placeholder="Liga" />
-            <div className="grid grid-cols-2 gap-4"><Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value}})} placeholder="Jornada" /><Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value}})} placeholder="Campo" /></div>
+            <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value.toUpperCase()}})} placeholder="LIGA" />
+            <div className="grid grid-cols-2 gap-4"><Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value.toUpperCase()}})} placeholder="JORNADA" /><Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value.toUpperCase()}})} placeholder="CAMPO" /></div>
             <Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} />
-            <div className="border-t pt-4 space-y-2"><Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value}})} placeholder="Árbitro Central" /><Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value}})} placeholder="Asistente 1" /><Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value}})} placeholder="Asistente 2" /></div>
+            <div className="border-t pt-4 space-y-2"><Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value.toUpperCase()}})} placeholder="ÁRBITRO CENTRAL" /><Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value.toUpperCase()}})} placeholder="ASISTENTE 1" /><Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value.toUpperCase()}})} placeholder="ASISTENTE 2" /></div>
           </div>
         </DialogContent>
       </Dialog>
