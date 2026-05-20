@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { DialogClose, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { parseTimeToMinutes, numberToSpanishWords } from '@/lib/utils';
+import { numberToSpanishWords } from '@/lib/utils';
 
 interface ReportViewProps {
   matchState: MatchState;
@@ -15,9 +15,6 @@ interface ReportViewProps {
 export function ReportView({ matchState }: ReportViewProps) {
   const { scores, teamNames, matchInfo, events, lineups = { home: [], away: [] }, signatures = {} } = matchState;
   const svgRef = useRef<SVGSVGElement>(null);
-
-  const localBg = PlaceHolderImages.find(p => p.id === 'local-team-bg')?.imageUrl;
-  const awayBg = PlaceHolderImages.find(p => p.id === 'away-team-bg')?.imageUrl;
 
   const handleDownload = () => {
     if (!svgRef.current) return;
@@ -28,7 +25,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     svg { font-family: 'Inter', sans-serif; }`;
     svg.insertBefore(style, svg.firstChild);
     
-    const svgHeight = parseFloat(svg.getAttribute('height') || '1400');
+    const svgHeight = parseFloat(svg.getAttribute('height') || '1800');
     const svgData = new XMLSerializer().serializeToString(svg);
     svg.removeChild(style);
 
@@ -44,7 +41,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
 
     img.onload = () => {
-      ctx.fillStyle = '#0F172A';
+      ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       const jpegUrl = canvas.toDataURL('image/jpeg', 0.95);
@@ -58,163 +55,173 @@ export function ReportView({ matchState }: ReportViewProps) {
   };
 
   const safeEvents = events || [];
-  const sorter = (a: MatchEvent, b: MatchEvent) => (a.id || 0) - (b.id || 0);
-
   const homePlayers = lineups.home || [];
   const awayPlayers = lineups.away || [];
 
-  const homeEvents = safeEvents.filter(e => e.side === 'home').sort(sorter);
-  const awayEvents = safeEvents.filter(e => e.side === 'away').sort(sorter);
-  const incidents = safeEvents.find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES.';
+  const homeStarters = homePlayers.slice(0, 11);
+  const homeSubs = homePlayers.slice(11);
+  const awayStarters = awayPlayers.slice(0, 11);
+  const awaySubs = awayPlayers.slice(11);
 
-  // Render a column of players
-  const renderPlayersList = (players: Player[], x: number, y: number, side: 'home' | 'away') => {
-    return (
-      <g>
-        <text x={x} y={y - 15} fontSize="14" fontWeight="900" fill="white" opacity="0.5" textAnchor="middle">
-          {players.length > 0 ? (players.length <= 11 ? 'TITULARES' : 'PLANTILLA') : ''}
+  const homeCards = safeEvents.filter(e => e.side === 'home' && e.category === 'cards');
+  const awayCards = safeEvents.filter(e => e.side === 'away' && e.category === 'cards');
+  const incidents = safeEvents.find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
+
+  // Helper to render player list text
+  const renderPlayerBlock = (players: Player[], x: number, y: number, title: string) => (
+    <g transform={`translate(${x}, ${y})`}>
+      <text x="0" y="-10" fontSize="12" fontWeight="900" fill="white" opacity="0.6" textAnchor="start">{title}</text>
+      {players.map((p, i) => (
+        <text key={p.id} x="0" y={15 + (i * 16)} fontSize="11" fill="white" fontWeight="700">
+          {`#${p.number} ${p.name}`}
         </text>
-        {players.map((p, i) => (
-          <text key={p.id} x={x} y={y + (i * 18)} fontSize="12" fill="white" textAnchor="middle" fontWeight="700">
-            {`#${p.number} ${p.name}`}
-          </text>
-        ))}
-      </g>
-    );
-  };
+      ))}
+    </g>
+  );
 
-  const homeColor = '#065F46'; // Emerald 800
-  const awayColor = '#1E40AF'; // Blue 800
+  const homeColor = '#064E3B'; // Emerald 900 (Fondo Local)
+  const awayColor = '#1E3A8A'; // Blue 900 (Fondo Visita)
   
-  // Dynamic Height calculation
-  const maxPlayers = Math.max(homePlayers.length, awayPlayers.length);
-  const maxEvents = Math.max(homeEvents.length, awayEvents.length);
-  const playersHeight = maxPlayers * 18 + 50;
-  const eventsHeight = maxEvents * 25 + 100;
-  const svgHeight = 750 + playersHeight + eventsHeight + 200;
+  // Calculate dynamic height
+  const maxPlayersCount = Math.max(homePlayers.length, awayPlayers.length);
+  const playersSecHeight = (maxPlayersCount * 18) + 80;
+  const cardsSecHeight = (Math.max(homeCards.length, awayCards.length) * 22) + 100;
+  const svgHeight = 450 + playersSecHeight + cardsSecHeight + 400;
 
   return (
     <div className="w-full max-h-[90vh] overflow-y-auto p-4 bg-slate-900 rounded-xl">
-       <DialogHeader className="px-2 pb-4 text-left">
-            <DialogTitle className="text-white font-black italic uppercase">Cédula Digital JPG</DialogTitle>
-            <DialogDescription className="text-slate-400">
-             Diseño optimizado para compartir. Incluye alineaciones y marcador en texto.
-            </DialogDescription>
-        </DialogHeader>
+      <DialogHeader className="px-2 pb-4 text-left">
+        <DialogTitle className="text-white font-black italic uppercase">Cédula Digital Profesional</DialogTitle>
+        <DialogDescription className="text-slate-400">
+          Informe en formato JPG de alta resolución para compartir.
+        </DialogDescription>
+      </DialogHeader>
       
       <div className="relative w-full max-w-[800px] mx-auto border-4 border-white/10 rounded-lg overflow-hidden">
         <svg
           ref={svgRef}
           viewBox={`0 0 800 ${svgHeight}`}
+          width="800"
           height={svgHeight}
           xmlns="http://www.w3.org/2000/svg"
-          className="max-w-full h-auto"
+          className="max-w-full h-auto bg-white"
         >
-          {/* Backgrounds */}
-          <rect x="0" y="0" width="800" height={svgHeight} fill="#0F172A" />
+          {/* Fondo por equipo */}
           <rect x="0" y="0" width="400" height={svgHeight} fill={homeColor} />
           <rect x="400" y="0" width="400" height={svgHeight} fill={awayColor} />
 
-          {localBg && <image href={localBg} x="-100" y="200" width="600" height="600" opacity="0.08" />}
-          {awayBg && <image href={awayBg} x="300" y="200" width="600" height="600" opacity="0.08" />}
-
-          {/* Header */}
-          <g transform="translate(400, 60)">
-            <text textAnchor="middle" fill="white" fontSize="22" fontWeight="900" style={{ letterSpacing: '0.1em' }}>
+          {/* Encabezado General (Info Partido) */}
+          <rect x="0" y="0" width="800" height="180" fill="rgba(0,0,0,0.3)" />
+          <g transform="translate(400, 50)">
+            <text textAnchor="middle" fill="white" fontSize="24" fontWeight="900" style={{ letterSpacing: '0.1em' }}>
               {matchInfo.league?.toUpperCase() || 'LIGA PROFESIONAL'}
             </text>
-            <text y="25" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="14" fontWeight="700">
+            <text y="25" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="14" fontWeight="700">
               {`JORNADA ${matchInfo.round || 'S/N'} | ${matchInfo.date || ''}`}
             </text>
-            <text y="45" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="14" fontWeight="700">
+            <text y="45" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="14" fontWeight="700">
               {matchInfo.place?.toUpperCase() || 'CAMPO POR DEFINIR'}
             </text>
-          </g>
-
-          {/* Team Names & Big Scores */}
-          <g transform="translate(200, 180)">
-             <text textAnchor="middle" fill="white" fontSize="32" fontWeight="900" style={{ letterSpacing: '-0.02em' }}>{teamNames.home.toUpperCase()}</text>
-             <text y="100" textAnchor="middle" fill="white" fontSize="120" fontWeight="900">{scores.home}</text>
-             <text y="140" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="18" fontWeight="800">{`(${numberToSpanishWords(scores.home)})`}</text>
-          </g>
-
-          <g transform="translate(600, 180)">
-             <text textAnchor="middle" fill="white" fontSize="32" fontWeight="900" style={{ letterSpacing: '-0.02em' }}>{teamNames.away.toUpperCase()}</text>
-             <text y="100" textAnchor="middle" fill="white" fontSize="120" fontWeight="900">{scores.away}</text>
-             <text y="140" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="18" fontWeight="800">{`(${numberToSpanishWords(scores.away)})`}</text>
-          </g>
-
-          {/* Players Lists */}
-          <g transform="translate(0, 400)">
-             {renderPlayersList(homePlayers, 200, 30, 'home')}
-             {renderPlayersList(awayPlayers, 600, 30, 'away')}
-          </g>
-
-          {/* Events Detail */}
-          <g transform={`translate(0, ${400 + playersHeight})`}>
-            <rect x="50" width="700" height="2" fill="white" opacity="0.1" />
             
-            <g transform="translate(200, 40)">
-              <text textAnchor="middle" fill="white" fontSize="16" fontWeight="900">INCIDENCIAS LOCAL</text>
-              {homeEvents.map((e, idx) => (
-                <text key={e.id} y={30 + (idx * 22)} x="0" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="12">
+            <g transform="translate(0, 75)">
+              <text textAnchor="middle" fill="white" fontSize="12" fontWeight="800">Cuerpo Arbitral:</text>
+              <text y="18" textAnchor="middle" fill="white" fontSize="11" fontWeight="400">CENTRAL: {matchInfo.referee?.toUpperCase() || '---'}</text>
+              <text y="34" textAnchor="middle" fill="white" fontSize="11" fontWeight="400">A1: {matchInfo.assistant1?.toUpperCase() || '---'} | A2: {matchInfo.assistant2?.toUpperCase() || '---'}</text>
+            </g>
+          </g>
+
+          {/* Marcador Central */}
+          <g transform="translate(200, 280)">
+             <text textAnchor="middle" fill="white" fontSize="36" fontWeight="900" style={{ letterSpacing: '-0.02em' }}>{teamNames.home.toUpperCase()}</text>
+             <text y="100" textAnchor="middle" fill="white" fontSize="130" fontWeight="900">{scores.home}</text>
+             <text y="140" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="20" fontWeight="800">{`(${numberToSpanishWords(scores.home)})`}</text>
+          </g>
+
+          <g transform="translate(600, 280)">
+             <text textAnchor="middle" fill="white" fontSize="36" fontWeight="900" style={{ letterSpacing: '-0.02em' }}>{teamNames.away.toUpperCase()}</text>
+             <text y="100" textAnchor="middle" fill="white" fontSize="130" fontWeight="900">{scores.away}</text>
+             <text y="140" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="20" fontWeight="800">{`(${numberToSpanishWords(scores.away)})`}</text>
+          </g>
+
+          {/* Alineaciones (Titulares y Suplentes) */}
+          <g transform="translate(40, 480)">
+             {renderPlayerBlock(homeStarters, 0, 30, 'TITULARES')}
+             {renderPlayerBlock(homeSubs, 0, 240, 'SUPLENTES')}
+          </g>
+          <g transform="translate(440, 480)">
+             {renderPlayerBlock(awayStarters, 0, 30, 'TITULARES')}
+             {renderPlayerBlock(awaySubs, 0, 240, 'SUPLENTES')}
+          </g>
+
+          {/* Detalle de Tarjetas */}
+          <g transform={`translate(0, ${480 + playersSecHeight})`}>
+            <rect width="800" height={cardsSecHeight} fill="rgba(0,0,0,0.2)" />
+            <g transform="translate(40, 40)">
+              <text fontSize="14" fontWeight="900" fill="white" textAnchor="start">TARJETAS LOCAL ({teamNames.home})</text>
+              {homeCards.map((e, idx) => (
+                <text key={e.id} y={30 + (idx * 20)} x="0" fill="white" fontSize="11" opacity="0.9">
                   {e.message}
                 </text>
               ))}
             </g>
-
-            <g transform="translate(600, 40)">
-              <text textAnchor="middle" fill="white" fontSize="16" fontWeight="900">INCIDENCIAS VISITA</text>
-              {awayEvents.map((e, idx) => (
-                <text key={e.id} y={30 + (idx * 22)} x="0" textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="12">
+            <g transform="translate(440, 40)">
+              <text fontSize="14" fontWeight="900" fill="white" textAnchor="start">TARJETAS VISITA ({teamNames.away})</text>
+              {awayCards.map((e, idx) => (
+                <text key={e.id} y={30 + (idx * 20)} x="0" fill="white" fontSize="11" opacity="0.9">
                   {e.message}
                 </text>
               ))}
             </g>
           </g>
 
-          {/* Narrative / Notes */}
-          <g transform={`translate(400, ${400 + playersHeight + eventsHeight})`}>
-             <text textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="14" fontWeight="900">OBSERVACIONES DEL ENCUENTRO</text>
-             <foreignObject x="-350" y="15" width="700" height="100">
-                <p xmlns="http://www.w3.org/1999/xhtml" style={{ color: 'white', fontSize: '12px', textAlign: 'center', margin: 0, opacity: 0.8 }}>
+          {/* Incidentes del Partido */}
+          <g transform={`translate(400, ${480 + playersSecHeight + cardsSecHeight + 50})`}>
+             <text textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16" fontWeight="900">INCIDENTES DEL PARTIDO</text>
+             <foreignObject x="-350" y="20" width="700" height="200">
+                <div xmlns="http://www.w3.org/1999/xhtml" style={{ color: 'white', fontSize: '13px', textAlign: 'center', lineHeight: '1.4', opacity: 0.9 }}>
                   {incidents}
-                </p>
+                </div>
              </foreignObject>
           </g>
 
-          {/* Signatures */}
+          {/* Firmas (Local - Arbitro - Visitante) */}
           <g transform={`translate(0, ${svgHeight - 160})`}>
+            {/* Local */}
             <g transform="translate(150, 0)">
-              {signatures.captainHome && <image href={signatures.captainHome} x="-60" y="-70" width="120" height="60" />}
-              <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="1" opacity="0.3" />
-              <text y="15" textAnchor="middle" fill="white" fontSize="10" fontWeight="900">CAPITÁN LOCAL</text>
+              {signatures.captainHome && <image href={signatures.captainHome} x="-70" y="-80" width="140" height="70" />}
+              <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="1.5" opacity="0.5" />
+              <text y="20" textAnchor="middle" fill="white" fontSize="11" fontWeight="900">CAPITÁN / DELEGADO LOCAL</text>
             </g>
 
+            {/* Árbitro */}
             <g transform="translate(400, 0)">
-              {signatures.referee && <image href={signatures.referee} x="-60" y="-70" width="120" height="60" />}
-              <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="1" opacity="0.3" />
-              <text y="15" textAnchor="middle" fill="white" fontSize="10" fontWeight="900">ÁRBITRO CENTRAL</text>
+              {signatures.referee && <image href={signatures.referee} x="-70" y="-80" width="140" height="70" />}
+              <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="1.5" opacity="0.5" />
+              <text y="20" textAnchor="middle" fill="white" fontSize="11" fontWeight="900">ÁRBITRO CENTRAL</text>
             </g>
 
+            {/* Visitante */}
             <g transform="translate(650, 0)">
-              {signatures.captainAway && <image href={signatures.captainAway} x="-60" y="-70" width="120" height="60" />}
-              <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="1" opacity="0.3" />
-              <text y="15" textAnchor="middle" fill="white" fontSize="10" fontWeight="900">CAPITÁN VISITANTE</text>
+              {signatures.captainAway && <image href={signatures.captainAway} x="-70" y="-80" width="140" height="70" />}
+              <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="1.5" opacity="0.5" />
+              <text y="20" textAnchor="middle" fill="white" fontSize="11" fontWeight="900">CAPITÁN / DELEGADO VISITANTE</text>
             </g>
           </g>
 
-          <text x="400" y={svgHeight - 20} textAnchor="middle" fill="white" opacity="0.3" fontSize="10" fontWeight="900" style={{ letterSpacing: '0.2em' }}>CEDULA DIGITAL GENERADA POR ASESOR PRO</text>
+          {/* Pie de página */}
+          <text x="400" y={svgHeight - 30} textAnchor="middle" fill="white" opacity="0.4" fontSize="11" fontWeight="900" style={{ letterSpacing: '0.3em' }}>
+            CEDULA DIGITAL GENERADA POR ASESOR PRO
+          </text>
         </svg>
       </div>
 
-      <div className="flex justify-center gap-3 mt-6">
-        <Button onClick={handleDownload} className="bg-emerald-600 hover:bg-emerald-700 font-bold px-8">
-          <Download className="mr-2 h-4 w-4" /> DESCARGAR JPG
+      <div className="flex justify-center gap-3 mt-8">
+        <Button onClick={handleDownload} className="bg-emerald-600 hover:bg-emerald-700 font-bold px-10 h-12">
+          <Download className="mr-2 h-5 w-5" /> DESCARGAR IMAGEN JPG
         </Button>
         <DialogClose asChild>
-          <Button variant="outline" className="text-white border-white/20 hover:bg-white/10">
-            CERRAR
+          <Button variant="outline" className="text-white border-white/20 hover:bg-white/10 h-12">
+            CERRAR VISTA PREVIA
           </Button>
         </DialogClose>
       </div>
