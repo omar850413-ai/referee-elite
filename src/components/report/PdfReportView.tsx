@@ -59,13 +59,18 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
   };
 
   const getPlayerEvents = (team: 'home' | 'away', number: string) => {
-    return events.filter(e => e.side === team && e.playerNumber === number);
+    return (events || []).filter(e => e.side === team && e.playerNumber === number);
   };
 
   const homePlayers = getPlayersByType('home');
   const awayPlayers = getPlayersByType('away');
-  const cards = events.filter(e => e.category === 'cards').sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
-  const incidentNote = events.find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
+  
+  const cardEvents = (events || []).filter(e => e.category === 'cards').sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+  
+  const homeCards = cardEvents.filter(e => e.side === 'home');
+  const awayCards = cardEvents.filter(e => e.side === 'away');
+
+  const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
   return (
     <div className="bg-gray-100 p-4 max-h-screen overflow-y-auto rounded-lg relative">
@@ -143,13 +148,35 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
         <div className="mt-10 border-t-2 border-black pt-6">
           <h2 className="text-sm font-bold mb-4 uppercase">DETALLE DE TARJETAS:</h2>
-          <div className="space-y-2 mb-8 text-[11px]">
-            {cards.map(e => (
-              <div key={e.id} className="border-b pb-1">
-                <strong>({e.side?.toUpperCase()}) #{e.playerNumber} {e.playerName}</strong>: {e.message.split(' - ')[0]} - {e.message.split(' - ')[1]}
-              </div>
-            ))}
-            {cards.length === 0 && <p className="italic text-gray-400">Sin amonestaciones ni expulsiones.</p>}
+          
+          <div className="mb-6">
+            <h3 className="text-[11px] font-black border-b border-black mb-2 uppercase">{teamNames.home} (LOCAL)</h3>
+            <div className="space-y-1 text-[10px]">
+              {homeCards.length > 0 ? (
+                homeCards.map(e => (
+                  <div key={e.id} className="border-b pb-1">
+                    <strong>#{e.playerNumber} {e.playerName}</strong>: {e.message.split(' - ')[0]} - {e.message.split(' - ')[1]}
+                  </div>
+                ))
+              ) : (
+                <p className="italic text-gray-400">Sin amonestaciones ni expulsiones para el equipo local.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <h3 className="text-[11px] font-black border-b border-black mb-2 uppercase">{teamNames.away} (VISITANTE)</h3>
+            <div className="space-y-1 text-[10px]">
+              {awayCards.length > 0 ? (
+                awayCards.map(e => (
+                  <div key={e.id} className="border-b pb-1">
+                    <strong>#{e.playerNumber} {e.playerName}</strong>: {e.message.split(' - ')[0]} - {e.message.split(' - ')[1]}
+                  </div>
+                ))
+              ) : (
+                <p className="italic text-gray-400">Sin amonestaciones ni expulsiones para el equipo visitante.</p>
+              )}
+            </div>
           </div>
 
           <h2 className="text-sm font-black mb-4 uppercase">INCIDENTES DEL PARTIDO:</h2>
@@ -169,18 +196,18 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           
           <div className="flex flex-col items-center">
             <div className="h-20 w-full flex items-center justify-center mb-1">
-              {signatures.captainAway && <img src={signatures.captainAway} alt="Firma Cap Visitante" className="max-h-full" />}
-            </div>
-            <div className="border-t border-black w-full mb-1"></div>
-            <p className="text-[8px] font-bold uppercase">Capitán / Delegado VISITANTE</p>
-          </div>
-
-          <div className="flex flex-col items-center">
-            <div className="h-20 w-full flex items-center justify-center mb-1">
               {signatures.referee && <img src={signatures.referee} alt="Firma Arb" className="max-h-full" />}
             </div>
             <div className="border-t border-black w-full mb-1"></div>
             <p className="text-[8px] font-bold uppercase">Árbitro Central</p>
+          </div>
+
+          <div className="flex flex-col items-center">
+            <div className="h-20 w-full flex items-center justify-center mb-1">
+              {signatures.captainAway && <img src={signatures.captainAway} alt="Firma Cap Visitante" className="max-h-full" />}
+            </div>
+            <div className="border-t border-black w-full mb-1"></div>
+            <p className="text-[8px] font-bold uppercase">Capitán / Delegado VISITANTE</p>
           </div>
         </div>
       </div>
