@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -11,50 +12,40 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // New function to identify the super admin by email
     function isSuperAdmin() {
       return isSignedIn() && request.auth.token.email == 'omar850413@gmail.com';
     }
 
     function isUserApproved() {
-      // An approved user is the super admin OR a user with isApproved: true in their profile.
       return isSuperAdmin() || (isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isApproved == true);
     }
     
     function isRequestingUserAdmin() {
-      // The super admin is always an admin. Others must have the flag.
       return isSuperAdmin() || (isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true);
     }
 
     // Rules for User Profiles
     match /users/{userId} {
-      // A user can read their own profile. An admin can read any profile.
       allow get: if isOwner(userId) || isRequestingUserAdmin();
-      // An admin can list all user profiles for the control panel.
       allow list: if isRequestingUserAdmin();
-      
-      // ANY signed-in user can create their OWN profile document...
       allow create: if isOwner(userId) &&
-                      // ... and they must provide their own email
                       request.resource.data.email == request.auth.token.email &&
-                      // ... BUT if they are NOT the super admin, they CANNOT set isAdmin or isApproved to true.
                       (isSuperAdmin() || (request.resource.data.isAdmin == false && request.resource.data.isApproved == false));
-
-      // An admin can update any user profile (e.g., to approve them). 
-      // A user can update their OWN profile, but cannot change their isAdmin or isApproved status.
       allow update: if isRequestingUserAdmin() || 
                       (isOwner(userId) && 
                        request.resource.data.isAdmin == resource.data.isAdmin &&
                        request.resource.data.isApproved == resource.data.isApproved);
-
-      // An admin can delete any user.
       allow delete: if isRequestingUserAdmin();
     }
 
     // Rules for Match Data
     match /matches/{matchId} {
-      // Only approved users can read or write match data.
-      allow read, write: if isUserApproved();
+      // Un usuario solo puede leer/escribir sus propios partidos (ownerId == auth.uid)
+      // Los administradores pueden leer todos los partidos para supervisión.
+      allow read: if isUserApproved() && (resource.data.ownerId == request.auth.uid || isRequestingUserAdmin());
+      allow create: if isUserApproved() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isUserApproved() && resource.data.ownerId == request.auth.uid;
+      allow delete: if isUserApproved() && resource.data.ownerId == request.auth.uid;
     }
   }
 }

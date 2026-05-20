@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "MatchState": {
@@ -6,6 +7,7 @@
       "type": "object",
       "description": "Represents the overall state of a match, including scores, timer, events, and team names.",
       "properties": {
+        "title": { "type": "string", "description": "A descriptive title for the match." },
         "scores": {
           "$ref": "#/entities/Scores"
         },
@@ -30,9 +32,10 @@
         },
         "penaltyShootout": {
           "$ref": "#/entities/PenaltyShootout"
-        }
+        },
+        "ownerId": { "type": "string", "description": "The UID of the user who created the match." }
       },
-      "required": ["scores", "fouls", "timer", "events", "teamNames", "matchInfo"]
+      "required": ["scores", "fouls", "timer", "events", "teamNames", "matchInfo", "ownerId"]
     },
     "Scores": {
       "title": "Scores",

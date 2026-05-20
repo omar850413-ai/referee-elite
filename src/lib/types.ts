@@ -1,3 +1,4 @@
+
 export interface Scores {
   home: number;
   away: number;
@@ -84,6 +85,8 @@ export interface Signatures {
 }
 
 export interface MatchState {
+  id?: string;
+  title: string;
   scores: Scores;
   fouls: Fouls;
   timer: Timer;
@@ -103,6 +106,8 @@ export interface MatchState {
   attendance?: string;
   timing?: MatchTiming;
   signatures?: Signatures;
+  ownerId: string;
+  createdAt?: number;
 }
 
 export interface UserProfile {
