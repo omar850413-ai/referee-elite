@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
@@ -21,7 +22,8 @@ import { useToast } from '@/hooks/use-toast';
 import { PdfReportView } from '@/components/report/PdfReportView';
 import { Logo } from '@/components/ui/Logo';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check } from 'lucide-react';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check, Pencil, X } from 'lucide-react';
+import { causalesAmarilla, causalesRoja } from '@/lib/causales';
 
 interface MatchPageProps {
   user: User;
@@ -39,6 +41,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const [modal, setModal] = useState<string | null>(null);
   const [currentSide, setCurrentSide] = useState<'home' | 'away'>('home');
   const [isPdfReportOpen, setIsPdfReportOpen] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<{player: Player, side: 'home' | 'away'} | null>(null);
+  const [cardType, setCardType] = useState<'yellow' | 'red' | null>(null);
 
   // Form states
   const [newPlayerNumber, setNewPlayerNumber] = useState('');
@@ -66,7 +70,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       });
   };
 
-  // Voice Dictation
+  // Voice Dictation Fix
   const startListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -74,15 +78,28 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'es-ES';
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setNewPlayerName(transcript.toUpperCase());
-    };
-    recognition.start();
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'es-ES';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+      recognition.onerror = (event: any) => {
+        console.error("Speech Recognition Error", event.error);
+        setIsListening(false);
+        toast({ variant: "destructive", title: "Error de audio", description: "No se pudo acceder al micrófono." });
+      };
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setNewPlayerName(transcript.toUpperCase());
+      };
+      recognition.start();
+    } catch (e) {
+      console.error(e);
+      setIsListening(false);
+    }
   };
 
   const handleAddPlayer = (side: 'home' | 'away') => {
@@ -123,6 +140,41 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     });
     
     toast({ title: `Gol registrado para #${player.number}` });
+  };
+
+  const handleAddCard = (side: 'home' | 'away', player: Player, type: 'yellow' | 'red', causalIdx: number, causalText: string) => {
+    if (!matchState) return;
+    
+    const symbol = type === 'yellow' ? '🟨' : '🟥';
+    const newEvent: MatchEvent = {
+      id: Date.now(),
+      time: '--',
+      category: 'cards',
+      message: `${symbol} #${player.number} ${player.name} - #${causalIdx + 1} ${causalText}`,
+      side: side,
+      playerNumber: player.number,
+      playerName: player.name
+    };
+
+    updateMatch({ 
+      events: [newEvent, ...(matchState.events || [])]
+    });
+    
+    setModal(null);
+    toast({ title: `Tarjeta registrada para #${player.number}` });
+  };
+
+  const removeEvent = (eventId: number) => {
+    if (!matchState) return;
+    const eventToRemove = matchState.events.find(e => e.id === eventId);
+    let updatedScores = { ...matchState.scores };
+    
+    if (eventToRemove?.category === 'goals' && eventToRemove.side) {
+      updatedScores[eventToRemove.side] = Math.max(0, updatedScores[eventToRemove.side] - 1);
+    }
+
+    const updatedEvents = matchState.events.filter(e => e.id !== eventId);
+    updateMatch({ events: updatedEvents, scores: updatedScores });
   };
 
   // Signature Canvas Logic
@@ -199,8 +251,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
   const { teamNames, matchInfo, lineups = { home: [], away: [] }, events = [], signatures = {} } = matchState;
 
-  const getPlayerGoals = (side: 'home' | 'away', number: string) => {
-    return events.filter(e => e.side === side && e.playerNumber === number && e.category === 'goals').length;
+  const getPlayerEvents = (side: 'home' | 'away', number: string) => {
+    return events.filter(e => e.side === side && e.playerNumber === number);
   };
 
   return (
@@ -239,101 +291,93 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         {/* MAIN GRID - 2 COLUMNS (LOCAL / VISITANTE) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          {/* LOCAL TEAM */}
-          <Card className="border-none shadow-md overflow-hidden">
-            <CardHeader className="bg-amber-500 text-white p-4 flex flex-row justify-between items-center">
-              <CardTitle className="text-lg font-black uppercase italic">{teamNames.home}</CardTitle>
-              <Button onClick={() => { setCurrentSide('home'); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-amber-600 hover:bg-white/90">
-                <UserPlus className="h-4 w-4 mr-2" /> INSCRIBIR
-              </Button>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead className="bg-slate-100 text-[10px] font-black uppercase text-slate-500">
-                    <tr>
-                      <th className="p-2 border-b w-12 text-center">GOL</th>
-                      <th className="p-2 border-b w-12 text-center">NO.</th>
-                      <th className="p-2 border-b">NOMBRE / APELLIDO</th>
-                      <th className="p-2 border-b w-10"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm">
-                    {lineups.home.length === 0 && (
-                      <tr><td colSpan={4} className="p-8 text-center text-slate-300 italic">No hay jugadores registrados</td></tr>
-                    )}
-                    {lineups.home.map(p => (
-                      <tr key={p.id} className="border-b hover:bg-slate-50">
-                        <td className="p-2 text-center">
-                          <button 
-                            onClick={() => handleAddGoal('home', p)}
-                            className="bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded-md hover:bg-emerald-200 transition-colors"
-                          >
-                            {getPlayerGoals('home', p.number) || 0}
-                          </button>
-                        </td>
-                        <td className="p-2 text-center font-bold text-slate-500">#{p.number}</td>
-                        <td className="p-2 font-medium uppercase">{p.name}</td>
-                        <td className="p-2 text-right">
-                          <button onClick={() => handleRemovePlayer('home', p.id)} className="text-slate-300 hover:text-red-500">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
+          {/* TEAM RENDER HELPER */}
+          {(['home', 'away'] as const).map(side => (
+            <Card key={side} className="border-none shadow-md overflow-hidden">
+              <CardHeader className={`${side === 'home' ? 'bg-amber-500' : 'bg-blue-600'} text-white p-4 flex flex-row justify-between items-center`}>
+                <CardTitle className="text-lg font-black uppercase italic">{teamNames[side]}</CardTitle>
+                <Button onClick={() => { setCurrentSide(side); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 hover:bg-white/90">
+                  <UserPlus className="h-4 w-4 mr-2" /> INSCRIBIR
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-slate-100 text-[9px] font-black uppercase text-slate-500">
+                      <tr>
+                        <th className="p-2 border-b w-10 text-center">NO.</th>
+                        <th className="p-2 border-b">NOMBRE</th>
+                        <th className="p-2 border-b w-32 text-center">ACCIONES</th>
+                        <th className="p-2 border-b w-10"></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* VISITANTE TEAM */}
-          <Card className="border-none shadow-md overflow-hidden">
-            <CardHeader className="bg-blue-600 text-white p-4 flex flex-row justify-between items-center">
-              <CardTitle className="text-lg font-black uppercase italic">{teamNames.away}</CardTitle>
-              <Button onClick={() => { setCurrentSide('away'); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-blue-600 hover:bg-white/90">
-                <UserPlus className="h-4 w-4 mr-2" /> INSCRIBIR
-              </Button>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead className="bg-slate-100 text-[10px] font-black uppercase text-slate-500">
-                    <tr>
-                      <th className="p-2 border-b w-12 text-center">GOL</th>
-                      <th className="p-2 border-b w-12 text-center">NO.</th>
-                      <th className="p-2 border-b">NOMBRE / APELLIDO</th>
-                      <th className="p-2 border-b w-10"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm">
-                    {lineups.away.length === 0 && (
-                      <tr><td colSpan={4} className="p-8 text-center text-slate-300 italic">No hay jugadores registrados</td></tr>
-                    )}
-                    {lineups.away.map(p => (
-                      <tr key={p.id} className="border-b hover:bg-slate-50">
-                        <td className="p-2 text-center">
-                          <button 
-                            onClick={() => handleAddGoal('away', p)}
-                            className="bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded-md hover:bg-emerald-200 transition-colors"
-                          >
-                            {getPlayerGoals('away', p.number) || 0}
-                          </button>
-                        </td>
-                        <td className="p-2 text-center font-bold text-slate-500">#{p.number}</td>
-                        <td className="p-2 font-medium uppercase">{p.name}</td>
-                        <td className="p-2 text-right">
-                          <button onClick={() => handleRemovePlayer('away', p.id)} className="text-slate-300 hover:text-red-500">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+                    </thead>
+                    <tbody className="text-sm">
+                      {lineups[side].length === 0 && (
+                        <tr><td colSpan={4} className="p-8 text-center text-slate-300 italic">No hay jugadores</td></tr>
+                      )}
+                      {lineups[side].map(p => {
+                        const playerEvs = getPlayerEvents(side, p.number);
+                        const goalsCount = playerEvs.filter(e => e.category === 'goals').length;
+                        return (
+                          <tr key={p.id} className="border-b hover:bg-slate-50 group">
+                            <td className="p-2 text-center font-bold text-slate-500">#{p.number}</td>
+                            <td className="p-2 font-medium uppercase truncate max-w-[120px]">
+                              {p.name}
+                              <div className="flex gap-1 mt-1">
+                                {playerEvs.filter(e => e.category === 'cards').map(e => (
+                                  <span key={e.id} className="text-[10px] font-bold">
+                                    {e.message.split(' - ')[0].split(' ')[0]} {e.message.split(' - ')[0].split(' ')[2] || ''}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="p-2">
+                              <div className="flex gap-1 justify-center">
+                                <Button 
+                                  onClick={() => handleAddGoal(side, p)}
+                                  size="icon" variant="outline" className="h-7 w-7 bg-emerald-50 border-emerald-200 text-emerald-700"
+                                >
+                                  {goalsCount > 0 ? goalsCount : <span className="text-[10px]">⚽</span>}
+                                </Button>
+                                <Button 
+                                  onClick={() => { setSelectedPlayer({player: p, side}); setCardType('yellow'); setModal('causales'); }}
+                                  size="icon" variant="outline" className="h-7 w-7 bg-yellow-50 border-yellow-200 text-yellow-600"
+                                >
+                                  🟨
+                                </Button>
+                                <Button 
+                                  onClick={() => { setSelectedPlayer({player: p, side}); setCardType('red'); setModal('causales'); }}
+                                  size="icon" variant="outline" className="h-7 w-7 bg-red-50 border-red-200 text-red-600"
+                                >
+                                  🟥
+                                </Button>
+                              </div>
+                            </td>
+                            <td className="p-2 text-right">
+                              <div className="flex gap-1">
+                                <Button 
+                                  onClick={() => { setSelectedPlayer({player: p, side}); setModal('edit-player'); }} 
+                                  variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-primary"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button 
+                                  onClick={() => handleRemovePlayer(side, p.id)} 
+                                  variant="ghost" size="icon" className="h-7 w-7 text-slate-300 hover:text-red-500"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {/* SIGNATURE SECTION */}
@@ -409,6 +453,57 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         </DialogContent>
       </Dialog>
 
+      {/* MODAL: CAUSALES */}
+      <Dialog open={modal === 'causales'} onOpenChange={() => setModal(null)}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-center font-black uppercase">
+              {cardType === 'yellow' ? 'Causales Amarilla' : 'Causales Roja'} - #{selectedPlayer?.player.number}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            {(cardType === 'yellow' ? causalesAmarilla : causalesRoja).map((causal, idx) => (
+              <Button 
+                key={idx} 
+                variant="outline" 
+                className="w-full justify-start text-left h-auto py-2 text-xs"
+                onClick={() => handleAddCard(selectedPlayer!.side, selectedPlayer!.player, cardType!, idx, causal)}
+              >
+                <span className="font-bold mr-2 text-primary">#{idx + 1}</span> {causal}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL: EDIT PLAYER EVENTS */}
+      <Dialog open={modal === 'edit-player'} onOpenChange={() => setModal(null)}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-center font-black uppercase">Gestionar: {selectedPlayer?.player.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-xs text-slate-400 font-bold uppercase">Eventos registrados:</p>
+            <div className="space-y-2">
+              {selectedPlayer && getPlayerEvents(selectedPlayer.side, selectedPlayer.player.number).map(e => (
+                <div key={e.id} className="flex justify-between items-center p-2 bg-slate-50 border rounded-lg">
+                  <span className="text-xs font-medium">{e.message}</span>
+                  <Button 
+                    onClick={() => removeEvent(e.id)}
+                    variant="ghost" size="icon" className="h-6 w-6 text-red-500"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              {selectedPlayer && getPlayerEvents(selectedPlayer.side, selectedPlayer.player.number).length === 0 && (
+                <p className="text-center text-slate-300 italic text-sm py-4">Sin eventos</p>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* MODAL: SIGNATURES */}
       <Dialog open={modal === 'sign-captain' || modal === 'sign-referee'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-md rounded-2xl p-0 overflow-hidden">
@@ -467,6 +562,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             <div className="border-t pt-4 space-y-2">
               <p className="text-[10px] font-black uppercase text-slate-400">Cuerpo Arbitral</p>
               <Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value}})} placeholder="Árbitro Central" />
+              <Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value}})} placeholder="Asistente 1" />
+              <Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value}})} placeholder="Asistente 2" />
             </div>
           </div>
         </DialogContent>
@@ -480,3 +577,4 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     </div>
   );
 }
+
