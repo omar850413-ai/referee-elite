@@ -22,7 +22,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -35,7 +34,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft } from 'lucide-react';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft, ArrowRightLeft } from 'lucide-react';
 import { causalesAmarilla, causalesRoja } from '@/lib/causales';
 import Link from 'next/link';
 
@@ -50,10 +49,11 @@ export default function Home() {
   const [currentSide, setCurrentSide] = useState<'home' | 'away'>('home');
   const [isPdfReportOpen, setIsPdfReportOpen] = useState(false);
   const [isImageReportOpen, setIsImageReportOpen] = useState(false);
-  const [selectedPlayer, setSelectedPlayer] = useState<{player: Player, side: 'home' | 'away'} | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<{player: Player, side: 'home' | 'away', isSub: boolean} | null>(null);
   const [cardType, setCardType] = useState<'yellow' | 'red' | null>(null);
   const [newPlayerNumber, setNewPlayerNumber] = useState('');
   const [newPlayerName, setNewPlayerName] = useState('');
+  const [subReplacedNumber, setSubReplacedNumber] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [tempIncidents, setTempIncidents] = useState('');
   const [currentMinute, setCurrentMinute] = useState('');
@@ -78,10 +78,6 @@ export default function Home() {
     if (!user) {
       router.push('/login');
       return;
-    }
-    const isSuperAdmin = user.email === 'omar850413@gmail.com';
-    if (!isSuperAdmin && !userProfile?.isApproved) {
-      router.push('/pending-approval');
     }
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
@@ -122,7 +118,7 @@ export default function Home() {
       ownerId: user.uid
     };
     setDoc(matchRef, resetState).then(() => {
-      toast({ title: "Información Reiniciada" });
+      toast({ title: "INFORMACIÓN REINICIADA" });
       setModal(null);
     });
   };
@@ -197,8 +193,9 @@ export default function Home() {
 
   const handleAddPlayer = (side: 'home' | 'away') => {
     if (!newPlayerNumber || !newPlayerName || !matchState) return;
-    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: 'starter' };
     const currentLineups = matchState.lineups || { home: [], away: [] };
+    const isSubstitute = currentLineups[side].length >= 11;
+    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: isSubstitute ? 'substitute' : 'starter' };
     updateMatch({ lineups: { ...currentLineups, [side]: [...currentLineups[side], player] } });
     setNewPlayerNumber(''); setNewPlayerName(''); setModal(null);
   };
@@ -231,6 +228,27 @@ export default function Home() {
     setCurrentMinute(''); setModal('player-actions');
   };
 
+  const handleRegisterSubstitution = () => {
+    if (!selectedPlayer || !matchState || !subReplacedNumber) return;
+    const { side, player } = selectedPlayer;
+    const updatedLineups = { ...matchState.lineups };
+    updatedLineups[side] = updatedLineups[side].map(p => p.id === player.id ? { ...p, replacedNumber: subReplacedNumber } : p);
+    
+    const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
+    const newEvent: MatchEvent = { 
+      id: Date.now(), 
+      time: timeDisplay, 
+      category: 'substitution', 
+      message: `🔄 ENTRÓ #${player.number} ${player.name} SALIÓ #${subReplacedNumber}${currentMinute ? ` (${currentMinute}')` : ''}`, 
+      side,
+      playerNumber: player.number,
+      playerName: player.name
+    };
+    
+    updateMatch({ lineups: updatedLineups, events: [newEvent, ...(matchState.events || [])] });
+    setSubReplacedNumber(''); setCurrentMinute(''); setModal(null);
+  };
+
   const handleLogout = async () => {
     await signOut(auth);
     localStorage.removeItem('sessionId');
@@ -257,9 +275,8 @@ export default function Home() {
   }
 
   const { teamNames, matchInfo, lineups = { home: [], away: [] }, events = [], signatures = {}, scores } = matchState;
-  const isAdmin = userProfile?.isAdmin || user?.email === 'omar850413@gmail.com';
 
-  const renderPlayerTable = (side: 'home' | 'away', players: Player[], title: string) => (
+  const renderPlayerTable = (side: 'home' | 'away', players: Player[], title: string, isSubList: boolean) => (
     <div className="mb-4">
       <div className="bg-slate-100 p-2 border-y"><p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{title}</p></div>
       <table className="w-full text-left border-collapse">
@@ -271,11 +288,14 @@ export default function Home() {
             const yellow = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟨'));
             const red = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟥'));
             return (
-              <tr key={p.id} className="border-b hover:bg-slate-50 cursor-pointer" onClick={() => { setSelectedPlayer({ player: p, side }); setModal('player-actions'); }}>
+              <tr key={p.id} className="border-b hover:bg-slate-50 cursor-pointer" onClick={() => { setSelectedPlayer({ player: p, side, isSub: isSubList }); setModal('player-actions'); }}>
                 <td className="p-2 text-center font-bold text-slate-400 w-10">#{p.number}</td>
                 <td className="p-2">
                   <div className="flex justify-between items-center">
-                    <p className="font-bold uppercase text-slate-700 text-xs">{p.name}</p>
+                    <div>
+                      <p className="font-bold uppercase text-slate-700 text-xs">{p.name}</p>
+                      {p.replacedNumber && <p className="text-[9px] font-black text-slate-400">ENTRÓ POR: #{p.replacedNumber}</p>}
+                    </div>
                     <div className="flex gap-4 items-center">
                       {goals > 0 && <span className="text-[11px] font-black text-emerald-600">⚽{goals}</span>}
                       {ownGoals > 0 && <span className="text-[11px] font-black text-orange-600">🥅{ownGoals}</span>}
@@ -296,27 +316,17 @@ export default function Home() {
     <div className="p-2 md:p-6 bg-slate-50 min-h-screen font-sans text-slate-900">
       <div className="max-w-5xl mx-auto space-y-4">
         
-        {/* LOGO AT THE VERY TOP */}
         <div className="flex justify-center py-6">
           <Logo />
         </div>
 
         <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border">
           <div className="flex flex-col gap-3">
-            {isAdmin && (
-              <div className="flex justify-center mb-1">
-                <Link href="/admin">
-                  <Button variant="ghost" size="sm" className="text-primary font-bold gap-2">
-                    <ShieldAlert className="h-4 w-4" /> PANEL ADMIN
-                  </Button>
-                </Link>
-              </div>
-            )}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <Button onClick={() => setModal('info')} className="bg-indigo-600 text-white font-black h-12 shadow-md"><Settings2 className="h-5 w-5 mr-2" /> DATOS PARTIDO</Button>
-              <Button onClick={() => { setTempIncidents(events.find(e => e.category === 'notes')?.message.replace('📝 ', '') || ''); setModal('incidents'); }} className="bg-rose-500 text-white font-black h-12 shadow-md"><AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES</Button>
-              <Button onClick={() => setIsPdfReportOpen(true)} className="bg-slate-900 text-white font-black h-12 shadow-md">PDF</Button>
-              <Button onClick={() => setIsImageReportOpen(true)} className="bg-emerald-500 text-white font-black h-12 shadow-md">IMAGEN</Button>
+              <Button onClick={() => setModal('info')} className="bg-indigo-600 text-white font-black h-12 shadow-md uppercase"><Settings2 className="h-5 w-5 mr-2" /> DATOS PARTIDO</Button>
+              <Button onClick={() => { setTempIncidents(events.find(e => e.category === 'notes')?.message.replace('📝 ', '') || ''); setModal('incidents'); }} className="bg-rose-500 text-white font-black h-12 shadow-md uppercase"><AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES</Button>
+              <Button onClick={() => setIsPdfReportOpen(true)} className="bg-slate-900 text-white font-black h-12 shadow-md uppercase">PDF</Button>
+              <Button onClick={() => setIsImageReportOpen(true)} className="bg-emerald-500 text-white font-black h-12 shadow-md uppercase">IMAGEN</Button>
             </div>
           </div>
         </div>
@@ -327,15 +337,15 @@ export default function Home() {
               <CardHeader className={`${side === 'home' ? 'bg-amber-500' : 'bg-blue-600'} text-white p-4`}>
                 <div className="flex justify-between items-center mb-2">
                   <CardTitle className="text-lg font-black uppercase italic">{teamNames[side]}</CardTitle>
-                  <Button onClick={() => { setCurrentSide(side); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[10px]"><UserPlus className="h-3 w-3 mr-1" /> JUGADOR</Button>
+                  <Button onClick={() => { setCurrentSide(side); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[10px] uppercase"><UserPlus className="h-3 w-3 mr-1" /> JUGADOR</Button>
                 </div>
                 <div className="text-center bg-black/20 rounded-lg p-2">
                   <Input type="number" value={scores[side]} onChange={e => updateMatch({ scores: { ...scores, [side]: parseInt(e.target.value) || 0 } })} className="bg-transparent border-none text-center text-4xl font-black text-white h-auto p-0 focus-visible:ring-0" />
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                {renderPlayerTable(side, lineups[side].slice(0, 11), "TITULARES")}
-                {renderPlayerTable(side, lineups[side].slice(11), "SUPLENTES")}
+                {renderPlayerTable(side, lineups[side].slice(0, 11), "TITULARES", false)}
+                {renderPlayerTable(side, lineups[side].slice(11), "SUPLENTES", true)}
               </CardContent>
             </Card>
           ))}
@@ -345,36 +355,35 @@ export default function Home() {
           {(['captainHome', 'referee', 'captainAway'] as const).map(type => (
             <div key={type} className="text-center">
               <button onClick={() => setModal(`sign-${type}`)} className="border-2 border-dashed border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 rounded-xl bg-white overflow-hidden">
-                {signatures[type] ? <img src={signatures[type]} className="max-h-full" /> : <span className="text-slate-300 italic text-[10px]">FIRMA {type.toUpperCase()}</span>}
+                {signatures[type] ? <img src={signatures[type]} className="max-h-full" /> : <span className="text-slate-300 italic text-[10px] uppercase">FIRMA {type.toUpperCase()}</span>}
               </button>
               <p className="text-[8px] font-black uppercase text-slate-400">{type === 'referee' ? 'ÁRBITRO CENTRAL' : `CAPITÁN ${type.includes('Home') ? 'LOCAL' : 'VISITANTE'}`}</p>
             </div>
           ))}
         </div>
 
-        {/* BOTTOM BUTTONS (RESET AND LOGOUT) */}
         <div className="flex justify-center gap-6 pt-10 pb-10">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm" className="font-black gap-2 opacity-60 hover:opacity-100 transition-opacity">
+              <Button variant="destructive" size="sm" className="font-black gap-2 opacity-60 hover:opacity-100 transition-opacity uppercase">
                 <RotateCcw className="h-4 w-4" /> REINICIAR REPORTE
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>¿REINICIAR INFORMACIÓN?</AlertDialogTitle>
-                <AlertDialogDescription>
+                <AlertDialogTitle className="uppercase">¿REINICIAR INFORMACIÓN?</AlertDialogTitle>
+                <AlertDialogDescription className="uppercase">
                   ¿ESTÁS SEGURO DE REINICIAR LOS DATOS DEL PARTIDO? ESTA ACCIÓN NO SE PUEDE DESHACER.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>CANCELAR</AlertDialogCancel>
-                <AlertDialogAction onClick={handleResetMatch} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">ACEPTAR</AlertDialogAction>
+                <AlertDialogCancel className="uppercase">CANCELAR</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetMatch} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 uppercase">ACEPTAR</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
 
-          <Button onClick={handleLogout} variant="ghost" size="sm" className="text-red-500 font-black gap-2 opacity-60 hover:opacity-100 transition-opacity">
+          <Button onClick={handleLogout} variant="ghost" size="sm" className="text-red-500 font-black gap-2 opacity-60 hover:opacity-100 transition-opacity uppercase">
             <LogOut className="h-4 w-4" /> SALIR
           </Button>
         </div>
@@ -391,7 +400,7 @@ export default function Home() {
                 {isListening ? <MicOff size={20} /> : <Mic size={20} />}
               </button>
             </div>
-            <Button onClick={() => handleAddPlayer(currentSide)} className="w-full h-12 font-black bg-primary text-white">AGREGAR</Button>
+            <Button onClick={() => handleAddPlayer(currentSide)} className="w-full h-12 font-black bg-primary text-white uppercase">AGREGAR</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -406,8 +415,24 @@ export default function Home() {
               <div className={`p-6 text-white text-center ${selectedPlayer.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}><p className="text-4xl font-black">#{selectedPlayer.player.number}</p><p className="text-xl font-bold uppercase italic">{selectedPlayer.player.name}</p></div>
               <div className="p-6 space-y-4 bg-white">
                 <div className="space-y-2"><Label className="flex items-center gap-2 text-xs font-black uppercase text-slate-400"><Clock size={14} /> MINUTO (OPCIONAL)</Label><Input type="number" placeholder="MIN" className="h-10 text-center font-bold" value={currentMinute} onChange={e => setCurrentMinute(e.target.value)} /></div>
-                <div className="grid grid-cols-2 gap-3"><Button onClick={() => handleAddGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-emerald-600 text-white">⚽ GOL</Button><Button onClick={() => handleAddOwnGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-orange-600 text-white">🥅 AUTOGOL</Button></div>
-                <div className="grid grid-cols-2 gap-3"><Button onClick={() => { setCardType('yellow'); setModal('causales'); }} className="h-14 font-black bg-yellow-400 text-yellow-900">🟨 AMONESTACION</Button><Button onClick={() => { setCardType('red'); setModal('causales'); }} className="h-14 font-black bg-red-600 text-white">🟥 EXPULSION</Button></div>
+                
+                {selectedPlayer.isSub && (
+                  <div className="space-y-2 border-b pb-4">
+                    <Label className="text-xs font-black uppercase text-slate-400">REGISTRAR CAMBIO</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="N° SALE" 
+                        className="font-bold text-center" 
+                        value={subReplacedNumber} 
+                        onChange={e => setSubReplacedNumber(e.target.value)} 
+                      />
+                      <Button onClick={handleRegisterSubstitution} className="bg-indigo-600 text-white font-bold uppercase">ENTRA POR</Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3"><Button onClick={() => handleAddGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-emerald-600 text-white uppercase">⚽ GOL</Button><Button onClick={() => handleAddOwnGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-orange-600 text-white uppercase">🥅 AUTOGOL</Button></div>
+                <div className="grid grid-cols-2 gap-3"><Button onClick={() => { setCardType('yellow'); setModal('causales'); }} className="h-14 font-black bg-yellow-400 text-yellow-900 uppercase">🟨 AMONESTACION</Button><Button onClick={() => { setCardType('red'); setModal('causales'); }} className="h-14 font-black bg-red-600 text-white uppercase">🟥 EXPULSION</Button></div>
               </div>
             </div>
           )}
@@ -424,7 +449,7 @@ export default function Home() {
       <Dialog open={modal === 'incidents'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-lg rounded-2xl">
           <DialogHeader><DialogTitle className="font-black uppercase">INCIDENTES</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4"><Textarea className="min-h-[200px]" value={tempIncidents} onChange={e => setTempIncidents(e.target.value.toUpperCase())} /><Button onClick={() => { updateMatch({ events: [ { id: Date.now(), time: '--', category: 'notes', message: `📝 ${tempIncidents.toUpperCase()}` }, ...events.filter(e => e.category !== 'notes') ] }); setModal(null); }} className="w-full font-bold bg-primary text-white">GUARDAR</Button></div>
+          <div className="space-y-4 py-4"><Textarea className="min-h-[200px]" value={tempIncidents} onChange={e => setTempIncidents(e.target.value.toUpperCase())} /><Button onClick={() => { updateMatch({ events: [ { id: Date.now(), time: '--', category: 'notes', message: `📝 ${tempIncidents.toUpperCase()}` }, ...events.filter(e => e.category !== 'notes') ] }); setModal(null); }} className="w-full font-bold bg-primary text-white uppercase">GUARDAR</Button></div>
         </DialogContent>
       </Dialog>
 
@@ -448,8 +473,8 @@ export default function Home() {
               />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={initCanvas} className="flex-1 font-bold">LIMPIAR</Button>
-              <Button onClick={() => saveSignature(modal!.split('-')[1] as any)} className="flex-1 bg-emerald-600 text-white font-bold">GUARDAR</Button>
+              <Button variant="outline" onClick={initCanvas} className="flex-1 font-bold uppercase">LIMPIAR</Button>
+              <Button onClick={() => saveSignature(modal!.split('-')[1] as any)} className="flex-1 bg-emerald-600 text-white font-bold uppercase">GUARDAR</Button>
             </div>
           </div>
         </DialogContent>
@@ -459,7 +484,7 @@ export default function Home() {
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-black uppercase">DATOS GENERALES</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4"><div><Label>LOCAL</Label><Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} /></div><div><Label>VISITA</Label><Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} /></div></div>
+            <div className="grid grid-cols-2 gap-4"><div><Label className="uppercase">LOCAL</Label><Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} /></div><div><Label className="uppercase">VISITA</Label><Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} /></div></div>
             <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value.toUpperCase()}})} placeholder="LIGA" />
             <div className="grid grid-cols-2 gap-4"><Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value.toUpperCase()}})} placeholder="JORNADA" /><Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value.toUpperCase()}})} placeholder="CAMPO" /></div>
             <Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} />

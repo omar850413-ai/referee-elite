@@ -27,6 +27,7 @@ export interface Player {
   number: string;
   name: string;
   type: 'starter' | 'substitute';
+  replacedNumber?: string;
 }
 
 export interface StaffMember {
@@ -115,5 +116,5 @@ export interface UserProfile {
   isApproved: boolean;
   isAdmin: boolean;
   sessionId?: string;
-  appId?: string; // Identificador para separar apps en el mismo proyecto
+  appId?: string; 
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef } from 'react';
@@ -81,18 +82,18 @@ export function ReportView({ matchState }: ReportViewProps) {
     const redCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟥')).length;
     
     let icons = '';
-    if (goalsCount > 0) icons += `    ⚽${goalsCount}`;
-    if (yellowCount > 0) icons += '   🟨';
-    if (redCount > 0) icons += '   🟥';
+    if (goalsCount > 0) icons += `  ⚽${goalsCount}`;
+    if (yellowCount > 0) icons += ' 🟨';
+    if (redCount > 0) icons += ' 🟥';
     return icons;
   };
 
-  const renderPlayerBlock = (side: 'home' | 'away', players: Player[], x: number, y: number, title: string) => (
+  const renderPlayerBlock = (side: 'home' | 'away', players: Player[], x: number, y: number, title: string, isSub: boolean) => (
     <g transform={`translate(${x}, ${y})`}>
       <text x="0" y="-10" fontSize="12" fontWeight="900" fill="white" opacity="0.6" textAnchor="start">{title}</text>
       {players.map((p, i) => (
-        <text key={p.id} x="0" y={15 + (i * 18)} fontSize="11" fill="white" fontWeight="700" className="uppercase">
-          {`#${p.number} ${p.name.toUpperCase()}${getPlayerEventIcons(side, p.number)}`}
+        <text key={p.id} x="0" y={15 + (i * 18)} fontSize="10" fill="white" fontWeight="700" className="uppercase">
+          {`#${p.number} ${p.name.toUpperCase()}${getPlayerEventIcons(side, p.number)}${isSub && p.replacedNumber ? ` (SALIÓ: #${p.replacedNumber})` : ''}`}
         </text>
       ))}
     </g>
@@ -137,27 +138,21 @@ export function ReportView({ matchState }: ReportViewProps) {
               INFORME ARBITRAL
             </text>
             <text y="30" textAnchor="middle" fill="white" fontSize="18" fontWeight="800" className="uppercase">
-              {matchInfo.league?.toUpperCase() || 'LIGA PROFESIONAL'}
+              {matchInfo.league?.toUpperCase() || 'LIGA'}
             </text>
             <text y="50" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="14" fontWeight="700" className="uppercase">
-              {`JORNADA ${matchInfo.round?.toUpperCase() || 'S/N'} | ${matchInfo.date || ''} | ${matchInfo.place?.toUpperCase() || '---'}`}
+              {`JORNADA ${matchInfo.round?.toUpperCase() || 'S/N'} | ${matchInfo.date || ''}`}
             </text>
-            
-            <g transform="translate(0, 85)">
-              <text textAnchor="middle" fill="white" fontSize="12" fontWeight="800">CUERPO ARBITRAL:</text>
-              <text y="18" textAnchor="middle" fill="white" fontSize="11" fontWeight="400" className="uppercase">CENTRAL: {matchInfo.referee?.toUpperCase() || '---'}</text>
-              <text y="34" textAnchor="middle" fill="white" fontSize="11" fontWeight="400" className="uppercase">A1: {matchInfo.assistant1?.toUpperCase() || '---'} | A2: {matchInfo.assistant2?.toUpperCase() || '---'}</text>
-            </g>
           </g>
 
           <g transform="translate(200, 300)">
-             <text textAnchor="middle" fill="white" fontSize="36" fontWeight="900" style={{ letterSpacing: '-0.02em' }} className="uppercase">{teamNames.home.toUpperCase()}</text>
+             <text textAnchor="middle" fill="white" fontSize="36" fontWeight="900" className="uppercase">{teamNames.home.toUpperCase()}</text>
              <text y="100" textAnchor="middle" fill="white" fontSize="130" fontWeight="900">{scores.home}</text>
              <text y="140" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="20" fontWeight="800">{`(${numberToSpanishWords(scores.home)})`}</text>
           </g>
 
           <g transform="translate(600, 300)">
-             <text textAnchor="middle" fill="white" fontSize="36" fontWeight="900" style={{ letterSpacing: '-0.02em' }} className="uppercase">{teamNames.away.toUpperCase()}</text>
+             <text textAnchor="middle" fill="white" fontSize="36" fontWeight="900" className="uppercase">{teamNames.away.toUpperCase()}</text>
              <text y="100" textAnchor="middle" fill="white" fontSize="130" fontWeight="900">{scores.away}</text>
              <text y="140" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="20" fontWeight="800">{`(${numberToSpanishWords(scores.away)})`}</text>
           </g>
@@ -165,15 +160,15 @@ export function ReportView({ matchState }: ReportViewProps) {
           <g transform="translate(40, 480)">
              <text x="0" y="0" fontSize="18" fontWeight="900" fill="white" textAnchor="start">ALINEACIONES</text>
              <g transform="translate(0, 20)">
-               {renderPlayerBlock('home', homeStarters, 0, 30, 'TITULARES')}
-               {renderPlayerBlock('home', homeSubs, 0, 260, 'SUPLENTES')}
+               {renderPlayerBlock('home', homeStarters, 0, 30, 'TITULARES', false)}
+               {renderPlayerBlock('home', homeSubs, 0, 260, 'SUPLENTES / CAMBIOS', true)}
              </g>
           </g>
           <g transform="translate(440, 480)">
              <text x="0" y="0" fontSize="18" fontWeight="900" fill="white" textAnchor="start">ALINEACIONES</text>
              <g transform="translate(0, 20)">
-               {renderPlayerBlock('away', awayStarters, 0, 30, 'TITULARES')}
-               {renderPlayerBlock('away', awaySubs, 0, 260, 'SUPLENTES')}
+               {renderPlayerBlock('away', awayStarters, 0, 30, 'TITULARES', false)}
+               {renderPlayerBlock('away', awaySubs, 0, 260, 'SUPLENTES / CAMBIOS', true)}
              </g>
           </g>
 
@@ -181,34 +176,34 @@ export function ReportView({ matchState }: ReportViewProps) {
             <rect width="800" height={cardsSecHeight} fill="rgba(0,0,0,0.2)" />
             <g transform="translate(40, 40)">
               <text fontSize="14" fontWeight="900" fill="white" textAnchor="start" className="uppercase">SANCIONES {teamNames.home}</text>
-              <text y="25" fill="white" fontSize="10" fontWeight="800" opacity="0.6">AMONESTACIONES (🟨):</text>
-              {homeSanciones.yellows.map((e, idx) => (
-                <text key={e.id} y={45 + (idx * 20)} x="0" fill="white" fontSize="11" opacity="0.9" className="uppercase">
-                   #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
-                </text>
-              ))}
-              <g transform={`translate(0, ${40 + homeSanciones.yellows.length * 20})`}>
-                <text y="25" fill="white" fontSize="10" fontWeight="800" opacity="0.6">EXPULSIONES (🟥):</text>
+              <g transform="translate(0, 30)">
+                {homeSanciones.yellows.map((e, idx) => (
+                  <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
+                     🟨 #{e.playerNumber} {e.playerName?.toUpperCase()} ({e.time}) - {e.message.split(' - ').pop()?.toUpperCase()}
+                  </text>
+                ))}
+              </g>
+              <g transform={`translate(0, ${50 + homeSanciones.yellows.length * 20})`}>
                 {homeSanciones.reds.map((e, idx) => (
-                  <text key={e.id} y={45 + (idx * 20)} x="0" fill="white" fontSize="11" opacity="0.9" className="uppercase">
-                    #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
+                  <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
+                    🟥 #{e.playerNumber} {e.playerName?.toUpperCase()} ({e.time}) - {e.message.split(' - ').pop()?.toUpperCase()}
                   </text>
                 ))}
               </g>
             </g>
             <g transform="translate(440, 40)">
               <text fontSize="14" fontWeight="900" fill="white" textAnchor="start" className="uppercase">SANCIONES {teamNames.away}</text>
-              <text y="25" fill="white" fontSize="10" fontWeight="800" opacity="0.6">AMONESTACIONES (🟨):</text>
-              {awaySanciones.yellows.map((e, idx) => (
-                <text key={e.id} y={45 + (idx * 20)} x="0" fill="white" fontSize="11" opacity="0.9" className="uppercase">
-                   #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
-                </text>
-              ))}
-              <g transform={`translate(0, ${40 + awaySanciones.yellows.length * 20})`}>
-                <text y="25" fill="white" fontSize="10" fontWeight="800" opacity="0.6">EXPULSIONES (🟥):</text>
+              <g transform="translate(0, 30)">
+                {awaySanciones.yellows.map((e, idx) => (
+                  <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
+                     🟨 #{e.playerNumber} {e.playerName?.toUpperCase()} ({e.time}) - {e.message.split(' - ').pop()?.toUpperCase()}
+                  </text>
+                ))}
+              </g>
+              <g transform={`translate(0, ${50 + awaySanciones.yellows.length * 20})`}>
                 {awaySanciones.reds.map((e, idx) => (
-                  <text key={e.id} y={45 + (idx * 20)} x="0" fill="white" fontSize="11" opacity="0.9" className="uppercase">
-                    #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
+                  <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
+                    🟥 #{e.playerNumber} {e.playerName?.toUpperCase()} ({e.time}) - {e.message.split(' - ').pop()?.toUpperCase()}
                   </text>
                 ))}
               </g>
@@ -218,44 +213,40 @@ export function ReportView({ matchState }: ReportViewProps) {
           <g transform={`translate(400, ${520 + playersSecHeight + cardsSecHeight + 50})`}>
              <text textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16" fontWeight="900">INCIDENTES DEL PARTIDO</text>
              <foreignObject x="-350" y="20" width="700" height="200">
-                <div xmlns="http://www.w3.org/1999/xhtml" style={{ color: 'white', fontSize: '13px', textAlign: 'center', lineHeight: '1.4', opacity: 0.9, textTransform: 'uppercase' }}>
+                <div xmlns="http://www.w3.org/1999/xhtml" style={{ color: 'white', fontSize: '12px', textAlign: 'center', lineHeight: '1.3', opacity: 0.9, textTransform: 'uppercase' }}>
                   {incidents}
                 </div>
              </foreignObject>
           </g>
 
-          <g transform={`translate(0, ${svgHeight - 160})`}>
+          <g transform={`translate(0, ${svgHeight - 140})`}>
             <g transform="translate(150, 0)">
-              {signatures.captainHome && <image href={signatures.captainHome} x="-70" y="-80" width="140" height="70" />}
-              <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="1.5" opacity="0.5" />
-              <text y="20" textAnchor="middle" fill="white" fontSize="11" fontWeight="900">CAPITÁN / DELEGADO LOCAL</text>
+              {signatures.captainHome && <image href={signatures.captainHome} x="-60" y="-70" width="120" height="60" />}
+              <line x1="-80" x2="80" y1="0" y2="0" stroke="white" strokeWidth="1" opacity="0.5" />
+              <text y="15" textAnchor="middle" fill="white" fontSize="9" fontWeight="900">CAPITÁN LOCAL</text>
             </g>
 
             <g transform="translate(400, 0)">
-              {signatures.referee && <image href={signatures.referee} x="-70" y="-80" width="140" height="70" />}
-              <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="1.5" opacity="0.5" />
-              <text y="20" textAnchor="middle" fill="white" fontSize="11" fontWeight="900">ÁRBITRO CENTRAL</text>
+              {signatures.referee && <image href={signatures.referee} x="-60" y="-70" width="120" height="60" />}
+              <line x1="-80" x2="80" y1="0" y2="0" stroke="white" strokeWidth="1" opacity="0.5" />
+              <text y="15" textAnchor="middle" fill="white" fontSize="9" fontWeight="900">ÁRBITRO CENTRAL</text>
             </g>
 
             <g transform="translate(650, 0)">
-              {signatures.captainAway && <image href={signatures.captainAway} x="-70" y="-80" width="140" height="70" />}
-              <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="1.5" opacity="0.5" />
-              <text y="20" textAnchor="middle" fill="white" fontSize="11" fontWeight="900">CAPITÁN / DELEGADO VISITANTE</text>
+              {signatures.captainAway && <image href={signatures.captainAway} x="-60" y="-70" width="120" height="60" />}
+              <line x1="-80" x2="80" y1="0" y2="0" stroke="white" strokeWidth="1" opacity="0.5" />
+              <text y="15" textAnchor="middle" fill="white" fontSize="9" fontWeight="900">CAPITÁN VISITANTE</text>
             </g>
           </g>
-
-          <text x="400" y={svgHeight - 30} textAnchor="middle" fill="white" opacity="0.4" fontSize="11" fontWeight="900" style={{ letterSpacing: '0.3em' }}>
-            CEDULA DIGITAL GENERADA POR REFEREE ELITE
-          </text>
         </svg>
       </div>
 
       <div className="flex justify-center gap-3 mt-8">
-        <Button onClick={handleDownload} className="bg-emerald-600 hover:bg-emerald-700 font-bold px-10 h-12">
+        <Button onClick={handleDownload} className="bg-emerald-600 hover:bg-emerald-700 font-bold px-10 h-12 uppercase">
           <Download className="mr-2 h-5 w-5" /> DESCARGAR IMAGEN JPG
         </Button>
         <DialogClose asChild>
-          <Button variant="outline" className="text-white border-white/20 hover:bg-white/10 h-12">
+          <Button variant="outline" className="text-white border-white/20 hover:bg-white/10 h-12 uppercase">
             CERRAR VISTA PREVIA
           </Button>
         </DialogClose>
