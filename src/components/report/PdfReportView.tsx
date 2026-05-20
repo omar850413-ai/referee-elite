@@ -125,14 +125,14 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               const hasRed = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟥'));
 
               return (
-                <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100">
+                <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100 py-0.5">
                   <span>
                     {p.number}.- {p.name}
-                    <span className="ml-2">
-                      {goalsCount > 0 && `⚽${goalsCount}`}
-                      {hasYellow && ' 🟨'}
-                      {hasRed && ' 🟥'}
-                    </span>
+                  </span>
+                  <span className="flex gap-2 font-bold min-w-[30px] justify-end">
+                    {goalsCount > 0 && `⚽${goalsCount}`}
+                    {hasYellow && ' 🟨'}
+                    {hasRed && ' 🟥'}
                   </span>
                 </div>
               );
@@ -146,14 +146,14 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               const hasRed = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟥'));
 
               return (
-                <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100">
+                <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100 py-0.5">
                   <span>
                     {p.number}.- {p.name}
-                    <span className="ml-2">
-                      {goalsCount > 0 && `⚽${goalsCount}`}
-                      {hasYellow && ' 🟨'}
-                      {hasRed && ' 🟥'}
-                    </span>
+                  </span>
+                  <span className="flex gap-2 font-bold min-w-[30px] justify-end">
+                    {goalsCount > 0 && `⚽${goalsCount}`}
+                    {hasYellow && ' 🟨'}
+                    {hasRed && ' 🟥'}
                   </span>
                 </div>
               );

@@ -25,7 +25,7 @@ import { PdfReportView } from '@/components/report/PdfReportView';
 import { ReportView } from '@/components/report/ReportView';
 import { Logo } from '@/components/ui/Logo';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check, Pencil, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check, Pencil, AlertCircle, Image as ImageIcon, ShieldAlert } from 'lucide-react';
 import { causalesAmarilla, causalesRoja } from '@/lib/causales';
 
 interface MatchPageProps {
@@ -344,12 +344,12 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
               >
                 <td className="p-2 text-center font-bold text-slate-500 w-10">#{p.number}</td>
                 <td className="p-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-bold uppercase text-slate-700 text-xs">{p.name}</p>
-                    <div className="flex gap-1 items-center">
-                      {goalsCount > 0 && <span className="text-[10px] font-bold text-emerald-600">⚽{goalsCount}</span>}
-                      {yellowCount > 0 && <span className="text-[10px]">🟨</span>}
-                      {redCount > 0 && <span className="text-[10px]">🟥</span>}
+                  <div className="flex justify-between items-center pr-2">
+                    <p className="font-bold uppercase text-slate-700 text-xs truncate max-w-[150px]">{p.name}</p>
+                    <div className="flex gap-3 items-center ml-4">
+                      {goalsCount > 0 && <span className="text-[11px] font-black text-emerald-600">⚽{goalsCount}</span>}
+                      {yellowCount > 0 && <span className="text-[11px]">🟨</span>}
+                      {redCount > 0 && <span className="text-[11px]">🟥</span>}
                     </div>
                   </div>
                 </td>
@@ -365,29 +365,40 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     <div className="p-2 md:p-6 bg-slate-50 min-h-screen font-sans text-slate-900">
       <div className="max-w-5xl mx-auto space-y-4">
         
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border">
-          <Logo className="scale-110" />
-          <div className="flex gap-2 flex-wrap justify-center">
-            <Button onClick={() => setModal('info')} variant="outline" size="sm" className="font-bold border-2">
-              <Settings2 className="h-4 w-4 mr-2" /> DATOS PARTIDO
-            </Button>
-            <Button onClick={() => { setTempIncidents(currentIncidents); setModal('incidents'); }} variant="outline" size="sm" className="font-bold border-2">
-              <AlertCircle className="h-4 w-4 mr-2" /> INCIDENTES
-            </Button>
-            <Button onClick={() => setIsPdfReportOpen(true)} variant="default" size="sm" className="bg-slate-800 font-bold">
-              <FileText className="h-4 w-4 mr-2" /> CÉDULA PDF
-            </Button>
-            <Button onClick={() => setIsImageReportOpen(true)} variant="secondary" size="sm" className="bg-primary text-white font-bold hover:bg-primary/90">
-              <ImageIcon className="h-4 w-4 mr-2" /> INFORME IMAGEN
-            </Button>
-            {isAdmin && (
-              <Link href="/admin">
-                <Button variant="secondary" size="sm">Admin</Button>
-              </Link>
-            )}
+        <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border">
+          <div className="flex justify-between items-center w-full">
+            <div className="flex items-center gap-4">
+              <Logo className="scale-110" />
+              {isAdmin && (
+                <Link href="/admin">
+                  <Button variant="ghost" size="sm" className="text-primary font-bold gap-2">
+                    <ShieldAlert className="h-4 w-4" /> PANEL
+                  </Button>
+                </Link>
+              )}
+            </div>
             <Button onClick={handleLogout} variant="ghost" size="sm" className="text-red-500">
               <LogOut className="h-4 w-4" />
             </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => setModal('info')} variant="outline" size="sm" className="font-bold border-2 h-11">
+                <Settings2 className="h-4 w-4 mr-2" /> DATOS PARTIDO
+              </Button>
+              <Button onClick={() => { setTempIncidents(currentIncidents); setModal('incidents'); }} variant="outline" size="sm" className="font-bold border-2 h-11">
+                <AlertCircle className="h-4 w-4 mr-2" /> INCIDENTES
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => setIsPdfReportOpen(true)} variant="default" size="sm" className="bg-slate-800 font-bold h-11">
+                <FileText className="h-4 w-4 mr-2" /> CÉDULA PDF
+              </Button>
+              <Button onClick={() => setIsImageReportOpen(true)} variant="secondary" size="sm" className="bg-primary text-white font-bold hover:bg-primary/90 h-11">
+                <ImageIcon className="h-4 w-4 mr-2" /> INFORME IMAGEN
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -414,7 +425,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                     </Button>
                   </div>
                   <div className="text-center bg-black/20 rounded-lg p-2">
-                     <p className="text-[10px] font-bold opacity-70">MARCADOR ACTUAL</p>
+                     <p className="text-[10px] font-bold opacity-70 uppercase">Marcador Manual</p>
                      <p className="text-4xl font-black">{scores[side]}</p>
                   </div>
                 </CardHeader>
@@ -728,11 +739,11 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           <div className="space-y-4 py-4">
              <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Marcador Local (Edit)</Label>
+                <Label>Marcador Local (Manual)</Label>
                 <Input type="number" value={scores.home} onChange={e => updateMatch({scores: {...scores, home: parseInt(e.target.value) || 0}})} />
               </div>
               <div className="space-y-2">
-                <Label>Marcador Visita (Edit)</Label>
+                <Label>Marcador Visita (Manual)</Label>
                 <Input type="number" value={scores.away} onChange={e => updateMatch({scores: {...scores, away: parseInt(e.target.value) || 0}})} />
               </div>
             </div>

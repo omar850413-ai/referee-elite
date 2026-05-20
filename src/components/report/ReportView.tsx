@@ -74,31 +74,31 @@ export function ReportView({ matchState }: ReportViewProps) {
     const redCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟥')).length;
     
     let icons = '';
-    if (goalsCount > 0) icons += ` ⚽${goalsCount}`;
-    if (yellowCount > 0) icons += ' 🟨';
-    if (redCount > 0) icons += ' 🟥';
+    // Agregamos espacios extras ( ) para separar estéticamente los iconos del nombre
+    if (goalsCount > 0) icons += `    ⚽${goalsCount}`;
+    if (yellowCount > 0) icons += '   🟨';
+    if (redCount > 0) icons += '   🟥';
     return icons;
   };
 
-  // Helper to render player list text
   const renderPlayerBlock = (side: 'home' | 'away', players: Player[], x: number, y: number, title: string) => (
     <g transform={`translate(${x}, ${y})`}>
       <text x="0" y="-10" fontSize="12" fontWeight="900" fill="white" opacity="0.6" textAnchor="start">{title}</text>
       {players.map((p, i) => (
-        <text key={p.id} x="0" y={15 + (i * 16)} fontSize="11" fill="white" fontWeight="700">
+        <text key={p.id} x="0" y={15 + (i * 18)} fontSize="11" fill="white" fontWeight="700">
           {`#${p.number} ${p.name}${getPlayerEventIcons(side, p.number)}`}
         </text>
       ))}
     </g>
   );
 
-  const homeColor = '#064E3B'; // Emerald 900
-  const awayColor = '#1E3A8A'; // Blue 900
+  const homeColor = '#064E3B'; 
+  const awayColor = '#1E3A8A'; 
   
   const maxPlayersCount = Math.max(homePlayers.length, awayPlayers.length);
-  const playersSecHeight = (maxPlayersCount * 18) + 80;
-  const cardsSecHeight = (Math.max(homeCards.length, awayCards.length) * 22) + 100;
-  const svgHeight = 450 + playersSecHeight + cardsSecHeight + 400;
+  const playersSecHeight = (maxPlayersCount * 18) + 120;
+  const cardsSecHeight = (Math.max(homeCards.length, awayCards.length) * 22) + 120;
+  const svgHeight = 480 + playersSecHeight + cardsSecHeight + 400;
 
   return (
     <div className="w-full max-h-[90vh] overflow-y-auto p-4 bg-slate-900 rounded-xl">
@@ -121,7 +121,7 @@ export function ReportView({ matchState }: ReportViewProps) {
           <rect x="0" y="0" width="400" height={svgHeight} fill={homeColor} />
           <rect x="400" y="0" width="400" height={svgHeight} fill={awayColor} />
 
-          <rect x="0" y="0" width="800" height="180" fill="rgba(0,0,0,0.3)" />
+          <rect x="0" y="0" width="800" height="200" fill="rgba(0,0,0,0.3)" />
           <g transform="translate(400, 50)">
             <text textAnchor="middle" fill="white" fontSize="24" fontWeight="900" style={{ letterSpacing: '0.1em' }}>
               {matchInfo.league?.toUpperCase() || 'LIGA PROFESIONAL'}
@@ -133,35 +133,35 @@ export function ReportView({ matchState }: ReportViewProps) {
               {matchInfo.place?.toUpperCase() || 'CAMPO POR DEFINIR'}
             </text>
             
-            <g transform="translate(0, 75)">
+            <g transform="translate(0, 85)">
               <text textAnchor="middle" fill="white" fontSize="12" fontWeight="800">Cuerpo Arbitral:</text>
               <text y="18" textAnchor="middle" fill="white" fontSize="11" fontWeight="400">CENTRAL: {matchInfo.referee?.toUpperCase() || '---'}</text>
               <text y="34" textAnchor="middle" fill="white" fontSize="11" fontWeight="400">A1: {matchInfo.assistant1?.toUpperCase() || '---'} | A2: {matchInfo.assistant2?.toUpperCase() || '---'}</text>
             </g>
           </g>
 
-          <g transform="translate(200, 280)">
+          <g transform="translate(200, 300)">
              <text textAnchor="middle" fill="white" fontSize="36" fontWeight="900" style={{ letterSpacing: '-0.02em' }}>{teamNames.home.toUpperCase()}</text>
              <text y="100" textAnchor="middle" fill="white" fontSize="130" fontWeight="900">{scores.home}</text>
              <text y="140" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="20" fontWeight="800">{`(${numberToSpanishWords(scores.home)})`}</text>
           </g>
 
-          <g transform="translate(600, 280)">
+          <g transform="translate(600, 300)">
              <text textAnchor="middle" fill="white" fontSize="36" fontWeight="900" style={{ letterSpacing: '-0.02em' }}>{teamNames.away.toUpperCase()}</text>
              <text y="100" textAnchor="middle" fill="white" fontSize="130" fontWeight="900">{scores.away}</text>
              <text y="140" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="20" fontWeight="800">{`(${numberToSpanishWords(scores.away)})`}</text>
           </g>
 
-          <g transform="translate(40, 480)">
+          <g transform="translate(40, 520)">
              {renderPlayerBlock('home', homeStarters, 0, 30, 'TITULARES')}
-             {renderPlayerBlock('home', homeSubs, 0, 240, 'SUPLENTES')}
+             {renderPlayerBlock('home', homeSubs, 0, 260, 'SUPLENTES')}
           </g>
-          <g transform="translate(440, 480)">
+          <g transform="translate(440, 520)">
              {renderPlayerBlock('away', awayStarters, 0, 30, 'TITULARES')}
-             {renderPlayerBlock('away', awaySubs, 0, 240, 'SUPLENTES')}
+             {renderPlayerBlock('away', awaySubs, 0, 260, 'SUPLENTES')}
           </g>
 
-          <g transform={`translate(0, ${480 + playersSecHeight})`}>
+          <g transform={`translate(0, ${520 + playersSecHeight})`}>
             <rect width="800" height={cardsSecHeight} fill="rgba(0,0,0,0.2)" />
             <g transform="translate(40, 40)">
               <text fontSize="14" fontWeight="900" fill="white" textAnchor="start">TARJETAS LOCAL ({teamNames.home})</text>
@@ -181,7 +181,7 @@ export function ReportView({ matchState }: ReportViewProps) {
             </g>
           </g>
 
-          <g transform={`translate(400, ${480 + playersSecHeight + cardsSecHeight + 50})`}>
+          <g transform={`translate(400, ${520 + playersSecHeight + cardsSecHeight + 50})`}>
              <text textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16" fontWeight="900">INCIDENTES DEL PARTIDO</text>
              <foreignObject x="-350" y="20" width="700" height="200">
                 <div xmlns="http://www.w3.org/1999/xhtml" style={{ color: 'white', fontSize: '13px', textAlign: 'center', lineHeight: '1.4', opacity: 0.9 }}>
