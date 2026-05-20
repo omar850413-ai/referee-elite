@@ -1,17 +1,14 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isSignedIn() { return request.auth != null; }
     function isSuperAdmin() { return isSignedIn() && request.auth.token.email == 'omar850413@gmail.com'; }
     
-    // Función segura para obtener datos del usuario
     function getUserData() { 
       let userDoc = /databases/$(database)/documents/users/$(request.auth.uid);
       return exists(userDoc) ? get(userDoc).data : null;
     }
     
-    // Validación de que el usuario pertenezca a ESTA aplicación
     function isFromThisApp() {
       let data = getUserData();
       return isSuperAdmin() || (data != null && data.appId == 'referee-elite');
@@ -28,16 +25,13 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Solo permitimos leer perfiles si eres el dueño o un admin de ESTA app
       allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      // Solo admins de Referee Elite pueden listar usuarios de Referee Elite
       allow list: if isAdmin();
       allow create: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
       allow update: if isAdmin() || (isSignedIn() && request.auth.uid == userId && request.resource.data.isAdmin == resource.data.isAdmin && request.resource.data.isApproved == resource.data.isApproved);
     }
 
     match /matches/{matchId} {
-      // Solo permitimos acceso si el usuario es de esta app y está aprobado
       allow read, write: if isSignedIn() && isFromThisApp() && (request.auth.uid == matchId || isAdmin() || isApproved());
     }
   }

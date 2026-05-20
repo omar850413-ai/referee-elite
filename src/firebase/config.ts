@@ -1,8 +1,9 @@
 export const firebaseConfig = {
-  "projectId": "soy-asesor2-65672652-a9318",
-  "appId": "1:415294002832:web:3b429e8603bbc1e9cc2a15",
-  "apiKey": "AIzaSyDyWydU0ROkxo0d1ynwJlomeGbTaajMwt8",
-  "authDomain": "soy-asesor2-65672652-a9318.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "415294002832"
+  apiKey: "AIzaSyBPeer0wfb5pbyXJvWwBwXkjdJN2LbNQP0",
+  authDomain: "soy-docente-58544610-7d370.firebaseapp.com",
+  databaseURL: "https://soy-docente-58544610-7d370-default-rtdb.firebaseio.com",
+  projectId: "soy-docente-58544610-7d370",
+  storageBucket: "soy-docente-58544610-7d370.firebasestorage.app",
+  messagingSenderId: "978987146644",
+  appId: "1:978987146644:web:4159d13276ab7178c2c381"
 };
