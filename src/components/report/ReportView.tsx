@@ -47,7 +47,8 @@ export function ReportView({ matchState }: ReportViewProps) {
       const jpegUrl = canvas.toDataURL('image/jpeg', 0.95);
       const link = document.createElement('a');
       link.href = jpegUrl;
-      link.download = `cedula-imagen-${matchInfo.league || 'partido'}.jpg`;
+      const fileName = `${teamNames.home || 'LOCAL'}-VS-${teamNames.away || 'VISITA'}.jpg`.toUpperCase();
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -83,15 +84,15 @@ export function ReportView({ matchState }: ReportViewProps) {
     const subEv = playerEvs.find(e => e.category === 'substitution');
     
     let summary = '';
-    yellows.forEach(e => { summary += ` 🟨${e.time !== '--' ? `(${e.time})` : ''}`; });
-    reds.forEach(e => { summary += ` 🟥${e.time !== '--' ? `(${e.time})` : ''}`; });
+    yellows.forEach(e => { summary += ` 🟨${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; });
+    reds.forEach(e => { summary += ` 🟥${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; });
     goals.forEach(e => { 
       const icon = e.message.includes('AUTOGOL') ? '🥅' : '⚽';
-      summary += ` ${icon}${e.time !== '--' ? `(${e.time})` : ''}`; 
+      summary += ` ${icon}${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; 
     });
     
     if (isSub && replacedNumber) {
-      summary += ` (SALIÓ: #${replacedNumber}${subEv?.time !== '--' ? ` ${subEv?.time}` : ''})`;
+      summary += ` (SALIÓ: #${replacedNumber}${subEv?.time !== '--' && subEv?.time !== '' ? ` ${subEv?.time}` : ''})`;
     }
     
     return summary;
@@ -188,14 +189,14 @@ export function ReportView({ matchState }: ReportViewProps) {
               <g transform="translate(0, 30)">
                 {homeSanciones.yellows.map((e, idx) => (
                   <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
-                     🟨 #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
+                     🟨 #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
                   </text>
                 ))}
               </g>
               <g transform={`translate(0, ${50 + homeSanciones.yellows.length * 20})`}>
                 {homeSanciones.reds.map((e, idx) => (
                   <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
-                    🟥 #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
+                    🟥 #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
                   </text>
                 ))}
               </g>
@@ -205,14 +206,14 @@ export function ReportView({ matchState }: ReportViewProps) {
               <g transform="translate(0, 30)">
                 {awaySanciones.yellows.map((e, idx) => (
                   <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
-                     🟨 #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
+                     🟨 #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
                   </text>
                 ))}
               </g>
               <g transform={`translate(0, ${50 + awaySanciones.yellows.length * 20})`}>
                 {awaySanciones.reds.map((e, idx) => (
                   <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
-                    🟥 #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
+                    🟥 #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
                   </text>
                 ))}
               </g>

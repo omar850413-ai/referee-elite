@@ -51,7 +51,9 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
         pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
         heightLeft -= pdfHeight;
       }
-      pdf.save(`cedula-${matchInfo.league || 'partido'}.pdf`);
+      
+      const fileName = `${teamNames.home || 'LOCAL'}-VS-${teamNames.away || 'VISITA'}.pdf`.toUpperCase();
+      pdf.save(fileName);
     });
   };
 
@@ -97,19 +99,19 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               
               <div className="flex gap-1 items-center ml-2">
                 {yellows.map(e => (
-                  <span key={e.id} title={e.message}>🟨{e.time !== '--' ? `(${e.time})` : ''}</span>
+                  <span key={e.id} title={e.message}>🟨{e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</span>
                 ))}
                 {reds.map(e => (
-                  <span key={e.id} title={e.message}>🟥{e.time !== '--' ? `(${e.time})` : ''}</span>
+                  <span key={e.id} title={e.message}>🟥{e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</span>
                 ))}
                 {goals.map(e => (
                   <span key={e.id} className="text-emerald-600 font-black">
-                    {e.message.includes('AUTOGOL') ? '🥅' : '⚽'}{e.time !== '--' ? `(${e.time})` : ''}
+                    {e.message.includes('AUTOGOL') ? '🥅' : '⚽'}{e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}
                   </span>
                 ))}
                 {isSub && p.replacedNumber && (
                   <span className="text-[8px] text-rose-600 font-black italic ml-1">
-                    (SALIÓ: #{p.replacedNumber}{subEv?.time !== '--' ? ` ${subEv?.time}` : ''})
+                    (SALIÓ: #{p.replacedNumber}{subEv?.time !== '--' && subEv?.time !== '' ? ` ${subEv?.time}` : ''})
                   </span>
                 )}
               </div>
@@ -187,13 +189,13 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 <p className="font-bold underline">AMONESTACIONES:</p>
                 {homeSanciones.yellows.map(e => (
                   <div key={e.id} className="border-b pb-0.5 uppercase">
-                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
+                    <strong>#{e.playerNumber} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
                   </div>
                 ))}
                 <p className="font-bold underline pt-2">EXPULSIONES:</p>
                 {homeSanciones.reds.map(e => (
                   <div key={e.id} className="border-b pb-0.5 uppercase">
-                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
+                    <strong>#{e.playerNumber} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
                   </div>
                 ))}
               </div>
@@ -204,13 +206,13 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 <p className="font-bold underline">AMONESTACIONES:</p>
                 {awaySanciones.yellows.map(e => (
                   <div key={e.id} className="border-b pb-0.5 uppercase">
-                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
+                    <strong>#{e.playerNumber} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
                   </div>
                 ))}
                 <p className="font-bold underline pt-2">EXPULSIONES:</p>
                 {awaySanciones.reds.map(e => (
                   <div key={e.id} className="border-b pb-0.5 uppercase">
-                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
+                    <strong>#{e.playerNumber} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
                   </div>
                 ))}
               </div>
