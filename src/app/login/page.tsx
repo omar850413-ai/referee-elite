@@ -212,7 +212,7 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-            {error && <p className="text-sm text-red-600 font-bold">{error}</p>}
+            {error && <p className="text-sm text-red-600 font-bold text-center uppercase">{error}</p>}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full font-black italic" disabled={isLoading}>

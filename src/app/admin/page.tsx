@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
-import { collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { useAuth, useUser, useFirestore, useDoc, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,20 +37,20 @@ export default function AdminPage() {
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
-  const usersRef = useMemoFirebase(
+  const usersQuery = useMemoFirebase(
     () => {
-      // Solo habilitamos la colección de usuarios si el perfil actual es admin
       if (!firestore || isUserLoading || isProfileLoading || !user) return null;
       
       const isSuperAdmin = user.email === 'omar850413@gmail.com';
       if (!isSuperAdmin && !userProfile?.isAdmin) return null;
 
-      return collection(firestore, 'users');
+      // FILTRO CRÍTICO: Solo mostrar usuarios de esta aplicación
+      return query(collection(firestore, 'users'), where('appId', '==', 'referee-elite'));
     },
     [firestore, isUserLoading, isProfileLoading, user, userProfile]
   );
   
-  const { data: users, isLoading: areUsersLoading } = useCollection<UserWithId>(usersRef);
+  const { data: users, isLoading: areUsersLoading } = useCollection<UserWithId>(usersQuery);
 
   useEffect(() => {
     if (isUserLoading || isProfileLoading) return;
@@ -79,7 +79,6 @@ export default function AdminPage() {
           requestResourceData: updateData,
         });
         errorEmitter.emit('permission-error', permissionError);
-        alert('Hubo un error al aprobar el usuario.');
       });
   };
 
@@ -94,7 +93,6 @@ export default function AdminPage() {
           requestResourceData: updateData,
         });
         errorEmitter.emit('permission-error', permissionError);
-        alert('Hubo un error al bloquear el usuario.');
       });
   };
   
@@ -107,13 +105,11 @@ export default function AdminPage() {
           operation: 'delete',
         });
         errorEmitter.emit('permission-error', permissionError);
-        alert('Hubo un error al eliminar el usuario.');
       });
   };
 
   const handleLogout = async () => {
     localStorage.removeItem('sessionId');
-    localStorage.removeItem('matchSession');
     await signOut(auth);
     router.push('/login');
   };
@@ -148,71 +144,72 @@ export default function AdminPage() {
   return (
     <div className="p-4 md:p-8 min-h-screen bg-sky-100">
        <div className="flex justify-between items-center mb-4">
-        <Link href="/" className="text-primary hover:underline">&larr; Volver a la App</Link>
-        <Button onClick={handleLogout} variant="outline" size="sm">Cerrar Sesión</Button>
+        <Link href="/" className="text-primary hover:underline font-bold uppercase italic">&larr; Volver a la App</Link>
+        <Button onClick={handleLogout} variant="outline" size="sm" className="font-bold uppercase italic">Cerrar Sesión</Button>
        </div>
       <Card>
         <CardHeader>
-          <CardTitle>Panel de Control de Usuarios</CardTitle>
+          <CardTitle className="uppercase font-black italic text-primary">Panel de Control: Referee Elite</CardTitle>
         </CardHeader>
         <CardContent>
           {areUsersLoading ? (
-            <p>Cargando usuarios...</p>
+            <p className="text-center font-bold">Cargando asesores...</p>
           ) : (
             <div className="space-y-4">
-              {users?.map((u) => {
-                const canManage = user && u.id !== user.uid && u.email !== 'omar850413@gmail.com';
-                const isTargetSuperAdmin = u.email === 'omar850413@gmail.com';
+              {users?.length === 0 ? (
+                <p className="text-center text-slate-500 py-8 font-bold">NO HAY ASESORES REGISTRADOS EN ESTA APP.</p>
+              ) : (
+                users?.map((u) => {
+                  const canManage = user && u.id !== user.uid && u.email !== 'omar850413@gmail.com';
+                  const isTargetSuperAdmin = u.email === 'omar850413@gmail.com';
 
-                return (
-                  <div key={u.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border rounded-lg bg-white shadow-sm gap-4">
-                    <div className='flex items-center gap-2 flex-wrap'>
-                      <p className="font-semibold break-all">{u.email}</p>
-                      {u.isApproved ? (
-                        <Badge variant="default" className="bg-emerald-500">Aprobado</Badge>
-                      ) : (
-                        <Badge variant="destructive">No Aprobado</Badge>
-                      )}
-                      {u.isAdmin && !isTargetSuperAdmin && <Badge className="ml-2">Admin</Badge>}
-                      {isTargetSuperAdmin && <Badge className="ml-2 bg-amber-500 text-white">Super Admin</Badge>}
-                    </div>
-                    {canManage && (
-                       <div className="flex gap-2 flex-shrink-0">
+                  return (
+                    <div key={u.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border rounded-lg bg-white shadow-sm gap-4">
+                      <div className='flex items-center gap-2 flex-wrap'>
+                        <p className="font-semibold break-all">{u.email}</p>
                         {u.isApproved ? (
-                          <Button variant="destructive" size="sm" onClick={() => handleBlockUser(u.id)}>Bloquear</Button>
+                          <Badge variant="default" className="bg-emerald-500 uppercase">Aprobado</Badge>
                         ) : (
-                          <Button size="sm" onClick={() => handleApproveUser(u.id)}>Aprobar</Button>
+                          <Badge variant="destructive" className="uppercase">No Aprobado</Badge>
                         )}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">Eliminar</Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                        {u.isAdmin && !isTargetSuperAdmin && <Badge className="ml-2 uppercase">Admin</Badge>}
+                        {isTargetSuperAdmin && <Badge className="ml-2 bg-amber-500 text-white uppercase">Super Admin</Badge>}
+                      </div>
+                      {canManage && (
+                         <div className="flex gap-2 flex-shrink-0">
+                          {u.isApproved ? (
+                            <Button variant="destructive" size="sm" className="font-bold uppercase" onClick={() => handleBlockUser(u.id)}>Bloquear</Button>
+                          ) : (
+                            <Button size="sm" className="font-bold uppercase" onClick={() => handleApproveUser(u.id)}>Aprobar</Button>
+                          )}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm" className="font-bold uppercase">Eliminar</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Esta acción eliminará el perfil del usuario permanentemente. Si el usuario inicia sesión de nuevo, deberá ser aprobado otra vez.
+                                <AlertDialogTitle className="uppercase font-black">¿Estás seguro?</AlertDialogTitle>
+                                <AlertDialogDescription className="uppercase font-bold text-xs">
+                                  Esta acción eliminará el perfil del asesor permanentemente de Referee Elite.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction 
-                                className="bg-destructive hover:bg-destructive/90"
-                                onClick={() => handleDeleteUser(u.id)}
-                              >
-                                Sí, eliminar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="uppercase font-bold">Cancelar</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  className="bg-destructive hover:bg-destructive/90 uppercase font-black italic"
+                                  onClick={() => handleDeleteUser(u.id)}
+                                >
+                                  Sí, eliminar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           )}
         </CardContent>

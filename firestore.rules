@@ -28,7 +28,9 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
+      // Solo permitimos leer perfiles si eres el dueño o un admin de ESTA app
       allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      // Solo admins de Referee Elite pueden listar usuarios de Referee Elite
       allow list: if isAdmin();
       allow create: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
       allow update: if isAdmin() || (isSignedIn() && request.auth.uid == userId && request.resource.data.isAdmin == resource.data.isAdmin && request.resource.data.isApproved == resource.data.isApproved);
