@@ -370,6 +370,14 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   
   const isAdmin = userProfile?.isAdmin || user?.email === 'omar850413@gmail.com';
 
+  if (isMatchLoading || !matchState) {
+    return (
+      <div className="p-4 bg-sky-100 min-h-screen flex items-center justify-center">
+        <Skeleton className="h-20 w-full max-w-md" />
+      </div>
+    );
+  }
+
   const { scores, fouls, teamNames, events, matchInfo, timer, attendance } = matchState;
 
   return (
