@@ -119,7 +119,10 @@ export default function Home() {
       signatures: {},
       ownerId: user.uid
     };
-    setDoc(matchRef, resetState).then(() => toast({ title: "Información Reiniciada" }));
+    setDoc(matchRef, resetState).then(() => {
+      toast({ title: "Información Reiniciada" });
+      setModal(null);
+    });
   };
 
   const initCanvas = () => {
@@ -220,6 +223,7 @@ export default function Home() {
   const handleAddCard = (side: 'home' | 'away', player: Player, type: 'yellow' | 'red', causalIdx: number, causalText: string) => {
     if (!matchState) return;
     const symbol = type === 'yellow' ? '🟨' : '🟥';
+    const label = type === 'yellow' ? 'AMONESTACION' : 'EXPULSION';
     const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
     const newEvent: MatchEvent = { id: Date.now(), time: timeDisplay, category: 'cards', message: `${symbol} #${player.number} ${player.name} - #${causalIdx + 1} ${causalText.toUpperCase()}${currentMinute ? ` (${currentMinute}')` : ''}`, side, playerNumber: player.number, playerName: player.name };
     updateMatch({ events: [newEvent, ...(matchState.events || [])] });
@@ -241,9 +245,9 @@ export default function Home() {
       <div className="flex flex-col items-center justify-center min-h-screen bg-sky-50 p-4">
         <Logo className="mb-8" />
         <Card className="w-full max-w-md text-center">
-          <CardHeader><CardTitle>Bienvenido a Referee Elite</CardTitle></CardHeader>
+          <CardHeader><CardTitle>BIENVENIDO A REFEREE ELITE</CardTitle></CardHeader>
           <CardContent>
-            <p className="mb-6 text-slate-500">Presiona el botón para iniciar tu primer reporte arbitral.</p>
+            <p className="mb-6 text-slate-500">PRESIONA EL BOTÓN PARA INICIAR TU PRIMER REPORTE ARBITRAL.</p>
             <Button onClick={handleResetMatch} className="w-full bg-primary h-12 font-black italic uppercase">COMENZAR REPORTE</Button>
           </CardContent>
         </Card>
@@ -307,23 +311,10 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="default" size="sm" className="bg-amber-500 hover:bg-amber-600 text-white font-black h-12 shadow-md">
-                  <RotateCcw className="h-5 w-5 mr-2" /> REINICIAR
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader><AlertDialogTitle>¿Reiniciar información?</AlertDialogTitle><AlertDialogDescription>¿Estás seguro de reiniciar los datos del partido?</AlertDialogDescription></AlertDialogHeader>
-                <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleResetMatch}>Aceptar</AlertDialogAction></AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
             <Button onClick={() => setModal('info')} className="bg-indigo-600 text-white font-black h-12 shadow-md"><Settings2 className="h-5 w-5 mr-2" /> DATOS PARTIDO</Button>
             <Button onClick={() => { setTempIncidents(events.find(e => e.category === 'notes')?.message.replace('📝 ', '') || ''); setModal('incidents'); }} className="bg-rose-500 text-white font-black h-12 shadow-md"><AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES</Button>
-            <div className="grid grid-cols-2 gap-2">
-              <Button onClick={() => setIsPdfReportOpen(true)} className="bg-slate-900 text-white font-black h-12 shadow-md">PDF</Button>
-              <Button onClick={() => setIsImageReportOpen(true)} className="bg-emerald-500 text-white font-black h-12 shadow-md">IMAGEN</Button>
-            </div>
+            <Button onClick={() => setIsPdfReportOpen(true)} className="bg-slate-900 text-white font-black h-12 shadow-md">PDF</Button>
+            <Button onClick={() => setIsImageReportOpen(true)} className="bg-emerald-500 text-white font-black h-12 shadow-md">IMAGEN</Button>
           </div>
         </div>
 
@@ -340,32 +331,55 @@ export default function Home() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                {renderPlayerTable(side, lineups[side].slice(0, 11), "Titulares")}
-                {renderPlayerTable(side, lineups[side].slice(11), "Suplentes")}
+                {renderPlayerTable(side, lineups[side].slice(0, 11), "TITULARES")}
+                {renderPlayerTable(side, lineups[side].slice(11), "SUPLENTES")}
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <div className="grid grid-cols-3 gap-8 pt-6 pb-10">
+        <div className="grid grid-cols-3 gap-8 pt-6 pb-4">
           {(['captainHome', 'referee', 'captainAway'] as const).map(type => (
             <div key={type} className="text-center">
               <button onClick={() => setModal(`sign-${type}`)} className="border-2 border-dashed border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 rounded-xl bg-white overflow-hidden">
                 {signatures[type] ? <img src={signatures[type]} className="max-h-full" /> : <span className="text-slate-300 italic text-[10px]">FIRMA {type.toUpperCase()}</span>}
               </button>
-              <p className="text-[8px] font-black uppercase text-slate-400">{type === 'referee' ? 'Árbitro Central' : `Capitán ${type.includes('Home') ? 'Local' : 'Visitante'}`}</p>
+              <p className="text-[8px] font-black uppercase text-slate-400">{type === 'referee' ? 'ÁRBITRO CENTRAL' : `CAPITÁN ${type.includes('Home') ? 'LOCAL' : 'VISITANTE'}`}</p>
             </div>
           ))}
+        </div>
+
+        {/* Botón Reiniciar al final */}
+        <div className="flex justify-center pt-10 pb-10">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" className="font-black gap-2 opacity-60 hover:opacity-100 transition-opacity">
+                <RotateCcw className="h-4 w-4" /> REINICIAR REPORTE
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿REINICIAR INFORMACIÓN?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  ¿ESTÁS SEGURO DE REINICIAR LOS DATOS DEL PARTIDO? ESTA ACCIÓN NO SE PUEDE DESHACER.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>CANCELAR</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetMatch} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">ACEPTAR</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
       <Dialog open={modal === 'add-player'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-sm rounded-2xl">
-          <DialogHeader><DialogTitle className="text-center font-black uppercase">Inscribir Jugador</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-center font-black uppercase">INSCRIBIR JUGADOR</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <Input type="number" placeholder="00" className="text-2xl h-14 text-center font-black" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} />
             <div className="relative">
-              <Input placeholder="Nombre completo" className="uppercase font-bold pr-10" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value.toUpperCase())} />
+              <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value.toUpperCase())} />
               <button onClick={startListening} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
                 {isListening ? <MicOff size={20} /> : <Mic size={20} />}
               </button>
@@ -381,9 +395,9 @@ export default function Home() {
             <div className="flex flex-col">
               <div className={`p-6 text-white text-center ${selectedPlayer.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}><p className="text-4xl font-black">#{selectedPlayer.player.number}</p><p className="text-xl font-bold uppercase italic">{selectedPlayer.player.name}</p></div>
               <div className="p-6 space-y-4 bg-white">
-                <div className="space-y-2"><Label className="flex items-center gap-2 text-xs font-black uppercase text-slate-400"><Clock size={14} /> Minuto (Opcional)</Label><Input type="number" placeholder="Min" className="h-10 text-center font-bold" value={currentMinute} onChange={e => setCurrentMinute(e.target.value)} /></div>
+                <div className="space-y-2"><Label className="flex items-center gap-2 text-xs font-black uppercase text-slate-400"><Clock size={14} /> MINUTO (OPCIONAL)</Label><Input type="number" placeholder="MIN" className="h-10 text-center font-bold" value={currentMinute} onChange={e => setCurrentMinute(e.target.value)} /></div>
                 <div className="grid grid-cols-2 gap-3"><Button onClick={() => handleAddGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-emerald-600 text-white">⚽ GOL</Button><Button onClick={() => handleAddOwnGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-orange-600 text-white">🥅 AUTOGOL</Button></div>
-                <div className="grid grid-cols-2 gap-3"><Button onClick={() => { setCardType('yellow'); setModal('causales'); }} className="h-14 font-black bg-yellow-400 text-yellow-900">🟨 AMARILLA</Button><Button onClick={() => { setCardType('red'); setModal('causales'); }} className="h-14 font-black bg-red-600 text-white">🟥 ROJA</Button></div>
+                <div className="grid grid-cols-2 gap-3"><Button onClick={() => { setCardType('yellow'); setModal('causales'); }} className="h-14 font-black bg-yellow-400 text-yellow-900">🟨 AMONESTACION</Button><Button onClick={() => { setCardType('red'); setModal('causales'); }} className="h-14 font-black bg-red-600 text-white">🟥 EXPULSION</Button></div>
               </div>
             </div>
           )}
@@ -392,14 +406,14 @@ export default function Home() {
 
       <Dialog open={modal === 'causales'} onOpenChange={() => setModal('player-actions')}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="font-black uppercase">Causales - #{selectedPlayer?.player.number}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-black uppercase">CAUSALES - #{selectedPlayer?.player.number}</DialogTitle></DialogHeader>
           <div className="space-y-2 py-4">{(cardType === 'yellow' ? causalesAmarilla : causalesRoja).map((causal, idx) => (<Button key={idx} variant="outline" className="w-full justify-start text-left h-auto py-2 text-xs" onClick={() => handleAddCard(selectedPlayer!.side, selectedPlayer!.player, cardType!, idx, causal)}><span className="font-bold mr-2 text-primary">#{idx + 1}</span> {causal.toUpperCase()}</Button>))}</div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={modal === 'incidents'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-lg rounded-2xl">
-          <DialogHeader><DialogTitle className="font-black uppercase">Incidentes</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-black uppercase">INCIDENTES</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4"><Textarea className="min-h-[200px]" value={tempIncidents} onChange={e => setTempIncidents(e.target.value.toUpperCase())} /><Button onClick={() => { updateMatch({ events: [ { id: Date.now(), time: '--', category: 'notes', message: `📝 ${tempIncidents.toUpperCase()}` }, ...events.filter(e => e.category !== 'notes') ] }); setModal(null); }} className="w-full font-bold bg-primary text-white">GUARDAR</Button></div>
         </DialogContent>
       </Dialog>
@@ -407,7 +421,7 @@ export default function Home() {
       <Dialog open={modal?.startsWith('sign-')} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-md p-0 overflow-hidden">
           <DialogHeader className="p-4 bg-slate-50 border-b">
-            <DialogTitle className="text-center font-black uppercase">Firma</DialogTitle>
+            <DialogTitle className="text-center font-black uppercase">FIRMA</DialogTitle>
           </DialogHeader>
           <div className="p-4 space-y-4">
             <div className="bg-white border-2 border-dashed rounded-xl overflow-hidden touch-none relative">
@@ -433,10 +447,10 @@ export default function Home() {
 
       <Dialog open={modal === 'info'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="font-black uppercase">Datos Generales</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-black uppercase">DATOS GENERALES</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2"><Label>Título del Reporte</Label><Input value={matchState.title} onChange={e => updateMatch({title: e.target.value.toUpperCase()})} /></div>
-            <div className="grid grid-cols-2 gap-4"><div><Label>Local</Label><Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} /></div><div><Label>Visita</Label><Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} /></div></div>
+            <div className="space-y-2"><Label>TÍTULO DEL REPORTE</Label><Input value={matchState.title} onChange={e => updateMatch({title: e.target.value.toUpperCase()})} /></div>
+            <div className="grid grid-cols-2 gap-4"><div><Label>LOCAL</Label><Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} /></div><div><Label>VISITA</Label><Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} /></div></div>
             <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value.toUpperCase()}})} placeholder="LIGA" />
             <div className="grid grid-cols-2 gap-4"><Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value.toUpperCase()}})} placeholder="JORNADA" /><Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value.toUpperCase()}})} placeholder="CAMPO" /></div>
             <Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} />
