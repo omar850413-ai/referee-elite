@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -295,26 +296,28 @@ export default function Home() {
     <div className="p-2 md:p-6 bg-slate-50 min-h-screen font-sans text-slate-900">
       <div className="max-w-5xl mx-auto space-y-4">
         
+        {/* LOGO AT THE VERY TOP */}
+        <div className="flex justify-center py-6">
+          <Logo />
+        </div>
+
         <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border">
-          <div className="flex justify-between items-center w-full">
-            <div className="flex items-center gap-4">
-              <Logo />
-              {isAdmin && (
+          <div className="flex flex-col gap-3">
+            {isAdmin && (
+              <div className="flex justify-center mb-1">
                 <Link href="/admin">
                   <Button variant="ghost" size="sm" className="text-primary font-bold gap-2">
                     <ShieldAlert className="h-4 w-4" /> PANEL ADMIN
                   </Button>
                 </Link>
-              )}
+              </div>
+            )}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <Button onClick={() => setModal('info')} className="bg-indigo-600 text-white font-black h-12 shadow-md"><Settings2 className="h-5 w-5 mr-2" /> DATOS PARTIDO</Button>
+              <Button onClick={() => { setTempIncidents(events.find(e => e.category === 'notes')?.message.replace('📝 ', '') || ''); setModal('incidents'); }} className="bg-rose-500 text-white font-black h-12 shadow-md"><AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES</Button>
+              <Button onClick={() => setIsPdfReportOpen(true)} className="bg-slate-900 text-white font-black h-12 shadow-md">PDF</Button>
+              <Button onClick={() => setIsImageReportOpen(true)} className="bg-emerald-500 text-white font-black h-12 shadow-md">IMAGEN</Button>
             </div>
-            <Button onClick={handleLogout} variant="ghost" size="sm" className="text-red-500 font-bold"><LogOut className="h-4 w-4 mr-1" /> SALIR</Button>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <Button onClick={() => setModal('info')} className="bg-indigo-600 text-white font-black h-12 shadow-md"><Settings2 className="h-5 w-5 mr-2" /> DATOS PARTIDO</Button>
-            <Button onClick={() => { setTempIncidents(events.find(e => e.category === 'notes')?.message.replace('📝 ', '') || ''); setModal('incidents'); }} className="bg-rose-500 text-white font-black h-12 shadow-md"><AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES</Button>
-            <Button onClick={() => setIsPdfReportOpen(true)} className="bg-slate-900 text-white font-black h-12 shadow-md">PDF</Button>
-            <Button onClick={() => setIsImageReportOpen(true)} className="bg-emerald-500 text-white font-black h-12 shadow-md">IMAGEN</Button>
           </div>
         </div>
 
@@ -349,7 +352,8 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="flex justify-center pt-10 pb-10">
+        {/* BOTTOM BUTTONS (RESET AND LOGOUT) */}
+        <div className="flex justify-center gap-6 pt-10 pb-10">
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm" className="font-black gap-2 opacity-60 hover:opacity-100 transition-opacity">
@@ -369,6 +373,10 @@ export default function Home() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          <Button onClick={handleLogout} variant="ghost" size="sm" className="text-red-500 font-black gap-2 opacity-60 hover:opacity-100 transition-opacity">
+            <LogOut className="h-4 w-4" /> SALIR
+          </Button>
         </div>
       </div>
 
