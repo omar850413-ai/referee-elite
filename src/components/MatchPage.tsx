@@ -62,8 +62,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   useEffect(() => {
     if (modal?.startsWith('sign-')) {
       const timer = setTimeout(() => {
-        clearCanvas();
-      }, 100);
+        initCanvas();
+      }, 150);
       return () => clearTimeout(timer);
     }
   }, [modal]);
@@ -255,6 +255,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     toast({ title: "Incidentes guardados" });
   };
 
+  // --- Signature Drawing Logic ---
+  
   const getCoordinates = (e: React.PointerEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
@@ -267,24 +269,40 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     };
   };
 
+  const initCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Set a white background for better export quality
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Set default stroke styles
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+  };
+
   const startDrawing = (e: React.PointerEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Capture pointer to track even outside boundaries
-    canvas.setPointerCapture(e.pointerId);
+    // Force recapture of context settings just in case
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
 
+    canvas.setPointerCapture(e.pointerId);
     const { x, y } = getCoordinates(e);
     
     ctx.beginPath();
     ctx.moveTo(x, y);
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    
     setIsDrawing(true);
   };
 
@@ -300,32 +318,29 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     ctx.stroke();
   };
 
-  const stopDrawing = () => {
+  const stopDrawing = (e: React.PointerEvent) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.releasePointerCapture(e.pointerId);
+    }
     setIsDrawing(false);
   };
 
   const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Optional: set a white background if needed, but transparent is usually okay for signatures
+    initCanvas();
   };
 
   const saveSignature = (type: 'captainHome' | 'captainAway' | 'referee') => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    // Ensure drawing is finished
     setIsDrawing(false);
-    
     const dataUrl = canvas.toDataURL('image/png');
     const currentSignatures = matchState.signatures || {};
     updateMatch({ signatures: { ...currentSignatures, [type]: dataUrl } });
     setModal(null);
-    toast({ title: "Firma guardada correctamente" });
+    toast({ title: "Firma capturada con éxito" });
   };
 
   const handleLogout = async () => {
@@ -720,28 +735,29 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         open={modal === 'sign-captainHome' || modal === 'sign-captainAway' || modal === 'sign-referee'} 
         onOpenChange={() => setModal(null)}
       >
-        <DialogContent className="max-w-md rounded-2xl p-0 overflow-hidden">
+        <DialogContent className="max-w-md rounded-2xl p-0 overflow-hidden" onPointerDown={e => e.stopPropagation()}>
           <DialogHeader className="p-4 bg-slate-50 border-b">
             <DialogTitle className="text-center font-black uppercase">Captura de Firma Autógrafa</DialogTitle>
+            <DialogDescription className="sr-only">Dibuje su firma dentro del recuadro blanco.</DialogDescription>
           </DialogHeader>
           <div className="p-4 space-y-4">
-            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl relative touch-none overflow-hidden">
+            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl relative touch-none overflow-hidden select-none">
               <canvas 
                 ref={canvasRef}
                 width={800}
                 height={400}
                 className="w-full h-48 cursor-crosshair touch-none bg-white"
-                style={{ touchAction: 'none' }}
+                style={{ touchAction: 'none', userSelect: 'none' }}
                 onPointerDown={startDrawing}
                 onPointerMove={draw}
                 onPointerUp={stopDrawing}
-                onPointerOut={stopDrawing}
+                onPointerLeave={stopDrawing}
                 onPointerCancel={stopDrawing}
               />
-              <p className="absolute bottom-2 left-0 right-0 text-center text-[10px] text-slate-300 pointer-events-none">FIRME DENTRO DEL RECUADRO</p>
+              <p className="absolute bottom-2 left-0 right-0 text-center text-[10px] text-slate-300 pointer-events-none uppercase font-bold">FIRME AQUÍ</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={clearCanvas} className="flex-1">
+              <Button variant="outline" onClick={clearCanvas} className="flex-1 font-bold">
                 <Eraser className="h-4 w-4 mr-2" /> Limpiar
               </Button>
               <Button 
@@ -750,9 +766,9 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                                modal === 'sign-captainAway' ? 'captainAway' : 'referee';
                   saveSignature(type);
                 }} 
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
               >
-                <Check className="h-4 w-4 mr-2" /> Guardar Firma
+                <Check className="h-4 w-4 mr-2" /> Guardar
               </Button>
             </div>
           </div>
