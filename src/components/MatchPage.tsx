@@ -470,7 +470,15 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                   </div>
                   <div className="text-center bg-black/20 rounded-lg p-2">
                      <p className="text-[10px] font-bold opacity-70 uppercase">Marcador</p>
-                     <p className="text-4xl font-black">{scores[side]}</p>
+                     <Input 
+                        type="number" 
+                        value={scores[side]} 
+                        onChange={e => {
+                          const val = parseInt(e.target.value) || 0;
+                          updateMatch({ scores: { ...scores, [side]: val } });
+                        }}
+                        className="bg-transparent border-none text-center text-4xl font-black text-white h-auto p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                     />
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -801,16 +809,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         <DialogContent className="max-h-[80vh] overflow-y-auto rounded-2xl">
           <DialogHeader><DialogTitle className="font-black text-center uppercase">Datos Generales</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
-             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Marcador Local</Label>
-                <Input type="number" value={scores.home} onChange={e => updateMatch({scores: {...scores, home: parseInt(e.target.value) || 0}})} />
-              </div>
-              <div className="space-y-2">
-                <Label>Marcador Visita</Label>
-                <Input type="number" value={scores.away} onChange={e => updateMatch({scores: {...scores, away: parseInt(e.target.value) || 0}})} />
-              </div>
-            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Equipo Local</Label>
