@@ -18,13 +18,24 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { MatchEvent, MatchState, Player, UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { PdfReportView } from '@/components/report/PdfReportView';
 import { ReportView } from '@/components/report/ReportView';
 import { Logo } from '@/components/ui/Logo';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check, Pencil, AlertCircle, Image as ImageIcon, ShieldAlert, Clock } from 'lucide-react';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check, Pencil, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw } from 'lucide-react';
 import { causalesAmarilla, causalesRoja } from '@/lib/causales';
 
 interface MatchPageProps {
@@ -95,6 +106,43 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           description: "No se pudieron guardar los cambios.",
         });
       });
+  };
+
+  const handleResetMatch = () => {
+    const initialState: MatchState = {
+      scores: { home: 0, away: 0 },
+      fouls: { home: 0, away: 0 },
+      teamNames: { home: 'LOCAL', away: 'VISITA' },
+      events: [],
+      matchInfo: { 
+        advisor: user.email || '', 
+        league: '', 
+        round: '', 
+        place: '', 
+        date: '', 
+        referee: '', 
+        assistant1: '', 
+        assistant2: '', 
+        fourthOfficial: '', 
+        var: '', 
+        avar: '' 
+      },
+      timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
+      penaltyShootout: { home: 0, away: 0, active: false },
+      reportSettings: { showFouls: false },
+      lineups: { home: [], away: [] },
+      staff: { home: [], away: [] },
+      signatures: {},
+      attendance: '',
+      timing: { firstHalfStart: '', firstHalfEnd: '', secondHalfStart: '', secondHalfEnd: '' }
+    };
+
+    updateMatch(initialState).then(() => {
+      toast({
+        title: "Partido Reiniciado",
+        description: "Se ha borrado toda la información del encuentro.",
+      });
+    });
   };
 
   const startListening = (target: 'new' | 'edit') => {
@@ -460,23 +508,39 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="grid grid-cols-2 gap-3">
-              <Button onClick={() => setModal('info')} variant="default" size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white font-black h-12 shadow-md">
-                <Settings2 className="h-5 w-5 mr-2" /> DATOS PARTIDO
-              </Button>
-              <Button onClick={() => { setTempIncidents(currentIncidents); setModal('incidents'); }} variant="default" size="sm" className="bg-rose-500 hover:bg-rose-600 text-white font-black h-12 shadow-md">
-                <AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Button onClick={() => setIsPdfReportOpen(true)} variant="default" size="sm" className="bg-slate-900 hover:bg-black text-white font-black h-12 shadow-md">
-                <FileText className="h-5 w-5 mr-2" /> CÉDULA PDF
-              </Button>
-              <Button onClick={() => setIsImageReportOpen(true)} variant="default" size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white font-black h-12 shadow-md">
-                <ImageIcon className="h-5 w-5 mr-2" /> IMAGEN
-              </Button>
-            </div>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="default" size="sm" className="bg-amber-500 hover:bg-amber-600 text-white font-black h-12 shadow-md">
+                  <RotateCcw className="h-5 w-5 mr-2" /> NUEVO PARTIDO
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Reiniciar información?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    ¿Estás seguro de reiniciar la información? Todos los datos del partido actual, incluyendo alineaciones, goles y firmas, serán eliminados permanentemente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleResetMatch} className="bg-destructive text-destructive-foreground">Aceptar</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <Button onClick={() => setModal('info')} variant="default" size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white font-black h-12 shadow-md">
+              <Settings2 className="h-5 w-5 mr-2" /> DATOS PARTIDO
+            </Button>
+            <Button onClick={() => { setTempIncidents(currentIncidents); setModal('incidents'); }} variant="default" size="sm" className="bg-rose-500 hover:bg-rose-600 text-white font-black h-12 shadow-md">
+              <AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES
+            </Button>
+            <Button onClick={() => setIsPdfReportOpen(true)} variant="default" size="sm" className="bg-slate-900 hover:bg-black text-white font-black h-12 shadow-md">
+              <FileText className="h-5 w-5 mr-2" /> CÉDULA PDF
+            </Button>
+            <Button onClick={() => setIsImageReportOpen(true)} variant="default" size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white font-black h-12 shadow-md">
+              <ImageIcon className="h-5 w-5 mr-2" /> IMAGEN
+            </Button>
           </div>
         </div>
 
@@ -634,7 +698,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                     placeholder="Min" 
                     className="h-10 text-center font-bold text-lg"
                     value={currentMinute}
-                    onChange={e => currentMinute = e.target.value}
+                    onChange={e => setCurrentMinute(e.target.value)}
                   />
                 </div>
 
