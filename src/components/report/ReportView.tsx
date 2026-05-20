@@ -75,25 +75,34 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const incidents = safeEvents.find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
-  const getPlayerEventIcons = (side: 'home' | 'away', number: string) => {
+  const getPlayerEventsSummary = (side: 'home' | 'away', number: string, isSub: boolean, replacedNumber?: string) => {
     const playerEvs = safeEvents.filter(e => e.side === side && e.playerNumber === number);
-    const goalsCount = playerEvs.filter(e => e.category === 'goals').length;
-    const yellowCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟨')).length;
-    const redCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟥')).length;
+    const goals = playerEvs.filter(e => e.category === 'goals');
+    const yellows = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟨'));
+    const reds = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟥'));
+    const subEv = playerEvs.find(e => e.category === 'substitution');
     
-    let icons = '';
-    if (goalsCount > 0) icons += `  ⚽${goalsCount}`;
-    if (yellowCount > 0) icons += ' 🟨';
-    if (redCount > 0) icons += ' 🟥';
-    return icons;
+    let summary = '';
+    yellows.forEach(e => { summary += ` 🟨${e.time !== '--' ? `(${e.time})` : ''}`; });
+    reds.forEach(e => { summary += ` 🟥${e.time !== '--' ? `(${e.time})` : ''}`; });
+    goals.forEach(e => { 
+      const icon = e.message.includes('AUTOGOL') ? '🥅' : '⚽';
+      summary += ` ${icon}${e.time !== '--' ? `(${e.time})` : ''}`; 
+    });
+    
+    if (isSub && replacedNumber) {
+      summary += ` (SALIÓ: #${replacedNumber}${subEv?.time !== '--' ? ` ${subEv?.time}` : ''})`;
+    }
+    
+    return summary;
   };
 
   const renderPlayerBlock = (side: 'home' | 'away', players: Player[], x: number, y: number, title: string, isSub: boolean) => (
     <g transform={`translate(${x}, ${y})`}>
-      <text x="0" y="-10" fontSize="12" fontWeight="900" fill="white" opacity="0.6" textAnchor="start">{title}</text>
+      <text x="0" y="-10" fontSize="12" fontWeight="900" fill="white" opacity="0.6" textAnchor="start">{title.toUpperCase()}</text>
       {players.map((p, i) => (
         <text key={p.id} x="0" y={15 + (i * 18)} fontSize="10" fill="white" fontWeight="700" className="uppercase">
-          {`#${p.number} ${p.name.toUpperCase()}${getPlayerEventIcons(side, p.number)}${isSub && p.replacedNumber ? ` (SALIÓ: #${p.replacedNumber})` : ''}`}
+          {`#${p.number} ${p.name.toUpperCase()}${getPlayerEventsSummary(side, p.number, isSub, p.replacedNumber)}`}
         </text>
       ))}
     </g>
@@ -175,7 +184,7 @@ export function ReportView({ matchState }: ReportViewProps) {
           <g transform={`translate(0, ${520 + playersSecHeight})`}>
             <rect width="800" height={cardsSecHeight} fill="rgba(0,0,0,0.2)" />
             <g transform="translate(40, 40)">
-              <text fontSize="14" fontWeight="900" fill="white" textAnchor="start" className="uppercase">SANCIONES {teamNames.home}</text>
+              <text fontSize="14" fontWeight="900" fill="white" textAnchor="start" className="uppercase">SANCIONES {teamNames.home.toUpperCase()}</text>
               <g transform="translate(0, 30)">
                 {homeSanciones.yellows.map((e, idx) => (
                   <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
@@ -192,7 +201,7 @@ export function ReportView({ matchState }: ReportViewProps) {
               </g>
             </g>
             <g transform="translate(440, 40)">
-              <text fontSize="14" fontWeight="900" fill="white" textAnchor="start" className="uppercase">SANCIONES {teamNames.away}</text>
+              <text fontSize="14" fontWeight="900" fill="white" textAnchor="start" className="uppercase">SANCIONES {teamNames.away.toUpperCase()}</text>
               <g transform="translate(0, 30)">
                 {awaySanciones.yellows.map((e, idx) => (
                   <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
@@ -211,10 +220,10 @@ export function ReportView({ matchState }: ReportViewProps) {
           </g>
 
           <g transform={`translate(400, ${520 + playersSecHeight + cardsSecHeight + 50})`}>
-             <text textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16" fontWeight="900">INCIDENTES DEL PARTIDO</text>
+             <text textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16" fontWeight="900" className="uppercase">INCIDENTES DEL PARTIDO</text>
              <foreignObject x="-350" y="20" width="700" height="200">
                 <div xmlns="http://www.w3.org/1999/xhtml" style={{ color: 'white', fontSize: '12px', textAlign: 'center', lineHeight: '1.3', opacity: 0.9, textTransform: 'uppercase' }}>
-                  {incidents}
+                  {incidents.toUpperCase()}
                 </div>
              </foreignObject>
           </g>

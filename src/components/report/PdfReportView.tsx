@@ -85,18 +85,34 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     <div className="space-y-1">
       {players.map(p => {
         const playerEvs = getPlayerEvents(side, p.number);
-        const goalsCount = playerEvs.filter(e => e.category === 'goals').length;
-        const hasYellow = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟨'));
-        const hasRed = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟥'));
+        const goals = playerEvs.filter(e => e.category === 'goals');
+        const yellows = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟨'));
+        const reds = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟥'));
+        const subEv = playerEvs.find(e => e.category === 'substitution');
 
         return (
           <div key={p.id} className="flex justify-between items-center text-[9px] border-b border-gray-100 py-0.5">
-            <span className="flex items-center gap-1 uppercase flex-1 truncate">
-              {hasRed && '🟥'}{hasYellow && '🟨'}{p.number}.- {p.name}
-            </span>
-            <div className="flex gap-2 items-center min-w-[60px] justify-end font-black">
-              {isSub && p.replacedNumber && <span className="text-[8px] text-rose-600">SALIÓ: #{p.replacedNumber}</span>}
-              {goalsCount > 0 && <span className="text-emerald-600">⚽{goalsCount}</span>}
+            <div className="flex items-center gap-1 uppercase flex-1 truncate">
+              <span className="font-bold">{p.number}.- {p.name.toUpperCase()}</span>
+              
+              <div className="flex gap-1 items-center ml-2">
+                {yellows.map(e => (
+                  <span key={e.id} title={e.message}>🟨{e.time !== '--' ? `(${e.time})` : ''}</span>
+                ))}
+                {reds.map(e => (
+                  <span key={e.id} title={e.message}>🟥{e.time !== '--' ? `(${e.time})` : ''}</span>
+                ))}
+                {goals.map(e => (
+                  <span key={e.id} className="text-emerald-600 font-black">
+                    {e.message.includes('AUTOGOL') ? '🥅' : '⚽'}{e.time !== '--' ? `(${e.time})` : ''}
+                  </span>
+                ))}
+                {isSub && p.replacedNumber && (
+                  <span className="text-[8px] text-rose-600 font-black italic ml-1">
+                    (SALIÓ: #{p.replacedNumber}{subEv?.time !== '--' ? ` ${subEv?.time}` : ''})
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         );
@@ -119,7 +135,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
       <div ref={reportRef} className="p-10 bg-white text-black font-sans mx-auto shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
         <div className="text-center space-y-1 mb-6">
           <h1 className="text-2xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
-          <h2 className="text-xs font-bold uppercase tracking-widest">{matchInfo.league || 'LIGA'} | JORNADA {matchInfo.round || 'S/N'}</h2>
+          <h2 className="text-xs font-bold uppercase tracking-widest">{matchInfo.league?.toUpperCase() || 'LIGA'} | JORNADA {matchInfo.round?.toUpperCase() || 'S/N'}</h2>
           <div className="border-b-2 border-black w-full mt-2"></div>
         </div>
 
@@ -135,12 +151,12 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           <div className="border-r-2 border-black p-2">
             <p className="text-[9px] font-bold">CLUB LOCAL</p>
             <p className="text-[12px] font-black">{scores.home} ({numberToSpanishWords(scores.home)})</p>
-            <h3 className="text-lg font-black uppercase">{teamNames.home}</h3>
+            <h3 className="text-lg font-black uppercase">{teamNames.home.toUpperCase()}</h3>
           </div>
           <div className="p-2">
             <p className="text-[9px] font-bold">CLUB VISITANTE</p>
             <p className="text-[12px] font-black">{scores.away} ({numberToSpanishWords(scores.away)})</p>
-            <h3 className="text-lg font-black uppercase">{teamNames.away}</h3>
+            <h3 className="text-lg font-black uppercase">{teamNames.away.toUpperCase()}</h3>
           </div>
         </div>
 
@@ -166,35 +182,35 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-4">
-              <h3 className="text-[10px] font-black border-b uppercase">{teamNames.home}</h3>
+              <h3 className="text-[10px] font-black border-b uppercase">{teamNames.home.toUpperCase()}</h3>
               <div className="text-[9px] space-y-2">
                 <p className="font-bold underline">AMONESTACIONES:</p>
                 {homeSanciones.yellows.map(e => (
                   <div key={e.id} className="border-b pb-0.5 uppercase">
-                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
+                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
                   </div>
                 ))}
                 <p className="font-bold underline pt-2">EXPULSIONES:</p>
                 {homeSanciones.reds.map(e => (
                   <div key={e.id} className="border-b pb-0.5 uppercase">
-                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
+                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
                   </div>
                 ))}
               </div>
             </div>
             <div className="space-y-4">
-              <h3 className="text-[10px] font-black border-b uppercase">{teamNames.away}</h3>
+              <h3 className="text-[10px] font-black border-b uppercase">{teamNames.away.toUpperCase()}</h3>
               <div className="text-[9px] space-y-2">
                 <p className="font-bold underline">AMONESTACIONES:</p>
                 {awaySanciones.yellows.map(e => (
                   <div key={e.id} className="border-b pb-0.5 uppercase">
-                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
+                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
                   </div>
                 ))}
                 <p className="font-bold underline pt-2">EXPULSIONES:</p>
                 {awaySanciones.reds.map(e => (
                   <div key={e.id} className="border-b pb-0.5 uppercase">
-                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
+                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
                   </div>
                 ))}
               </div>
@@ -203,7 +219,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
           <h2 className="text-[11px] font-black mt-6 mb-2 uppercase">INCIDENTES:</h2>
           <div className="text-[9px] p-2 border border-slate-200 rounded min-h-[100px] whitespace-pre-wrap uppercase">
-            {incidentNote}
+            {incidentNote.toUpperCase()}
           </div>
         </div>
 
