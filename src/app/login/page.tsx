@@ -185,7 +185,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-black uppercase italic text-primary">Iniciar Sesión</CardTitle>
-          <CardDescription>Accede a tu panel de RefereElite.</CardDescription>
+          <CardDescription>Accede a tu panel de Referee Elite.</CardDescription>
         </CardHeader>
         <form onSubmit={handleSignIn}>
           <CardContent className="space-y-4">

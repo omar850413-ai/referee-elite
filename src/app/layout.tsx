@@ -7,7 +7,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'RefereElite',
+  title: 'Referee Elite',
   description:
     'La herramienta definitiva para asesores de arbitraje de fútbol.',
   icons: {

@@ -115,7 +115,7 @@ export function ReportView({ matchState }: ReportViewProps) {
       <DialogHeader className="px-2 pb-4 text-left">
         <DialogTitle className="text-white font-black italic uppercase">Cédula Digital Profesional</DialogTitle>
         <DialogDescription className="text-slate-400">
-          Informe en formato JPG de alta resolución generado por RefereElite.
+          Informe en formato JPG de alta resolución generado por Referee Elite.
         </DialogDescription>
       </DialogHeader>
       
@@ -239,7 +239,7 @@ export function ReportView({ matchState }: ReportViewProps) {
           </g>
 
           <text x="400" y={svgHeight - 30} textAnchor="middle" fill="white" opacity="0.4" fontSize="11" fontWeight="900" style={{ letterSpacing: '0.3em' }}>
-            CEDULA DIGITAL GENERADA POR REFEREELITE
+            CEDULA DIGITAL GENERADA POR REFEREE ELITE
           </text>
         </svg>
       </div>
