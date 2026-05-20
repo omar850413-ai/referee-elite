@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -37,9 +38,18 @@ export default function AdminPage() {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const usersRef = useMemoFirebase(
-    () => collection(firestore, 'users'),
-    [firestore]
+    () => {
+      // Solo habilitamos la colección de usuarios si el perfil actual es admin
+      if (!firestore || isUserLoading || isProfileLoading || !user) return null;
+      
+      const isSuperAdmin = user.email === 'omar850413@gmail.com';
+      if (!isSuperAdmin && !userProfile?.isAdmin) return null;
+
+      return collection(firestore, 'users');
+    },
+    [firestore, isUserLoading, isProfileLoading, user, userProfile]
   );
+  
   const { data: users, isLoading: areUsersLoading } = useCollection<UserWithId>(usersRef);
 
   useEffect(() => {
@@ -180,9 +190,12 @@ export default function AdminPage() {
                           <AlertDialogContent>
                             <AlertDialogHeader>
                               <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta acción eliminará el perfil del usuario permanentemente. Si el usuario inicia sesión de nuevo, deberá ser aprobado otra vez.
-                              </AlertDialogDescription>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta acción eliminará el perfil del usuario permanentemente. Si el usuario inicia sesión de nuevo, deberá ser aprobado otra vez.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>

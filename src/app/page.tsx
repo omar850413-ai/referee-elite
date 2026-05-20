@@ -2,13 +2,13 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, doc, addDoc, query, where, orderBy, DocumentReference, deleteDoc } from 'firebase/firestore';
+import { collection, doc, addDoc, query, where, orderBy, deleteDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth, useCollection } from '@/firebase';
 import { UserProfile, MatchState } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from '@/components/ui/Logo';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText, Trash2, LogOut, ShieldAlert, ChevronRight, Calendar } from 'lucide-react';
 import MatchPage from '@/components/MatchPage';
@@ -29,13 +29,21 @@ export default function Home() {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const matchesQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
+    // Solo ejecutamos la consulta si el usuario y el perfil están listos
+    if (!user || !firestore || isProfileLoading) return null;
+    
+    const isSuperAdmin = user.email === 'omar850413@gmail.com';
+    const isApproved = userProfile?.isApproved === true;
+
+    // Solo consultamos si el usuario tiene permiso (aprobado o admin)
+    if (!isSuperAdmin && !isApproved) return null;
+
     return query(
       collection(firestore, 'matches'),
       where('ownerId', '==', user.uid),
       orderBy('createdAt', 'desc')
     );
-  }, [user, firestore]);
+  }, [user, firestore, isProfileLoading, userProfile]);
 
   const { data: matches, isLoading: areMatchesLoading } = useCollection<MatchState>(matchesQuery);
 
