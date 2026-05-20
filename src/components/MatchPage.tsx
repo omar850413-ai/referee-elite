@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { MatchEvent, MatchState, Player, UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -89,7 +90,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       recognition.onend = () => setIsListening(false);
       recognition.onerror = (event: any) => {
         setIsListening(false);
-        toast({ variant: "destructive", title: "Error de audio", description: "No se pudo acceder al micrófono." });
+        console.error('Speech Recognition Error:', event.error);
+        toast({ variant: "destructive", title: "Error de audio", description: `No se pudo acceder al micrófono: ${event.error}` });
       };
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
@@ -101,6 +103,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       };
       recognition.start();
     } catch (e) {
+      console.error('Recognition error:', e);
       setIsListening(false);
     }
   };
@@ -511,6 +514,9 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
       <Dialog open={modal === 'player-actions'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Acciones del Jugador</DialogTitle>
+          </DialogHeader>
           {selectedPlayer && (
             <div className="flex flex-col">
               <div className={`p-6 text-white text-center ${selectedPlayer.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}>
@@ -757,6 +763,9 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
       <Dialog open={isPdfReportOpen} onOpenChange={setIsPdfReportOpen}>
         <DialogContent className="max-w-5xl p-0 bg-transparent border-none shadow-none h-[95vh]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Vista Previa de Cédula</DialogTitle>
+          </DialogHeader>
           <PdfReportView matchState={matchState} />
         </DialogContent>
       </Dialog>
