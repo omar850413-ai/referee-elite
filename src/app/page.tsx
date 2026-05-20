@@ -376,14 +376,23 @@ export default function Home() {
   );
 
   const isSuperAdmin = user?.email === 'omar850413@gmail.com';
-  const hasAdminRights = userProfile?.isAdmin || isSuperAdmin;
 
   return (
     <div className="p-2 md:p-6 bg-slate-50 min-h-screen font-sans text-slate-900">
       <div className="max-w-5xl mx-auto space-y-4">
         
-        <div className="flex justify-center py-6">
+        <div className="flex justify-between items-center py-6">
+          <div className="flex-1"></div>
           <Logo />
+          <div className="flex-1 flex justify-end">
+            {isSuperAdmin && (
+              <Link href="/admin">
+                <Button variant="outline" size="sm" className="font-black gap-2 uppercase text-primary border-primary shadow-sm">
+                  <ShieldAlert className="h-4 w-4" /> PANEL DE CONTROL
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border">
@@ -433,14 +442,6 @@ export default function Home() {
         </div>
 
         <div className="flex justify-center gap-6 pt-10 pb-10">
-          {hasAdminRights && (
-            <Link href="/admin">
-              <Button variant="outline" size="sm" className="font-black gap-2 opacity-60 hover:opacity-100 transition-opacity uppercase text-primary border-primary">
-                <ShieldAlert className="h-4 w-4" /> PANEL DE CONTROL
-              </Button>
-            </Link>
-          )}
-
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm" className="font-black gap-2 opacity-60 hover:opacity-100 transition-opacity uppercase">
