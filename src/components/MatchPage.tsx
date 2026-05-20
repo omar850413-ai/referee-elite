@@ -55,15 +55,16 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const [isListening, setIsListening] = useState(false);
   const [tempIncidents, setTempIncidents] = useState('');
 
+  // Signature drawing refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const isDrawingRef = useRef(false);
 
-  // Clear canvas when a signature modal opens
+  // Clear and init canvas when a signature modal opens
   useEffect(() => {
     if (modal?.startsWith('sign-')) {
       const timer = setTimeout(() => {
         initCanvas();
-      }, 150);
+      }, 200);
       return () => clearTimeout(timer);
     }
   }, [modal]);
@@ -133,8 +134,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const handleAddPlayer = (side: 'home' | 'away') => {
     if (!newPlayerNumber || !newPlayerName) return;
     const currentLineups = matchState.lineups || { home: [], away: [] };
-    const playerType = currentLineups[side].length < 11 ? 'starter' : 'substitute';
-    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: playerType };
+    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: 'starter' };
     const updatedLineups = { ...currentLineups, [side]: [...currentLineups[side], player] };
     updateMatch({ lineups: updatedLineups });
     setNewPlayerNumber('');
@@ -275,13 +275,11 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Set a white background for better export quality
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Set default stroke styles
     ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 5;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
   };
@@ -292,39 +290,40 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Force recapture of context settings just in case
-    ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 4;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
+    e.preventDefault();
     canvas.setPointerCapture(e.pointerId);
     const { x, y } = getCoordinates(e);
     
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    
     ctx.beginPath();
     ctx.moveTo(x, y);
-    setIsDrawing(true);
+    isDrawingRef.current = true;
   };
 
   const draw = (e: React.PointerEvent) => {
-    if (!isDrawing) return;
+    if (!isDrawingRef.current) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    e.preventDefault();
     const { x, y } = getCoordinates(e);
     ctx.lineTo(x, y);
     ctx.stroke();
   };
 
   const stopDrawing = (e: React.PointerEvent) => {
-    if (!isDrawing) return;
+    if (!isDrawingRef.current) return;
     const canvas = canvasRef.current;
     if (canvas) {
       canvas.releasePointerCapture(e.pointerId);
     }
-    setIsDrawing(false);
+    isDrawingRef.current = false;
   };
 
   const clearCanvas = () => {
@@ -335,12 +334,12 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    setIsDrawing(false);
+    isDrawingRef.current = false;
     const dataUrl = canvas.toDataURL('image/png');
     const currentSignatures = matchState.signatures || {};
     updateMatch({ signatures: { ...currentSignatures, [type]: dataUrl } });
     setModal(null);
-    toast({ title: "Firma capturada con éxito" });
+    toast({ title: "Firma guardada" });
   };
 
   const handleLogout = async () => {
@@ -523,6 +522,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
       </div>
 
+      {/* Modals Section */}
       <Dialog open={modal === 'add-player'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
@@ -735,26 +735,26 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         open={modal === 'sign-captainHome' || modal === 'sign-captainAway' || modal === 'sign-referee'} 
         onOpenChange={() => setModal(null)}
       >
-        <DialogContent className="max-w-md rounded-2xl p-0 overflow-hidden" onPointerDown={e => e.stopPropagation()}>
+        <DialogContent className="max-w-md rounded-2xl p-0 overflow-hidden">
           <DialogHeader className="p-4 bg-slate-50 border-b">
-            <DialogTitle className="text-center font-black uppercase">Captura de Firma Autógrafa</DialogTitle>
-            <DialogDescription className="sr-only">Dibuje su firma dentro del recuadro blanco.</DialogDescription>
+            <DialogTitle className="text-center font-black uppercase">Firma Autógrafa</DialogTitle>
+            <DialogDescription className="sr-only">Capture su firma en el recuadro blanco.</DialogDescription>
           </DialogHeader>
           <div className="p-4 space-y-4">
-            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl relative touch-none overflow-hidden select-none">
+            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl overflow-hidden relative touch-none select-none">
               <canvas 
                 ref={canvasRef}
                 width={800}
                 height={400}
-                className="w-full h-48 cursor-crosshair touch-none bg-white"
-                style={{ touchAction: 'none', userSelect: 'none' }}
+                className="w-full h-48 cursor-crosshair touch-none bg-white block"
+                style={{ touchAction: 'none', pointerEvents: 'auto' }}
                 onPointerDown={startDrawing}
                 onPointerMove={draw}
                 onPointerUp={stopDrawing}
                 onPointerLeave={stopDrawing}
                 onPointerCancel={stopDrawing}
               />
-              <p className="absolute bottom-2 left-0 right-0 text-center text-[10px] text-slate-300 pointer-events-none uppercase font-bold">FIRME AQUÍ</p>
+              <p className="absolute bottom-2 left-0 right-0 text-center text-[10px] text-slate-300 pointer-events-none uppercase font-bold">ZONA DE FIRMA</p>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={clearCanvas} className="flex-1 font-bold">
@@ -777,37 +777,37 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
       <Dialog open={modal === 'info'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-h-[80vh] overflow-y-auto rounded-2xl">
-          <DialogHeader><DialogTitle className="font-black text-center uppercase">Datos Generales del Acta</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-black text-center uppercase">Datos Generales</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
              <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Marcador Local (Manual)</Label>
+                <Label>Marcador Local</Label>
                 <Input type="number" value={scores.home} onChange={e => updateMatch({scores: {...scores, home: parseInt(e.target.value) || 0}})} />
               </div>
               <div className="space-y-2">
-                <Label>Marcador Visita (Manual)</Label>
+                <Label>Marcador Visita</Label>
                 <Input type="number" value={scores.away} onChange={e => updateMatch({scores: {...scores, away: parseInt(e.target.value) || 0}})} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Nombre Equipo Local</Label>
+                <Label>Equipo Local</Label>
                 <Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} />
               </div>
               <div className="space-y-2">
-                <Label>Nombre Equipo Visitante</Label>
+                <Label>Equipo Visita</Label>
                 <Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} />
               </div>
             </div>
-            <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value}})} placeholder="Nombre de la Liga / Torneo" />
+            <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value}})} placeholder="Liga / Torneo" />
             <div className="grid grid-cols-2 gap-4">
-              <Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value}})} placeholder="Jornada / Temporada" />
-              <Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value}})} placeholder="Campo / Estadio" />
+              <Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value}})} placeholder="Jornada" />
+              <Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value}})} placeholder="Campo" />
             </div>
             <Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} />
             <div className="border-t pt-4 space-y-2">
-              <p className="text-[10px] font-black uppercase text-slate-400">Cuerpo Arbitral</p>
-              <Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value}})} placeholder="Árbitro Central" />
+              <p className="text-[10px] font-black uppercase text-slate-400">Árbitros</p>
+              <Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value}})} placeholder="Central" />
               <Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value}})} placeholder="Asistente 1" />
               <Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value}})} placeholder="Asistente 2" />
             </div>
@@ -817,18 +817,14 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
       <Dialog open={isPdfReportOpen} onOpenChange={setIsPdfReportOpen}>
         <DialogContent className="max-w-5xl p-0 bg-transparent border-none shadow-none h-[95vh]">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Vista Previa de Cédula</DialogTitle>
-          </DialogHeader>
+          <DialogHeader className="sr-only"><DialogTitle>PDF</DialogTitle></DialogHeader>
           <PdfReportView matchState={matchState} />
         </DialogContent>
       </Dialog>
 
       <Dialog open={isImageReportOpen} onOpenChange={setIsImageReportOpen}>
         <DialogContent className="max-w-5xl p-0 bg-transparent border-none shadow-none">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Vista Previa de Informe Imagen</DialogTitle>
-          </DialogHeader>
+          <DialogHeader className="sr-only"><DialogTitle>Imagen</DialogTitle></DialogHeader>
           <ReportView matchState={matchState} />
         </DialogContent>
       </Dialog>
