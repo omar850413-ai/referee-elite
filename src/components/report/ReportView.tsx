@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useRef } from 'react';
-import { MatchState, MatchEvent, Player } from '@/lib/types';
+import { MatchState, MatchEvent, Player, StaffMember } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { DialogClose, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -13,7 +12,7 @@ interface ReportViewProps {
 }
 
 export function ReportView({ matchState }: ReportViewProps) {
-  const { scores, teamNames, matchInfo, events, lineups = { home: [], away: [] }, signatures = {} } = matchState;
+  const { scores, teamNames, matchInfo, events, lineups = { home: [], away: [] }, staff = { home: [], away: [] }, signatures = {} } = matchState;
   const svgRef = useRef<SVGSVGElement>(null);
 
   const handleDownload = () => {
@@ -58,6 +57,8 @@ export function ReportView({ matchState }: ReportViewProps) {
   const safeEvents = events || [];
   const homePlayers = lineups.home || [];
   const awayPlayers = lineups.away || [];
+  const homeStaff = staff.home || [];
+  const awayStaff = staff.away || [];
 
   const homeStarters = homePlayers.slice(0, 11);
   const homeSubs = homePlayers.slice(11);
@@ -98,22 +99,42 @@ export function ReportView({ matchState }: ReportViewProps) {
     return summary;
   };
 
-  const renderPlayerBlock = (side: 'home' | 'away', players: Player[], x: number, y: number, title: string, isSub: boolean) => (
+  const getStaffEventsSummary = (side: 'home' | 'away', name: string) => {
+    const staffEvs = safeEvents.filter(e => e.side === side && e.playerName === name);
+    const yellows = staffEvs.filter(e => e.category === 'cards' && e.message.includes('🟨'));
+    const reds = staffEvs.filter(e => e.category === 'cards' && e.message.includes('🟥'));
+    
+    let summary = '';
+    yellows.forEach(e => { summary += ` 🟨${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; });
+    reds.forEach(e => { summary += ` 🟥${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; });
+    
+    return summary;
+  };
+
+  const renderPlayerBlock = (side: 'home' | 'away', players: Player[], staffMembers: StaffMember[], x: number, y: number, title: string) => (
     <g transform={`translate(${x}, ${y})`}>
       <text x="0" y="-10" fontSize="12" fontWeight="900" fill="white" opacity="0.6" textAnchor="start">{title.toUpperCase()}</text>
       {players.map((p, i) => (
         <text key={p.id} x="0" y={15 + (i * 18)} fontSize="10" fill="white" fontWeight="700" className="uppercase">
-          {`#${p.number} ${p.name.toUpperCase()}${getPlayerEventsSummary(side, p.number, isSub, p.replacedNumber)}`}
+          {`#${p.number} ${p.name.toUpperCase()}${getPlayerEventsSummary(side, p.number, title.includes('SUPLENTES'), p.replacedNumber)}`}
         </text>
       ))}
+      <g transform={`translate(0, ${players.length * 18 + 20})`}>
+        <text x="0" y="-10" fontSize="12" fontWeight="900" fill="white" opacity="0.6" textAnchor="start">CUERPO TÉCNICO</text>
+        {staffMembers.map((s, i) => (
+          <text key={s.id} x="0" y={15 + (i * 18)} fontSize="10" fill="white" fontWeight="700" className="uppercase">
+            {`${s.role.toUpperCase()}: ${s.name.toUpperCase()}${getStaffEventsSummary(side, s.name)}`}
+          </text>
+        ))}
+      </g>
     </g>
   );
 
   const homeColor = '#064E3B'; 
   const awayColor = '#1E3A8A'; 
   
-  const maxPlayersCount = Math.max(homePlayers.length, awayPlayers.length);
-  const playersSecHeight = (maxPlayersCount * 18) + 120;
+  const maxPlayersCount = Math.max(homePlayers.length + homeStaff.length, awayPlayers.length + awayStaff.length);
+  const playersSecHeight = (maxPlayersCount * 18) + 150;
   
   const homeCardsCount = homeSanciones.yellows.length + homeSanciones.reds.length + 2; 
   const awayCardsCount = awaySanciones.yellows.length + awaySanciones.reds.length + 2;
@@ -123,12 +144,12 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   return (
     <div className="w-full max-h-[90vh] overflow-y-auto p-4 bg-slate-900 rounded-xl">
-      <DialogHeader className="px-2 pb-4 text-left">
-        <DialogTitle className="text-white font-black italic uppercase">Cédula Digital Profesional</DialogTitle>
-        <DialogDescription className="text-slate-400">
+      <div className="px-2 pb-4 text-left">
+        <h2 className="text-white font-black italic uppercase">Cédula Digital Profesional</h2>
+        <p className="text-slate-400 text-sm">
           Informe en formato JPG de alta resolución generado por Referee Elite.
-        </DialogDescription>
-      </DialogHeader>
+        </p>
+      </div>
       
       <div className="relative w-full max-w-[800px] mx-auto border-4 border-white/10 rounded-lg overflow-hidden">
         <svg
@@ -170,15 +191,15 @@ export function ReportView({ matchState }: ReportViewProps) {
           <g transform="translate(40, 480)">
              <text x="0" y="0" fontSize="18" fontWeight="900" fill="white" textAnchor="start">ALINEACIONES</text>
              <g transform="translate(0, 20)">
-               {renderPlayerBlock('home', homeStarters, 0, 30, 'TITULARES', false)}
-               {renderPlayerBlock('home', homeSubs, 0, 260, 'SUPLENTES / CAMBIOS', true)}
+               {renderPlayerBlock('home', homeStarters, homeStaff, 0, 30, 'TITULARES')}
+               {renderPlayerBlock('home', homeSubs, [], 0, 300, 'SUPLENTES / CAMBIOS')}
              </g>
           </g>
           <g transform="translate(440, 480)">
              <text x="0" y="0" fontSize="18" fontWeight="900" fill="white" textAnchor="start">ALINEACIONES</text>
              <g transform="translate(0, 20)">
-               {renderPlayerBlock('away', awayStarters, 0, 30, 'TITULARES', false)}
-               {renderPlayerBlock('away', awaySubs, 0, 260, 'SUPLENTES / CAMBIOS', true)}
+               {renderPlayerBlock('away', awayStarters, awayStaff, 0, 30, 'TITULARES')}
+               {renderPlayerBlock('away', awaySubs, [], 0, 300, 'SUPLENTES / CAMBIOS')}
              </g>
           </g>
 
@@ -189,14 +210,14 @@ export function ReportView({ matchState }: ReportViewProps) {
               <g transform="translate(0, 30)">
                 {homeSanciones.yellows.map((e, idx) => (
                   <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
-                     🟨 #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
+                     🟨 {e.playerNumber ? `#${e.playerNumber}` : ''} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
                   </text>
                 ))}
               </g>
               <g transform={`translate(0, ${50 + homeSanciones.yellows.length * 20})`}>
                 {homeSanciones.reds.map((e, idx) => (
                   <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
-                    🟥 #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
+                    🟥 {e.playerNumber ? `#${e.playerNumber}` : ''} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
                   </text>
                 ))}
               </g>
@@ -206,14 +227,14 @@ export function ReportView({ matchState }: ReportViewProps) {
               <g transform="translate(0, 30)">
                 {awaySanciones.yellows.map((e, idx) => (
                   <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
-                     🟨 #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
+                     🟨 {e.playerNumber ? `#${e.playerNumber}` : ''} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
                   </text>
                 ))}
               </g>
               <g transform={`translate(0, ${50 + awaySanciones.yellows.length * 20})`}>
                 {awaySanciones.reds.map((e, idx) => (
                   <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
-                    🟥 #{e.playerNumber} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
+                    🟥 {e.playerNumber ? `#${e.playerNumber}` : ''} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
                   </text>
                 ))}
               </g>

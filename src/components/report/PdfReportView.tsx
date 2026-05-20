@@ -1,10 +1,9 @@
-
 'use client';
 
 import React, { useRef } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { MatchEvent, MatchState, Player } from '@/lib/types';
+import { MatchEvent, MatchState, Player, StaffMember } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { DialogClose } from '@/components/ui/dialog';
 import { Download, X } from 'lucide-react';
@@ -21,6 +20,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     scores, 
     events, 
     lineups = { home: [], away: [] }, 
+    staff = { home: [], away: [] },
     signatures = {}
   } = matchState;
   const reportRef = useRef<HTMLDivElement>(null);
@@ -67,6 +67,10 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
   const getPlayerEvents = (team: 'home' | 'away', number: string) => {
     return (events || []).filter(e => e.side === team && e.playerNumber === number);
+  };
+
+  const getStaffEvents = (team: 'home' | 'away', name: string) => {
+    return (events || []).filter(e => e.side === team && e.playerName === name);
   };
 
   const cardEvents = (events || []).filter(e => e.category === 'cards').sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
@@ -122,6 +126,32 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     </div>
   );
 
+  const renderStaffList = (staffMembers: StaffMember[], side: 'home' | 'away') => (
+    <div className="space-y-1">
+      {staffMembers.map(s => {
+        const staffEvs = getStaffEvents(side, s.name);
+        const yellows = staffEvs.filter(e => e.category === 'cards' && e.message.includes('🟨'));
+        const reds = staffEvs.filter(e => e.category === 'cards' && e.message.includes('🟥'));
+
+        return (
+          <div key={s.id} className="flex justify-between items-center text-[9px] border-b border-gray-100 py-0.5">
+            <div className="flex items-center gap-1 uppercase flex-1 truncate">
+              <span className="font-bold">{s.role.toUpperCase()}: {s.name.toUpperCase()}</span>
+              <div className="flex gap-1 items-center ml-2">
+                {yellows.map(e => (
+                  <span key={e.id} title={e.message}>🟨{e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</span>
+                ))}
+                {reds.map(e => (
+                  <span key={e.id} title={e.message}>🟥{e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className="bg-gray-100 p-4 max-h-screen overflow-y-auto rounded-lg relative">
       <DialogClose className="absolute right-4 top-4 z-50 bg-black/20 p-2 rounded-full">
@@ -169,6 +199,8 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
             {renderPlayerList(getStarters('home'), 'home', false)}
             <p className="text-[8px] font-black text-slate-400 mt-4 mb-1">SUPLENTES / CAMBIOS</p>
             {renderPlayerList(getSubs('home'), 'home', true)}
+            <p className="text-[8px] font-black text-slate-400 mt-4 mb-1">CUERPO TÉCNICO</p>
+            {renderStaffList(staff.home, 'home')}
           </div>
           <div>
             <div className="text-center font-black text-[12px] mb-2 border-b uppercase">ALINEACIONES VISITA</div>
@@ -176,6 +208,8 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
             {renderPlayerList(getStarters('away'), 'away', false)}
             <p className="text-[8px] font-black text-slate-400 mt-4 mb-1">SUPLENTES / CAMBIOS</p>
             {renderPlayerList(getSubs('away'), 'away', true)}
+            <p className="text-[8px] font-black text-slate-400 mt-4 mb-1">CUERPO TÉCNICO</p>
+            {renderStaffList(staff.away, 'away')}
           </div>
         </div>
 
@@ -189,13 +223,13 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 <p className="font-bold underline">AMONESTACIONES:</p>
                 {homeSanciones.yellows.map(e => (
                   <div key={e.id} className="border-b pb-0.5 uppercase">
-                    <strong>#{e.playerNumber} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
+                    <strong>{e.playerNumber ? `#${e.playerNumber}` : ''} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
                   </div>
                 ))}
                 <p className="font-bold underline pt-2">EXPULSIONES:</p>
                 {homeSanciones.reds.map(e => (
                   <div key={e.id} className="border-b pb-0.5 uppercase">
-                    <strong>#{e.playerNumber} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
+                    <strong>{e.playerNumber ? `#${e.playerNumber}` : ''} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
                   </div>
                 ))}
               </div>
@@ -206,13 +240,13 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 <p className="font-bold underline">AMONESTACIONES:</p>
                 {awaySanciones.yellows.map(e => (
                   <div key={e.id} className="border-b pb-0.5 uppercase">
-                    <strong>#{e.playerNumber} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
+                    <strong>{e.playerNumber ? `#${e.playerNumber}` : ''} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
                   </div>
                 ))}
                 <p className="font-bold underline pt-2">EXPULSIONES:</p>
                 {awaySanciones.reds.map(e => (
                   <div key={e.id} className="border-b pb-0.5 uppercase">
-                    <strong>#{e.playerNumber} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
+                    <strong>{e.playerNumber ? `#${e.playerNumber}` : ''} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()?.toUpperCase()}
                   </div>
                 ))}
               </div>

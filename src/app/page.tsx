@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -6,7 +5,7 @@ import { signOut } from 'firebase/auth';
 import { doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
 
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { MatchEvent, MatchState, Player, UserProfile } from '@/lib/types';
+import { MatchEvent, MatchState, Player, StaffMember, UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { PdfReportView } from '@/components/report/PdfReportView';
 import { ReportView } from '@/components/report/ReportView';
@@ -34,8 +33,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft, ArrowRightLeft } from 'lucide-react';
-import { causalesAmarilla, causalesRoja } from '@/lib/causales';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft, ArrowRightLeft, Users } from 'lucide-react';
+import { causalesAmarilla, causalesRoja, causalesStaff } from '@/lib/causales';
 import Link from 'next/link';
 
 export default function Home() {
@@ -50,9 +56,12 @@ export default function Home() {
   const [isPdfReportOpen, setIsPdfReportOpen] = useState(false);
   const [isImageReportOpen, setIsImageReportOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<{player: Player, side: 'home' | 'away', isSub: boolean} | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<{staff: StaffMember, side: 'home' | 'away'} | null>(null);
   const [cardType, setCardType] = useState<'yellow' | 'red' | null>(null);
   const [newPlayerNumber, setNewPlayerNumber] = useState('');
   const [newPlayerName, setNewPlayerName] = useState('');
+  const [newStaffName, setNewStaffName] = useState('');
+  const [newStaffRole, setNewStaffRole] = useState('DIRECTOR TÉCNICO');
   const [subReplacedNumber, setSubReplacedNumber] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [tempIncidents, setTempIncidents] = useState('');
@@ -175,7 +184,7 @@ export default function Home() {
     setModal(null);
   };
 
-  const startListening = () => {
+  const startListening = (target: 'player' | 'staff') => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
     try {
@@ -185,7 +194,8 @@ export default function Home() {
       recognition.onend = () => setIsListening(false);
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
-        setNewPlayerName(transcript.toUpperCase());
+        if (target === 'player') setNewPlayerName(transcript.toUpperCase());
+        else setNewStaffName(transcript.toUpperCase());
       };
       recognition.start();
     } catch (e) { setIsListening(false); }
@@ -198,6 +208,14 @@ export default function Home() {
     const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: isSubstitute ? 'substitute' : 'starter' };
     updateMatch({ lineups: { ...currentLineups, [side]: [...currentLineups[side], player] } });
     setNewPlayerNumber(''); setNewPlayerName(''); setModal(null);
+  };
+
+  const handleAddStaff = (side: 'home' | 'away') => {
+    if (!newStaffName || !matchState) return;
+    const currentStaff = matchState.staff || { home: [], away: [] };
+    const member: StaffMember = { id: Date.now().toString(), name: newStaffName.toUpperCase(), role: newStaffRole.toUpperCase() };
+    updateMatch({ staff: { ...currentStaff, [side]: [...currentStaff[side], member] } });
+    setNewStaffName(''); setModal(null);
   };
 
   const handleAddGoal = (side: 'home' | 'away', player: Player) => {
@@ -226,6 +244,15 @@ export default function Home() {
     const newEvent: MatchEvent = { id: Date.now(), time: timeDisplay, category: 'cards', message: `${symbol} #${player.number} ${player.name} - #${causalIdx + 1} ${causalText.toUpperCase()}${currentMinute ? ` (${currentMinute}')` : ''}`, side, playerNumber: player.number, playerName: player.name };
     updateMatch({ events: [newEvent, ...(matchState.events || [])] });
     setCurrentMinute(''); setModal('player-actions');
+  };
+
+  const handleAddStaffCard = (side: 'home' | 'away', staff: StaffMember, type: 'yellow' | 'red', causalIdx: number, causalText: string) => {
+    if (!matchState) return;
+    const symbol = type === 'yellow' ? '🟨' : '🟥';
+    const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
+    const newEvent: MatchEvent = { id: Date.now(), time: timeDisplay, category: 'cards', message: `${symbol} ${staff.role} ${staff.name} - #${causalIdx + 1} ${causalText.toUpperCase()}${currentMinute ? ` (${currentMinute}')` : ''}`, side, playerName: staff.name };
+    updateMatch({ events: [newEvent, ...(matchState.events || [])] });
+    setCurrentMinute(''); setModal('staff-actions');
   };
 
   const handleRegisterSubstitution = () => {
@@ -274,7 +301,7 @@ export default function Home() {
     );
   }
 
-  const { teamNames, matchInfo, lineups = { home: [], away: [] }, events = [], signatures = {}, scores } = matchState;
+  const { teamNames, matchInfo, lineups = { home: [], away: [] }, staff = { home: [], away: [] }, events = [], signatures = {}, scores } = matchState;
 
   const renderPlayerTable = (side: 'home' | 'away', players: Player[], title: string, isSubList: boolean) => (
     <div className="mb-4">
@@ -312,6 +339,37 @@ export default function Home() {
     </div>
   );
 
+  const renderStaffTable = (side: 'home' | 'away', staffMembers: StaffMember[]) => (
+    <div className="mb-4">
+      <div className="bg-slate-100 p-2 border-y"><p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">CUERPO TÉCNICO</p></div>
+      <table className="w-full text-left border-collapse">
+        <tbody className="text-sm">
+          {staffMembers.map((s) => {
+            const staffEvs = events.filter(e => e.side === side && e.playerName === s.name);
+            const yellow = staffEvs.some(e => e.category === 'cards' && e.message.includes('🟨'));
+            const red = staffEvs.some(e => e.category === 'cards' && e.message.includes('🟥'));
+            return (
+              <tr key={s.id} className="border-b hover:bg-slate-50 cursor-pointer" onClick={() => { setSelectedStaff({ staff: s, side }); setModal('staff-actions'); }}>
+                <td className="p-2">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-bold uppercase text-slate-700 text-xs">{s.name}</p>
+                      <p className="text-[9px] font-black text-slate-400">{s.role}</p>
+                    </div>
+                    <div className="flex gap-4 items-center">
+                      {yellow && <span className="text-[11px]">🟨</span>}
+                      {red && <span className="text-[11px]">🟥</span>}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
     <div className="p-2 md:p-6 bg-slate-50 min-h-screen font-sans text-slate-900">
       <div className="max-w-5xl mx-auto space-y-4">
@@ -335,9 +393,12 @@ export default function Home() {
           {(['home', 'away'] as const).map(side => (
             <Card key={side} className="border-none shadow-md overflow-hidden">
               <CardHeader className={`${side === 'home' ? 'bg-amber-500' : 'bg-blue-600'} text-white p-4`}>
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
                   <CardTitle className="text-lg font-black uppercase italic">{teamNames[side]}</CardTitle>
-                  <Button onClick={() => { setCurrentSide(side); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[10px] uppercase"><UserPlus className="h-3 w-3 mr-1" /> JUGADOR</Button>
+                  <div className="flex gap-2">
+                    <Button onClick={() => { setCurrentSide(side); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[10px] uppercase"><UserPlus className="h-3 w-3 mr-1" /> JUGADOR</Button>
+                    <Button onClick={() => { setCurrentSide(side); setModal('add-staff'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[10px] uppercase"><Users className="h-3 w-3 mr-1" /> STAFF</Button>
+                  </div>
                 </div>
                 <div className="text-center bg-black/20 rounded-lg p-2">
                   <Input type="number" value={scores[side]} onChange={e => updateMatch({ scores: { ...scores, [side]: parseInt(e.target.value) || 0 } })} className="bg-transparent border-none text-center text-4xl font-black text-white h-auto p-0 focus-visible:ring-0" />
@@ -346,6 +407,7 @@ export default function Home() {
               <CardContent className="p-0">
                 {renderPlayerTable(side, lineups[side].slice(0, 11), "TITULARES", false)}
                 {renderPlayerTable(side, lineups[side].slice(11), "SUPLENTES", true)}
+                {renderStaffTable(side, staff[side])}
               </CardContent>
             </Card>
           ))}
@@ -396,11 +458,44 @@ export default function Home() {
             <Input type="number" placeholder="00" className="text-2xl h-14 text-center font-black" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} />
             <div className="relative">
               <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value.toUpperCase())} />
-              <button onClick={startListening} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+              <button onClick={() => startListening('player')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
                 {isListening ? <MicOff size={20} /> : <Mic size={20} />}
               </button>
             </div>
             <Button onClick={() => handleAddPlayer(currentSide)} className="w-full h-12 font-black bg-primary text-white uppercase">AGREGAR</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modal === 'add-staff'} onOpenChange={() => setModal(null)}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader><DialogTitle className="text-center font-black uppercase">INSCRIBIR CUERPO TÉCNICO</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-black uppercase">CARGO</Label>
+              <Select value={newStaffRole} onValueChange={setNewStaffRole}>
+                <SelectTrigger className="w-full uppercase font-bold">
+                  <SelectValue placeholder="SELECCIONE CARGO" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DIRECTOR TÉCNICO">DIRECTOR TÉCNICO</SelectItem>
+                  <SelectItem value="AUXILIAR">AUXILIAR</SelectItem>
+                  <SelectItem value="PREPARADOR FÍSICO">PREPARADOR FÍSICO</SelectItem>
+                  <SelectItem value="UTILERO">UTILERO</SelectItem>
+                  <SelectItem value="MÉDICO">MÉDICO</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-black uppercase">NOMBRE</Label>
+              <div className="relative">
+                <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newStaffName} onChange={e => setNewStaffName(e.target.value.toUpperCase())} />
+                <button onClick={() => startListening('staff')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                </button>
+              </div>
+            </div>
+            <Button onClick={() => handleAddStaff(currentSide)} className="w-full h-12 font-black bg-primary text-white uppercase">AGREGAR</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -439,10 +534,38 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={modal === 'staff-actions'} onOpenChange={() => setModal(null)}>
+        <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Acciones de Cuerpo Técnico</DialogTitle>
+          </DialogHeader>
+          {selectedStaff && (
+            <div className="flex flex-col">
+              <div className={`p-6 text-white text-center ${selectedStaff.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}><p className="text-2xl font-black uppercase">{selectedStaff.staff.role}</p><p className="text-xl font-bold uppercase italic">{selectedStaff.staff.name}</p></div>
+              <div className="p-6 space-y-4 bg-white">
+                <div className="space-y-2"><Label className="flex items-center gap-2 text-xs font-black uppercase text-slate-400"><Clock size={14} /> MINUTO (OPCIONAL)</Label><Input type="number" placeholder="MIN" className="h-10 text-center font-bold" value={currentMinute} onChange={e => setCurrentMinute(e.target.value)} /></div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <Button onClick={() => { setCardType('yellow'); setModal('causales-staff'); }} className="h-14 font-black bg-yellow-400 text-yellow-900 uppercase">🟨 AMONESTACION</Button>
+                  <Button onClick={() => { setCardType('red'); setModal('causales-staff'); }} className="h-14 font-black bg-red-600 text-white uppercase">🟥 EXPULSION</Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={modal === 'causales'} onOpenChange={() => setModal('player-actions')}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-black uppercase">CAUSALES - #{selectedPlayer?.player.number}</DialogTitle></DialogHeader>
           <div className="space-y-2 py-4">{(cardType === 'yellow' ? causalesAmarilla : causalesRoja).map((causal, idx) => (<Button key={idx} variant="outline" className="w-full justify-start text-left h-auto py-2 text-xs" onClick={() => handleAddCard(selectedPlayer!.side, selectedPlayer!.player, cardType!, idx, causal)}><span className="font-bold mr-2 text-primary">#{idx + 1}</span> {causal.toUpperCase()}</Button>))}</div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modal === 'causales-staff'} onOpenChange={() => setModal('staff-actions')}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="font-black uppercase">CAUSALES STAFF - {selectedStaff?.staff.role}</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-4">{causalesStaff.map((causal, idx) => (<Button key={idx} variant="outline" className="w-full justify-start text-left h-auto py-2 text-xs" onClick={() => handleAddStaffCard(selectedStaff!.side, selectedStaff!.staff, cardType!, idx, causal)}><span className="font-bold mr-2 text-primary">#{idx + 1}</span> {causal.toUpperCase()}</Button>))}</div>
         </DialogContent>
       </Dialog>
 
