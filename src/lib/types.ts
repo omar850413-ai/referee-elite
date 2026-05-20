@@ -77,6 +77,11 @@ export interface ReportSettings {
   showFouls: boolean;
 }
 
+export interface Signatures {
+  captain?: string;
+  referee?: string;
+}
+
 export interface MatchState {
   scores: Scores;
   fouls: Fouls;
@@ -96,6 +101,7 @@ export interface MatchState {
   };
   attendance?: string;
   timing?: MatchTiming;
+  signatures?: Signatures;
 }
 
 export interface UserProfile {

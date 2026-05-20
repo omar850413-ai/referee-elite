@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, signOut } from 'firebase/auth';
@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PdfReportView } from '@/components/report/PdfReportView';
 import { Logo } from '@/components/ui/Logo';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2 } from 'lucide-react';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check } from 'lucide-react';
 
 interface MatchPageProps {
   user: User;
@@ -43,6 +43,11 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   // Form states
   const [newPlayerNumber, setNewPlayerNumber] = useState('');
   const [newPlayerName, setNewPlayerName] = useState('');
+  const [isListening, setIsListening] = useState(false);
+
+  // Signature state
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   const updateMatch = (data: Partial<MatchState>) => {
     return updateDoc(matchDocRef, data)
@@ -61,10 +66,29 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       });
   };
 
+  // Voice Dictation
+  const startListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast({ title: "No soportado", description: "El dictado no es compatible con este navegador." });
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setNewPlayerName(transcript.toUpperCase());
+    };
+    recognition.start();
+  };
+
   const handleAddPlayer = (side: 'home' | 'away') => {
     if (!matchState || !newPlayerNumber || !newPlayerName) return;
     const lineups = matchState.lineups || { home: [], away: [] };
-    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName, type: 'starter' };
+    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: 'starter' };
     const updatedLineups = { ...lineups, [side]: [...lineups[side], player] };
     updateMatch({ lineups: updatedLineups });
     setNewPlayerNumber('');
@@ -101,6 +125,62 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     toast({ title: `Gol registrado para #${player.number}` });
   };
 
+  // Signature Canvas Logic
+  const startDrawing = (e: React.PointerEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    setIsDrawing(true);
+  };
+
+  const draw = (e: React.PointerEvent) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const saveSignature = (type: 'captain' | 'referee') => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL();
+    const signatures = matchState?.signatures || {};
+    updateMatch({ signatures: { ...signatures, [type]: dataUrl } });
+    setModal(null);
+    toast({ title: "Firma guardada correctamente" });
+  };
+
   const handleLogout = async () => {
     localStorage.removeItem('sessionId');
     await signOut(auth);
@@ -117,7 +197,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     );
   }
 
-  const { teamNames, matchInfo, lineups = { home: [], away: [] }, events = [] } = matchState;
+  const { teamNames, matchInfo, lineups = { home: [], away: [] }, events = [], signatures = {} } = matchState;
 
   const getPlayerGoals = (side: 'home' | 'away', number: string) => {
     return events.filter(e => e.side === side && e.playerNumber === number && e.category === 'goals').length;
@@ -259,18 +339,36 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         {/* SIGNATURE SECTION */}
         <div className="grid grid-cols-2 gap-8 pt-10 pb-20">
           <div className="text-center">
-            <div className="border-b-2 border-slate-300 w-full h-20 mb-2"></div>
+            <button 
+              onClick={() => setModal('sign-captain')}
+              className="border-b-2 border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden"
+            >
+              {signatures.captain ? (
+                <img src={signatures.captain} alt="Firma Capitán" className="max-h-full" />
+              ) : (
+                <span className="text-slate-300 italic text-xs">PULSAR PARA FIRMAR</span>
+              )}
+            </button>
             <p className="text-[10px] font-black uppercase text-slate-400">Firma del Capitán / Delegado</p>
           </div>
           <div className="text-center">
-            <div className="border-b-2 border-slate-300 w-full h-20 mb-2"></div>
+            <button 
+              onClick={() => setModal('sign-referee')}
+              className="border-b-2 border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden"
+            >
+              {signatures.referee ? (
+                <img src={signatures.referee} alt="Firma Árbitro" className="max-h-full" />
+              ) : (
+                <span className="text-slate-300 italic text-xs">PULSAR PARA FIRMAR</span>
+              )}
+            </button>
             <p className="text-[10px] font-black uppercase text-slate-400">Firma del Árbitro</p>
           </div>
         </div>
 
       </div>
 
-      {/* MODALS */}
+      {/* MODAL: ADD PLAYER */}
       <Dialog open={modal === 'add-player'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
@@ -289,16 +387,59 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             </div>
             <div className="space-y-2">
               <Label>Nombre y Apellido</Label>
-              <Input 
-                placeholder="Nombre completo" 
-                className="uppercase font-bold"
-                value={newPlayerName} 
-                onChange={e => setNewPlayerName(e.target.value)}
-              />
+              <div className="relative">
+                <Input 
+                  placeholder="Nombre completo" 
+                  className="uppercase font-bold pr-10"
+                  value={newPlayerName} 
+                  onChange={e => setNewPlayerName(e.target.value)}
+                />
+                <button 
+                  onClick={startListening}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}
+                >
+                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                </button>
+              </div>
             </div>
             <Button onClick={() => handleAddPlayer(currentSide)} className="w-full h-12 font-black uppercase italic bg-primary">
               <Plus className="h-5 w-5 mr-2" /> Agregar a Lista
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL: SIGNATURES */}
+      <Dialog open={modal === 'sign-captain' || modal === 'sign-referee'} onOpenChange={() => setModal(null)}>
+        <DialogContent className="max-w-md rounded-2xl p-0 overflow-hidden">
+          <DialogHeader className="p-4 bg-slate-50 border-b">
+            <DialogTitle className="text-center font-black uppercase">Captura de Firma Autógrafa</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 space-y-4">
+            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl relative touch-none">
+              <canvas 
+                ref={canvasRef}
+                width={400}
+                height={200}
+                className="w-full h-48 cursor-crosshair"
+                onPointerDown={startDrawing}
+                onPointerMove={draw}
+                onPointerUp={stopDrawing}
+                onPointerOut={stopDrawing}
+              />
+              <p className="absolute bottom-2 left-0 right-0 text-center text-[10px] text-slate-300 pointer-events-none">FIRME DENTRO DEL RECUADRO</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={clearCanvas} className="flex-1">
+                <Eraser className="h-4 w-4 mr-2" /> Limpiar
+              </Button>
+              <Button 
+                onClick={() => saveSignature(modal === 'sign-captain' ? 'captain' : 'referee')} 
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+              >
+                <Check className="h-4 w-4 mr-2" /> Guardar Firma
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

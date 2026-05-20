@@ -22,7 +22,8 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     lineups = { home: [], away: [] }, 
     staff = { home: [], away: [] }, 
     attendance, 
-    timing 
+    timing,
+    signatures = {}
   } = matchState;
   const reportRef = useRef<HTMLDivElement>(null);
 
@@ -207,6 +208,24 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           </div>
           <div className="text-right">
             <p className="font-bold">Asistencia aproximada: {attendance || '0'}</p>
+          </div>
+        </div>
+
+        {/* SIGNATURES ON PDF */}
+        <div className="grid grid-cols-2 gap-10 mt-10 text-center">
+          <div className="flex flex-col items-center">
+            <div className="h-20 w-full flex items-center justify-center mb-1">
+              {signatures.captain && <img src={signatures.captain} alt="Firma Cap" className="max-h-full" />}
+            </div>
+            <div className="border-t border-black w-48 mb-1"></div>
+            <p className="text-[9px] font-bold uppercase">Capitán / Delegado</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="h-20 w-full flex items-center justify-center mb-1">
+              {signatures.referee && <img src={signatures.referee} alt="Firma Arb" className="max-h-full" />}
+            </div>
+            <div className="border-t border-black w-48 mb-1"></div>
+            <p className="text-[9px] font-bold uppercase">Árbitro Central</p>
           </div>
         </div>
 
