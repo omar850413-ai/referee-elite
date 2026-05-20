@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef } from 'react';
@@ -21,9 +20,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     scores, 
     events, 
     lineups = { home: [], away: [] }, 
-    staff = { home: [], away: [] }, 
-    attendance, 
-    timing,
     signatures = {}
   } = matchState;
   const reportRef = useRef<HTMLDivElement>(null);
@@ -69,9 +65,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
   const homeStarters = getPlayersByType('home', 'starter');
   const awayStarters = getPlayersByType('away', 'starter');
-  const homeSubs = getPlayersByType('home', 'substitute');
-  const awaySubs = getPlayersByType('away', 'substitute');
-  const changes = events.filter(e => e.category === 'subs').sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
   const cards = events.filter(e => e.category === 'cards').sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
 
   return (
@@ -123,7 +116,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
         {/* LINEUPS SECTION */}
         <div className="text-center font-bold text-[12px] mb-2">ALINEACIÓN INICIAL</div>
         <div className="grid grid-cols-2 gap-10 mb-8">
-          {/* HOME LINEUP */}
           <div className="space-y-1">
             {homeStarters.map(p => (
               <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100">
@@ -138,7 +130,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               </div>
             ))}
           </div>
-          {/* AWAY LINEUP */}
           <div className="space-y-1">
             {awayStarters.map(p => (
               <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100">
@@ -155,7 +146,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           </div>
         </div>
 
-        {/* PAGE BREAK FOR CARDS & INCIDENTS */}
         <div className="mt-10 border-t-2 border-black pt-6">
           <h2 className="text-sm font-bold mb-4 uppercase">DETALLE DE TARJETAS:</h2>
           <div className="space-y-2 mb-8 text-[11px]">
@@ -178,25 +168,33 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           </div>
         </div>
 
-        {/* SIGNATURES ON PDF */}
-        <div className="grid grid-cols-2 gap-10 mt-20 text-center">
+        {/* 3 SIGNATURES SECTION */}
+        <div className="grid grid-cols-3 gap-6 mt-20 text-center">
           <div className="flex flex-col items-center">
             <div className="h-20 w-full flex items-center justify-center mb-1">
-              {signatures.captain && <img src={signatures.captain} alt="Firma Cap" className="max-h-full" />}
+              {signatures.captainHome && <img src={signatures.captainHome} alt="Firma Cap Local" className="max-h-full" />}
             </div>
-            <div className="border-t border-black w-48 mb-1"></div>
-            <p className="text-[9px] font-bold uppercase">Capitán / Delegado</p>
+            <div className="border-t border-black w-full mb-1"></div>
+            <p className="text-[8px] font-bold uppercase">Capitán / Delegado LOCAL</p>
           </div>
+          
+          <div className="flex flex-col items-center">
+            <div className="h-20 w-full flex items-center justify-center mb-1">
+              {signatures.captainAway && <img src={signatures.captainAway} alt="Firma Cap Visitante" className="max-h-full" />}
+            </div>
+            <div className="border-t border-black w-full mb-1"></div>
+            <p className="text-[8px] font-bold uppercase">Capitán / Delegado VISITANTE</p>
+          </div>
+
           <div className="flex flex-col items-center">
             <div className="h-20 w-full flex items-center justify-center mb-1">
               {signatures.referee && <img src={signatures.referee} alt="Firma Arb" className="max-h-full" />}
             </div>
-            <div className="border-t border-black w-48 mb-1"></div>
-            <p className="text-[9px] font-bold uppercase">Árbitro Central</p>
+            <div className="border-t border-black w-full mb-1"></div>
+            <p className="text-[8px] font-bold uppercase">Árbitro Central</p>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

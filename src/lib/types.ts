@@ -78,7 +78,8 @@ export interface ReportSettings {
 }
 
 export interface Signatures {
-  captain?: string;
+  captainHome?: string;
+  captainAway?: string;
   referee?: string;
 }
 

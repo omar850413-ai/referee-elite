@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
@@ -70,7 +69,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       });
   };
 
-  // Voice Dictation Fix
   const startListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -177,16 +175,29 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     updateMatch({ events: updatedEvents, scores: updatedScores });
   };
 
-  // Signature Canvas Logic
+  // Signature Canvas Logic with Offset Fix
+  const getCoordinates = (e: React.PointerEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    
+    // Scale factors to account for CSS sizing differences
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
+    };
+  };
+
   const startDrawing = (e: React.PointerEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const { x, y } = getCoordinates(e);
 
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -200,15 +211,14 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const { x, y } = getCoordinates(e);
 
     ctx.lineTo(x, y);
     ctx.stroke();
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
   };
 
   const stopDrawing = () => {
@@ -223,7 +233,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
-  const saveSignature = (type: 'captain' | 'referee') => {
+  const saveSignature = (type: 'captainHome' | 'captainAway' | 'referee') => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const dataUrl = canvas.toDataURL();
@@ -290,8 +300,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
         {/* MAIN GRID - 2 COLUMNS (LOCAL / VISITANTE) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* TEAM RENDER HELPER */}
           {(['home', 'away'] as const).map(side => (
             <Card key={side} className="border-none shadow-md overflow-hidden">
               <CardHeader className={`${side === 'home' ? 'bg-amber-500' : 'bg-blue-600'} text-white p-4 flex flex-row justify-between items-center`}>
@@ -380,25 +388,40 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           ))}
         </div>
 
-        {/* SIGNATURE SECTION */}
-        <div className="grid grid-cols-2 gap-8 pt-10 pb-20">
+        {/* SIGNATURE SECTION - 3 BOXES */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10 pb-20">
           <div className="text-center">
             <button 
-              onClick={() => setModal('sign-captain')}
-              className="border-b-2 border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden"
+              onClick={() => setModal('sign-captainHome')}
+              className="border-2 border-dashed border-slate-300 w-full h-32 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden rounded-xl bg-white"
             >
-              {signatures.captain ? (
-                <img src={signatures.captain} alt="Firma Capitán" className="max-h-full" />
+              {signatures.captainHome ? (
+                <img src={signatures.captainHome} alt="Firma Cap Local" className="max-h-full" />
               ) : (
                 <span className="text-slate-300 italic text-xs">PULSAR PARA FIRMAR</span>
               )}
             </button>
-            <p className="text-[10px] font-black uppercase text-slate-400">Firma del Capitán / Delegado</p>
+            <p className="text-[10px] font-black uppercase text-slate-400">Capitán / Delegado (LOCAL)</p>
           </div>
+          
+          <div className="text-center">
+            <button 
+              onClick={() => setModal('sign-captainAway')}
+              className="border-2 border-dashed border-slate-300 w-full h-32 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden rounded-xl bg-white"
+            >
+              {signatures.captainAway ? (
+                <img src={signatures.captainAway} alt="Firma Cap Visitante" className="max-h-full" />
+              ) : (
+                <span className="text-slate-300 italic text-xs">PULSAR PARA FIRMAR</span>
+              )}
+            </button>
+            <p className="text-[10px] font-black uppercase text-slate-400">Capitán / Delegado (VISITANTE)</p>
+          </div>
+
           <div className="text-center">
             <button 
               onClick={() => setModal('sign-referee')}
-              className="border-b-2 border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden"
+              className="border-2 border-dashed border-slate-300 w-full h-32 mb-2 flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden rounded-xl bg-white"
             >
               {signatures.referee ? (
                 <img src={signatures.referee} alt="Firma Árbitro" className="max-h-full" />
@@ -406,7 +429,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 <span className="text-slate-300 italic text-xs">PULSAR PARA FIRMAR</span>
               )}
             </button>
-            <p className="text-[10px] font-black uppercase text-slate-400">Firma del Árbitro</p>
+            <p className="text-[10px] font-black uppercase text-slate-400">Árbitro Central</p>
           </div>
         </div>
 
@@ -476,47 +499,22 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         </DialogContent>
       </Dialog>
 
-      {/* MODAL: EDIT PLAYER EVENTS */}
-      <Dialog open={modal === 'edit-player'} onOpenChange={() => setModal(null)}>
-        <DialogContent className="max-w-sm rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-center font-black uppercase">Gestionar: {selectedPlayer?.player.name}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-xs text-slate-400 font-bold uppercase">Eventos registrados:</p>
-            <div className="space-y-2">
-              {selectedPlayer && getPlayerEvents(selectedPlayer.side, selectedPlayer.player.number).map(e => (
-                <div key={e.id} className="flex justify-between items-center p-2 bg-slate-50 border rounded-lg">
-                  <span className="text-xs font-medium">{e.message}</span>
-                  <Button 
-                    onClick={() => removeEvent(e.id)}
-                    variant="ghost" size="icon" className="h-6 w-6 text-red-500"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-              {selectedPlayer && getPlayerEvents(selectedPlayer.side, selectedPlayer.player.number).length === 0 && (
-                <p className="text-center text-slate-300 italic text-sm py-4">Sin eventos</p>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* MODAL: SIGNATURES */}
-      <Dialog open={modal === 'sign-captain' || modal === 'sign-referee'} onOpenChange={() => setModal(null)}>
+      {/* MODAL: SIGNATURE CAPTURE */}
+      <Dialog 
+        open={modal === 'sign-captainHome' || modal === 'sign-captainAway' || modal === 'sign-referee'} 
+        onOpenChange={() => setModal(null)}
+      >
         <DialogContent className="max-w-md rounded-2xl p-0 overflow-hidden">
           <DialogHeader className="p-4 bg-slate-50 border-b">
             <DialogTitle className="text-center font-black uppercase">Captura de Firma Autógrafa</DialogTitle>
           </DialogHeader>
           <div className="p-4 space-y-4">
-            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl relative touch-none">
+            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl relative touch-none overflow-hidden">
               <canvas 
                 ref={canvasRef}
-                width={400}
-                height={200}
-                className="w-full h-48 cursor-crosshair"
+                width={800}
+                height={400}
+                className="w-full h-48 cursor-crosshair touch-none"
                 onPointerDown={startDrawing}
                 onPointerMove={draw}
                 onPointerUp={stopDrawing}
@@ -529,7 +527,11 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 <Eraser className="h-4 w-4 mr-2" /> Limpiar
               </Button>
               <Button 
-                onClick={() => saveSignature(modal === 'sign-captain' ? 'captain' : 'referee')} 
+                onClick={() => {
+                  const type = modal === 'sign-captainHome' ? 'captainHome' : 
+                               modal === 'sign-captainAway' ? 'captainAway' : 'referee';
+                  saveSignature(type);
+                }} 
                 className="flex-1 bg-emerald-600 hover:bg-emerald-700"
               >
                 <Check className="h-4 w-4 mr-2" /> Guardar Firma
@@ -539,6 +541,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         </DialogContent>
       </Dialog>
 
+      {/* MODAL: INFO & OTHER */}
       <Dialog open={modal === 'info'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-h-[80vh] overflow-y-auto rounded-2xl">
           <DialogHeader><DialogTitle className="font-black text-center uppercase">Datos Generales del Acta</DialogTitle></DialogHeader>
@@ -577,4 +580,3 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     </div>
   );
 }
-
