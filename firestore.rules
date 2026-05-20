@@ -2,65 +2,21 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() { return request.auth != null; }
+    function isSuperAdmin() { return isSignedIn() && request.auth.token.email == 'omar850413@gmail.com'; }
+    function getUserData() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function isApproved() { return isSuperAdmin() || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().isApproved == true); }
+    function isAdmin() { return isSuperAdmin() || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().isAdmin == true); }
 
-    // -- Funciones Auxiliares --
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Comprueba si el usuario es el Super Administrador designado
-    function isSuperAdmin() {
-      return isSignedIn() && request.auth.token.email == 'omar850413@gmail.com';
-    }
-
-    // Comprueba de forma segura si un usuario tiene un campo específico en true
-    function hasUserFlag(flag) {
-      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return exists(userPath) && get(userPath).data[flag] == true;
-    }
-
-    // Comprueba si el usuario está aprobado o es super admin
-    function isApproved() {
-      return isSuperAdmin() || hasUserFlag('isApproved');
-    }
-
-    // Comprueba si el usuario es admin o super admin
-    function isAdmin() {
-      return isSuperAdmin() || hasUserFlag('isAdmin');
-    }
-
-    // Comprueba si el usuario es el propietario del documento
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    // -- Reglas para Perfiles de Usuario --
     match /users/{userId} {
-      // Los admins pueden ver a todos. Los usuarios solo a sí mismos.
-      allow get: if isOwner(userId) || isAdmin();
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin();
-      
-      // Creación: El super admin puede crear cualquier perfil. Otros solo el suyo (registro inicial).
-      allow create: if isSignedIn() && (isOwner(userId) || isSuperAdmin());
-      
-      // Actualización: Admins pueden actualizar cualquier campo. Usuarios solo los suyos EXCEPTO su estatus de admin/aprobado.
-      allow update: if isAdmin() || 
-                      (isOwner(userId) && 
-                       request.resource.data.isAdmin == resource.data.isAdmin &&
-                       request.resource.data.isApproved == resource.data.isApproved);
-                       
-      allow delete: if isAdmin();
+      allow create: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+      allow update: if isAdmin() || (isSignedIn() && request.auth.uid == userId && request.resource.data.isAdmin == resource.data.isAdmin && request.resource.data.isApproved == resource.data.isApproved);
     }
 
-    // -- Reglas para Datos de Partidos --
     match /matches/{matchId} {
-      // Lectura: Usuarios aprobados pueden leer sus propios partidos. Admins pueden leer todos.
-      allow read: if isApproved() && (isAdmin() || resource.data.ownerId == request.auth.uid);
-      
-      // Escritura: Solo usuarios aprobados y que sean dueños del registro.
-      allow create: if isApproved() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isApproved() && resource.data.ownerId == request.auth.uid;
-      allow delete: if isApproved() && resource.data.ownerId == request.auth.uid;
+      allow read, write: if isApproved() && (isAdmin() || matchId == request.auth.uid || (resource != null && resource.data.ownerId == request.auth.uid) || (request.resource != null && request.resource.data.ownerId == request.auth.uid));
     }
   }
 }

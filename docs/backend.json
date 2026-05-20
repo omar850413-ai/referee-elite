@@ -5,174 +5,36 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "MatchState",
       "type": "object",
-      "description": "Represents the overall state of a match, including scores, timer, events, and team names.",
+      "description": "Represents the overall state of a single match per user.",
       "properties": {
-        "title": { "type": "string", "description": "A descriptive title for the match." },
-        "scores": {
-          "$ref": "#/entities/Scores"
-        },
-        "fouls": {
-          "$ref": "#/entities/Fouls"
-        },
-        "timer": {
-          "$ref": "#/entities/Timer"
-        },
-        "events": {
-          "type": "array",
-          "description": "List of match events, like goals, cards, fouls, and notes.",
-          "items": {
-            "$ref": "#/entities/Event"
-          }
-        },
-        "teamNames": {
-          "$ref": "#/entities/TeamNames"
-        },
-        "matchInfo": {
-          "$ref": "#/entities/MatchInfo"
-        },
-        "penaltyShootout": {
-          "$ref": "#/entities/PenaltyShootout"
-        },
-        "ownerId": { "type": "string", "description": "The UID of the user who created the match." }
-      },
-      "required": ["scores", "fouls", "timer", "events", "teamNames", "matchInfo", "ownerId"]
-    },
-    "Scores": {
-      "title": "Scores",
-      "type": "object",
-      "description": "Represents the score of the match",
-      "properties": {
-        "home": { "type": "number", "description": "Score of the home team." },
-        "away": { "type": "number", "description": "Score of the away team." }
-      },
-      "required": ["home", "away"]
-    },
-    "Fouls": {
-      "title": "Fouls",
-      "type": "object",
-      "description": "Represents the number of fouls committed for each team.",
-      "properties": {
-        "home": { "type": "number", "description": "Number of fouls committed by the home team." },
-        "away": { "type": "number", "description": "Number of fouls committed by the away team." }
-      },
-      "required": ["home", "away"]
-    },
-    "Timer": {
-      "title": "Timer",
-      "type": "object",
-      "description": "Represents the state of the game timer.",
-      "properties": {
-        "status": {
-          "type": "string",
-          "description": "Current status of the match.",
-          "enum": ["NOT_STARTED", "FIRST_HALF", "HALF_TIME", "SECOND_HALF", "FINISHED"]
-        },
-        "startTime": { "type": "number", "description": "Timestamp of the last time the timer was started or resumed." },
-        "elapsedSeconds": { "type": "number", "description": "Total elapsed seconds in the current period." },
-        "isRunning": { "type": "boolean", "description": "Indicates whether the timer is currently running." },
-        "firstHalfEndSeconds": { "type": "number", "description": "Timestamp of when the first half ended." }
-      },
-      "required": ["status", "startTime", "elapsedSeconds", "isRunning"]
-    },
-    "Event": {
-      "title": "Event",
-      "type": "object",
-      "description": "Represents a single event that occurs during the match.",
-      "properties": {
-        "id": { "type": "number", "description": "Unique identifier for the Event entity (timestamp)." },
-        "time": { "type": "string", "description": "Formatted time when the event occurred (e.g., '45+2')." },
-        "category": { "type": "string", "description": "Category of the event (e.g., 'goals', 'cards', 'subs', 'notes', 'general')." },
-        "message": { "type": "string", "description": "Descriptive message for the event." }
-      },
-      "required": ["id", "time", "category", "message"]
-    },
-    "TeamNames": {
-      "title": "TeamNames",
-      "type": "object",
-      "description": "Represents the names of the teams.",
-      "properties": {
-        "home": { "type": "string", "description": "Name of the home team." },
-        "away": { "type": "string", "description": "Name of the away team." }
-      },
-      "required": ["home", "away"]
-    },
-    "MatchInfo": {
-      "title": "MatchInfo",
-      "type": "object",
-      "description": "General information about the match.",
-      "properties": {
-        "advisor": { "type": "string", "description": "Name of the match advisor." },
-        "league": { "type": "string", "description": "Name of the league or tournament." },
-        "round": { "type": "string", "description": "The matchday or round number." },
-        "place": { "type": "string", "description": "Venue or location of the match." },
-        "date": { "type": "string", "description": "Date of the match." },
-        "referee": { "type": "string", "description": "Name of the referee." },
-        "assistant1": { "type": "string", "description": "Name of the first assistant referee." },
-        "assistant2": { "type": "string", "description": "Name of the second assistant referee." },
-        "fourthOfficial": { "type": "string", "description": "Name of the fourth official." },
-        "var": { "type": "string", "description": "Name of the VAR." },
-        "avar": { "type": "string", "description": "Name of the AVAR." }
-      },
-      "required": ["advisor", "league", "round", "place", "date"]
-    },
-    "PenaltyShootout": {
-      "title": "PenaltyShootout",
-      "type": "object",
-      "description": "Represents the result of a penalty shootout.",
-      "properties": {
-        "home": { "type": "number", "description": "Penalty goals for the home team." },
-        "away": { "type": "number", "description": "Penalty goals for the away team." },
-        "active": { "type": "boolean", "description": "Indicates if the penalty shootout is active." }
-      },
-      "required": ["home", "away", "active"]
+        "title": { "type": "string" },
+        "scores": { "type": "object", "properties": { "home": { "type": "number" }, "away": { "type": "number" } } },
+        "fouls": { "type": "object", "properties": { "home": { "type": "number" }, "away": { "type": "number" } } },
+        "timer": { "type": "object" },
+        "events": { "type": "array" },
+        "teamNames": { "type": "object", "properties": { "home": { "type": "string" }, "away": { "type": "string" } } },
+        "matchInfo": { "type": "object" },
+        "lineups": { "type": "object" },
+        "signatures": { "type": "object" },
+        "ownerId": { "type": "string" }
+      }
     },
     "UserProfile": {
       "title": "User Profile",
       "type": "object",
-      "description": "Represents a user's profile information, including approval and admin status.",
       "properties": {
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "The user's email address."
-        },
-        "isApproved": {
-          "type": "boolean",
-          "description": "Indicates if the user has been approved by an administrator."
-        },
-        "isAdmin": {
-          "type": "boolean",
-          "description": "Indicates if the user has administrative privileges."
-        },
-        "sessionId": {
-          "type": "string",
-          "description": "A unique token to identify the current active session and prevent multi-device login."
-        }
-      },
-      "required": ["email", "isApproved", "isAdmin"]
+        "email": { "type": "string" },
+        "isApproved": { "type": "boolean" },
+        "isAdmin": { "type": "boolean" },
+        "sessionId": { "type": "string" }
+      }
     }
   },
-  "auth": {
-    "providers": [
-      "email_password"
-    ]
-  },
+  "auth": { "providers": ["email_password"] },
   "firestore": {
     "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "schema": { "$ref": "#/entities/UserProfile" },
-          "description": "Stores user profile information."
-        }
-      },
-      {
-        "path": "/matches/{matchId}",
-        "definition": {
-          "schema": { "$ref": "#/entities/MatchState" },
-          "description": "Stores the complete state for a single match."
-        }
-      }
+      { "path": "/users/{userId}", "definition": { "schema": { "$ref": "#/entities/UserProfile" }, "description": "User profile." } },
+      { "path": "/matches/{matchId}", "definition": { "schema": { "$ref": "#/entities/MatchState" }, "description": "Single match report." } }
     ]
   }
 }

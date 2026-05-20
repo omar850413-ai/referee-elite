@@ -1,17 +1,41 @@
 
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, doc, addDoc, query, where, orderBy, deleteDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth, useCollection } from '@/firebase';
-import { UserProfile, MatchState } from '@/lib/types';
-import { Skeleton } from '@/components/ui/skeleton';
+import { doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
+
+import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { MatchEvent, MatchState, Player, UserProfile } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+import { PdfReportView } from '@/components/report/PdfReportView';
+import { ReportView } from '@/components/report/ReportView';
 import { Logo } from '@/components/ui/Logo';
-import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText, Trash2, LogOut, ShieldAlert, ChevronRight, Calendar } from 'lucide-react';
-import MatchPage from '@/components/MatchPage';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft } from 'lucide-react';
+import { causalesAmarilla, causalesRoja } from '@/lib/causales';
 import Link from 'next/link';
 
 export default function Home() {
@@ -19,8 +43,22 @@ export default function Home() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const auth = useAuth();
+  const { toast } = useToast();
 
-  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const [modal, setModal] = useState<string | null>(null);
+  const [currentSide, setCurrentSide] = useState<'home' | 'away'>('home');
+  const [isPdfReportOpen, setIsPdfReportOpen] = useState(false);
+  const [isImageReportOpen, setIsImageReportOpen] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<{player: Player, side: 'home' | 'away'} | null>(null);
+  const [cardType, setCardType] = useState<'yellow' | 'red' | null>(null);
+  const [newPlayerNumber, setNewPlayerNumber] = useState('');
+  const [newPlayerName, setNewPlayerName] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const [tempIncidents, setTempIncidents] = useState('');
+  const [currentMinute, setCurrentMinute] = useState('');
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isDrawingRef = useRef(false);
 
   const userProfileRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -28,24 +66,11 @@ export default function Home() {
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
-  const matchesQuery = useMemoFirebase(() => {
-    // Solo ejecutamos la consulta si el usuario y el perfil están listos
-    if (!user || !firestore || isProfileLoading) return null;
-    
-    const isSuperAdmin = user.email === 'omar850413@gmail.com';
-    const isApproved = userProfile?.isApproved === true;
-
-    // Solo consultamos si el usuario tiene permiso (aprobado o admin)
-    if (!isSuperAdmin && !isApproved) return null;
-
-    return query(
-      collection(firestore, 'matches'),
-      where('ownerId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
-  }, [user, firestore, isProfileLoading, userProfile]);
-
-  const { data: matches, isLoading: areMatchesLoading } = useCollection<MatchState>(matchesQuery);
+  const matchRef = useMemoFirebase(
+    () => (user ? doc(firestore, 'matches', user.uid) : null),
+    [user, firestore]
+  );
+  const { data: matchState, isLoading: isMatchLoading } = useDoc<MatchState>(matchRef);
 
   useEffect(() => {
     if (isUserLoading || isProfileLoading) return;
@@ -53,19 +78,35 @@ export default function Home() {
       router.push('/login');
       return;
     }
-
     const isSuperAdmin = user.email === 'omar850413@gmail.com';
-    const isApproved = userProfile?.isApproved === true;
-
-    if (!isSuperAdmin && !isApproved) {
+    if (!isSuperAdmin && !userProfile?.isApproved) {
       router.push('/pending-approval');
     }
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
-  const handleCreateMatch = async () => {
-    if (!user || !firestore) return;
+  useEffect(() => {
+    if (modal?.startsWith('sign-')) {
+      const timer = setTimeout(() => initCanvas(), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [modal]);
+
+  const updateMatch = (data: Partial<MatchState>) => {
+    if (!matchRef) return;
+    updateDoc(matchRef, data).catch((error) => {
+      const permissionError = new FirestorePermissionError({
+        path: matchRef.path,
+        operation: 'update',
+        requestResourceData: data,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    });
+  };
+
+  const handleResetMatch = () => {
+    if (!matchRef || !user) return;
     const advisorName = user.email || '';
-    const newMatch: MatchState = {
+    const resetState: MatchState = {
       title: `Partido ${new Date().toLocaleDateString()}`,
       scores: { home: 0, away: 0 },
       fouls: { home: 0, away: 0 },
@@ -76,19 +117,98 @@ export default function Home() {
       penaltyShootout: { home: 0, away: 0, active: false },
       lineups: { home: [], away: [] },
       staff: { home: [], away: [] },
-      ownerId: user.uid,
-      createdAt: Date.now()
+      signatures: {},
+      ownerId: user.uid
     };
-
-    const docRef = await addDoc(collection(firestore, 'matches'), newMatch);
-    setSelectedMatchId(docRef.id);
+    setDoc(matchRef, resetState).then(() => toast({ title: "Información Reiniciada" }));
   };
 
-  const handleDeleteMatch = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    if (confirm('¿Estás seguro de que quieres eliminar este reporte permanentemente?')) {
-      await deleteDoc(doc(firestore, 'matches', id));
-    }
+  const initCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+  };
+
+  const getCoordinates = (e: React.PointerEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+  };
+
+  const startDrawing = (e: React.PointerEvent) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    const { x, y } = getCoordinates(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    isDrawingRef.current = true;
+  };
+
+  const draw = (e: React.PointerEvent) => {
+    if (!isDrawingRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!ctx) return;
+    const { x, y } = getCoordinates(e);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const saveSignature = (type: 'captainHome' | 'captainAway' | 'referee') => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL('image/png');
+    updateMatch({ signatures: { ...(matchState?.signatures || {}), [type]: dataUrl } });
+    setModal(null);
+  };
+
+  const handleAddPlayer = (side: 'home' | 'away') => {
+    if (!newPlayerNumber || !newPlayerName || !matchState) return;
+    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: 'starter' };
+    const currentLineups = matchState.lineups || { home: [], away: [] };
+    updateMatch({ lineups: { ...currentLineups, [side]: [...currentLineups[side], player] } });
+    setNewPlayerNumber(''); setNewPlayerName(''); setModal(null);
+  };
+
+  const handleAddGoal = (side: 'home' | 'away', player: Player) => {
+    if (!matchState) return;
+    const newScores = { ...matchState.scores, [side]: (matchState.scores[side] || 0) + 1 };
+    const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
+    const newEvent: MatchEvent = { id: Date.now(), time: timeDisplay, category: 'goals', message: `⚽ GOL #${player.number} ${player.name}${currentMinute ? ` (${currentMinute}')` : ''}`, side, playerNumber: player.number, playerName: player.name };
+    updateMatch({ scores: newScores, events: [newEvent, ...(matchState.events || [])] });
+    setCurrentMinute(''); setModal(null);
+  };
+
+  const handleAddOwnGoal = (playerSide: 'home' | 'away', player: Player) => {
+    if (!matchState) return;
+    const opponentSide = playerSide === 'home' ? 'away' : 'home';
+    const newScores = { ...matchState.scores, [opponentSide]: (matchState.scores[opponentSide] || 0) + 1 };
+    const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
+    const newEvent: MatchEvent = { id: Date.now(), time: timeDisplay, category: 'goals', message: `🥅 AUTOGOL #${player.number} ${player.name}${currentMinute ? ` (${currentMinute}')` : ''}`, side: playerSide, playerNumber: player.number, playerName: player.name };
+    updateMatch({ scores: newScores, events: [newEvent, ...(matchState.events || [])] });
+    setCurrentMinute(''); setModal(null);
+  };
+
+  const handleAddCard = (side: 'home' | 'away', player: Player, type: 'yellow' | 'red', causalIdx: number, causalText: string) => {
+    if (!matchState) return;
+    const symbol = type === 'yellow' ? '🟨' : '🟥';
+    const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
+    const newEvent: MatchEvent = { id: Date.now(), time: timeDisplay, category: 'cards', message: `${symbol} #${player.number} ${player.name} - #${causalIdx + 1} ${causalText}${currentMinute ? ` (${currentMinute}')` : ''}`, side, playerNumber: player.number, playerName: player.name };
+    updateMatch({ events: [newEvent, ...(matchState.events || [])] });
+    setCurrentMinute(''); setModal('player-actions');
   };
 
   const handleLogout = async () => {
@@ -97,98 +217,193 @@ export default function Home() {
     router.push('/login');
   };
 
-  if (isUserLoading || isProfileLoading || areMatchesLoading) {
+  if (isUserLoading || isProfileLoading || isMatchLoading) {
+    return <div className="p-4 bg-sky-50 min-h-screen flex items-center justify-center"><Skeleton className="h-40 w-full max-w-4xl" /></div>;
+  }
+
+  if (!matchState) {
     return (
-      <div className="p-4 bg-sky-100 min-h-screen flex items-center justify-center">
-        <Skeleton className="h-40 w-full max-w-4xl" />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-sky-50 p-4">
+        <Logo className="mb-8" />
+        <Card className="w-full max-w-md text-center">
+          <CardHeader><CardTitle>Bienvenido a Referee Elite</CardTitle></CardHeader>
+          <CardContent>
+            <p className="mb-6 text-slate-500">Presiona el botón para iniciar tu primer reporte arbitral.</p>
+            <Button onClick={handleResetMatch} className="w-full bg-primary h-12 font-black italic uppercase">COMENZAR REPORTE</Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  if (selectedMatchId) {
-    const matchRef = doc(firestore, 'matches', selectedMatchId);
-    return <MatchPage user={user!} userProfile={userProfile} matchDocRef={matchRef} onBack={() => setSelectedMatchId(null)} />;
-  }
-
+  const { teamNames, matchInfo, lineups = { home: [], away: [] }, events = [], signatures = {}, scores } = matchState;
   const isAdmin = userProfile?.isAdmin || user?.email === 'omar850413@gmail.com';
 
+  const renderPlayerTable = (side: 'home' | 'away', players: Player[], title: string) => (
+    <div className="mb-4">
+      <div className="bg-slate-100 p-2 border-y"><p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{title}</p></div>
+      <table className="w-full text-left border-collapse">
+        <tbody className="text-sm">
+          {players.map((p) => {
+            const playerEvs = events.filter(e => e.side === side && e.playerNumber === p.number);
+            const goals = playerEvs.filter(e => e.category === 'goals' && !e.message.includes('AUTOGOL')).length;
+            const ownGoals = playerEvs.filter(e => e.category === 'goals' && e.message.includes('AUTOGOL')).length;
+            const yellow = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟨'));
+            const red = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟥'));
+            return (
+              <tr key={p.id} className="border-b hover:bg-slate-50 cursor-pointer" onClick={() => { setSelectedPlayer({ player: p, side }); setModal('player-actions'); }}>
+                <td className="p-2 text-center font-bold text-slate-400 w-10">#{p.number}</td>
+                <td className="p-2">
+                  <div className="flex justify-between items-center">
+                    <p className="font-bold uppercase text-slate-700 text-xs">{p.name}</p>
+                    <div className="flex gap-4 items-center">
+                      {goals > 0 && <span className="text-[11px] font-black text-emerald-600">⚽{goals}</span>}
+                      {ownGoals > 0 && <span className="text-[11px] font-black text-orange-600">🥅{ownGoals}</span>}
+                      {yellow && <span className="text-[11px]">🟨</span>}
+                      {red && <span className="text-[11px]">🟥</span>}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
-    <div className="p-4 md:p-8 bg-sky-50 min-h-screen">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Logo />
-            {isAdmin && (
-              <Link href="/admin">
-                <Button variant="ghost" size="sm" className="text-primary font-bold gap-2">
-                  <ShieldAlert className="h-4 w-4" /> PANEL ADMIN
-                </Button>
-              </Link>
-            )}
+    <div className="p-2 md:p-6 bg-slate-50 min-h-screen font-sans text-slate-900">
+      <div className="max-w-5xl mx-auto space-y-4">
+        
+        <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border">
+          <div className="flex justify-between items-center w-full">
+            <div className="flex items-center gap-4">
+              <Logo />
+              {isAdmin && (
+                <Link href="/admin">
+                  <Button variant="ghost" size="sm" className="text-primary font-bold gap-2">
+                    <ShieldAlert className="h-4 w-4" /> PANEL ADMIN
+                  </Button>
+                </Link>
+              )}
+            </div>
+            <Button onClick={handleLogout} variant="ghost" size="sm" className="text-red-500 font-bold"><LogOut className="h-4 w-4 mr-1" /> SALIR</Button>
           </div>
-          <Button onClick={handleLogout} variant="ghost" size="sm" className="text-red-500">
-            <LogOut className="h-4 w-4 mr-2" /> Salir
-          </Button>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="default" size="sm" className="bg-amber-500 hover:bg-amber-600 text-white font-black h-12 shadow-md">
+                  <RotateCcw className="h-5 w-5 mr-2" /> REINICIAR
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader><AlertDialogTitle>¿Reiniciar información?</AlertDialogTitle><AlertDialogDescription>¿Estás seguro de reiniciar los datos del partido?</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleResetMatch}>Aceptar</AlertDialogAction></AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button onClick={() => setModal('info')} className="bg-indigo-600 text-white font-black h-12 shadow-md"><Settings2 className="h-5 w-5 mr-2" /> DATOS PARTIDO</Button>
+            <Button onClick={() => { setTempIncidents(events.find(e => e.category === 'notes')?.message.replace('📝 ', '') || ''); setModal('incidents'); }} className="bg-rose-500 text-white font-black h-12 shadow-md"><AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES</Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => setIsPdfReportOpen(true)} className="bg-slate-900 text-white font-black h-12 shadow-md">PDF</Button>
+              <Button onClick={() => setIsImageReportOpen(true)} className="bg-emerald-500 text-white font-black h-12 shadow-md">IMAGEN</Button>
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex justify-between items-end">
-            <div>
-              <h2 className="text-3xl font-black italic uppercase text-slate-800">Mis Reportes</h2>
-              <p className="text-slate-500">Gestiona tus cédulas arbitrales guardadas.</p>
-            </div>
-            <Button onClick={handleCreateMatch} className="bg-primary text-white font-black uppercase italic shadow-lg">
-              <Plus className="h-5 w-5 mr-2" /> NUEVO JUEGO
-            </Button>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {(['home', 'away'] as const).map(side => (
+            <Card key={side} className="border-none shadow-md overflow-hidden">
+              <CardHeader className={`${side === 'home' ? 'bg-amber-500' : 'bg-blue-600'} text-white p-4`}>
+                <div className="flex justify-between items-center mb-2">
+                  <CardTitle className="text-lg font-black uppercase italic">{teamNames[side]}</CardTitle>
+                  <Button onClick={() => { setCurrentSide(side); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[10px]"><UserPlus className="h-3 w-3 mr-1" /> JUGADOR</Button>
+                </div>
+                <div className="text-center bg-black/20 rounded-lg p-2">
+                  <Input type="number" value={scores[side]} onChange={e => updateMatch({ scores: { ...scores, [side]: parseInt(e.target.value) || 0 } })} className="bg-transparent border-none text-center text-4xl font-black text-white h-auto p-0 focus-visible:ring-0" />
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {renderPlayerTable(side, lineups[side].slice(0, 11), "Titulares")}
+                {renderPlayerTable(side, lineups[side].slice(11), "Suplentes")}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-          <div className="grid grid-cols-1 gap-4">
-            {matches && matches.length > 0 ? (
-              matches.map((match) => (
-                <Card 
-                  key={match.id} 
-                  className="hover:shadow-md transition-all cursor-pointer group border-l-4 border-l-primary"
-                  onClick={() => setSelectedMatchId(match.id!)}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-center">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-xl font-black uppercase italic text-slate-700">{match.teamNames.home} vs {match.teamNames.away}</h3>
-                          <span className="text-lg font-bold text-primary">{match.scores.home} - {match.scores.away}</span>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-slate-500 font-bold">
-                          <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> {match.matchInfo.date}</span>
-                          <span className="bg-slate-100 px-2 py-0.5 rounded text-[10px] uppercase">{match.matchInfo.league || 'Sin Liga'}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="text-slate-300 hover:text-red-500 transition-colors"
-                          onClick={(e) => handleDeleteMatch(e, match.id!)}
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </Button>
-                        <ChevronRight className="h-6 w-6 text-slate-300 group-hover:text-primary transition-colors" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <Card className="border-dashed border-2 bg-transparent text-center py-20">
-                <CardContent>
-                  <FileText className="h-16 w-16 mx-auto text-slate-300 mb-4" />
-                  <p className="text-slate-400 font-bold">No tienes reportes guardados aún.</p>
-                  <Button variant="link" onClick={handleCreateMatch} className="text-primary mt-2">Crea tu primer partido aquí</Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+        <div className="grid grid-cols-3 gap-8 pt-6 pb-10">
+          {(['captainHome', 'referee', 'captainAway'] as const).map(type => (
+            <div key={type} className="text-center">
+              <button onClick={() => setModal(`sign-${type}`)} className="border-2 border-dashed border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 rounded-xl bg-white overflow-hidden">
+                {signatures[type] ? <img src={signatures[type]} className="max-h-full" /> : <span className="text-slate-300 italic text-[10px]">FIRMA {type.toUpperCase()}</span>}
+              </button>
+              <p className="text-[8px] font-black uppercase text-slate-400">{type === 'referee' ? 'Árbitro Central' : `Capitán ${type.includes('Home') ? 'Local' : 'Visitante'}`}</p>
+            </div>
+          ))}
         </div>
       </div>
+
+      <Dialog open={modal === 'add-player'} onOpenChange={() => setModal(null)}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader><DialogTitle className="text-center font-black uppercase">Inscribir Jugador</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <Input type="number" placeholder="00" className="text-2xl h-14 text-center font-black" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} />
+            <Input placeholder="Nombre completo" className="uppercase font-bold" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} />
+            <Button onClick={() => handleAddPlayer(currentSide)} className="w-full h-12 font-black bg-primary text-white">AGREGAR</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modal === 'player-actions'} onOpenChange={() => setModal(null)}>
+        <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          {selectedPlayer && (
+            <div className="flex flex-col">
+              <div className={`p-6 text-white text-center ${selectedPlayer.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}><p className="text-4xl font-black">#{selectedPlayer.player.number}</p><p className="text-xl font-bold uppercase italic">{selectedPlayer.player.name}</p></div>
+              <div className="p-6 space-y-4 bg-white">
+                <div className="space-y-2"><Label className="flex items-center gap-2 text-xs font-black uppercase text-slate-400"><Clock size={14} /> Minuto (Opcional)</Label><Input type="number" placeholder="Min" className="h-10 text-center font-bold" value={currentMinute} onChange={e => setCurrentMinute(e.target.value)} /></div>
+                <div className="grid grid-cols-2 gap-3"><Button onClick={() => handleAddGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-emerald-600 text-white">⚽ GOL</Button><Button onClick={() => handleAddOwnGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-orange-600 text-white">🥅 AUTOGOL</Button></div>
+                <div className="grid grid-cols-2 gap-3"><Button onClick={() => { setCardType('yellow'); setModal('causales'); }} className="h-14 font-black bg-yellow-400 text-yellow-900">🟨 AMARILLA</Button><Button onClick={() => { setCardType('red'); setModal('causales'); }} className="h-14 font-black bg-red-600 text-white">🟥 ROJA</Button></div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modal === 'causales'} onOpenChange={() => setModal('player-actions')}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="font-black uppercase">Causales - #{selectedPlayer?.player.number}</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-4">{(cardType === 'yellow' ? causalesAmarilla : causalesRoja).map((causal, idx) => (<Button key={idx} variant="outline" className="w-full justify-start text-left h-auto py-2 text-xs" onClick={() => handleAddCard(selectedPlayer!.side, selectedPlayer!.player, cardType!, idx, causal)}><span className="font-bold mr-2 text-primary">#{idx + 1}</span> {causal}</Button>))}</div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modal === 'incidents'} onOpenChange={() => setModal(null)}>
+        <DialogContent className="max-w-lg rounded-2xl">
+          <DialogHeader><DialogTitle className="font-black uppercase">Incidentes</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4"><Textarea className="min-h-[200px]" value={tempIncidents} onChange={e => setTempIncidents(e.target.value)} /><Button onClick={() => { updateMatch({ events: [ { id: Date.now(), time: '--', category: 'notes', message: `📝 ${tempIncidents}` }, ...events.filter(e => e.category !== 'notes') ] }); setModal(null); }} className="w-full font-bold bg-primary text-white">GUARDAR</Button></div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modal?.startsWith('sign-')} onOpenChange={() => setModal(null)}>
+        <DialogContent className="max-w-md p-0 overflow-hidden"><DialogHeader className="p-4 bg-slate-50 border-b"><DialogTitle className="text-center font-black uppercase">Firma</DialogTitle></DialogHeader><div className="p-4 space-y-4"><div className="bg-white border-2 border-dashed rounded-xl overflow-hidden touch-none relative"><canvas ref={canvasRef} width={800} height={400} className="w-full h-48 cursor-crosshair" onPointerDown={startDrawing} onPointerMove={draw} onPointerUp={() => isDrawingRef.current = false} style={{ touchAction: 'none' }} /></div><div className="flex gap-2"><Button variant="outline" onClick={initCanvas} className="flex-1 font-bold">LIMPIAR</Button><Button onClick={() => saveSignature(modal!.split('-')[1] as any)} className="flex-1 bg-emerald-600 text-white font-bold">GUARDAR</Button></div></div></DialogContent>
+      </Dialog>
+
+      <Dialog open={modal === 'info'} onOpenChange={() => setModal(null)}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="font-black uppercase">Datos Generales</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2"><Label>Título del Reporte</Label><Input value={matchState.title} onChange={e => updateMatch({title: e.target.value})} /></div>
+            <div className="grid grid-cols-2 gap-4"><div><Label>Local</Label><Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} /></div><div><Label>Visita</Label><Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} /></div></div>
+            <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value}})} placeholder="Liga" />
+            <div className="grid grid-cols-2 gap-4"><Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value}})} placeholder="Jornada" /><Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value}})} placeholder="Campo" /></div>
+            <Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} />
+            <div className="border-t pt-4 space-y-2"><Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value}})} placeholder="Árbitro Central" /><Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value}})} placeholder="Asistente 1" /><Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value}})} placeholder="Asistente 2" /></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPdfReportOpen} onOpenChange={setIsPdfReportOpen}><DialogContent className="max-w-5xl h-[95vh] p-0 overflow-auto bg-transparent border-none"><PdfReportView matchState={matchState} /></DialogContent></Dialog>
+      <Dialog open={isImageReportOpen} onOpenChange={setIsImageReportOpen}><DialogContent className="max-w-5xl p-0 bg-transparent border-none"><ReportView matchState={matchState} /></DialogContent></Dialog>
     </div>
   );
 }
