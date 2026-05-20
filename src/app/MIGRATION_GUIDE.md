@@ -1,11 +1,11 @@
-# Guía de Migración: Asesor Pro
+# Guía de Migración: RefereElite
 
 Este documento contiene los pasos detallados para mudar tu proyecto de **Firebase Studio** a las nuevas plataformas antes del 22 de marzo de 2027.
 
 ## Paso 1: Descargar tu Código Actual
 Antes de cualquier cambio, es vital tener una copia física de todo lo que hemos construido.
 1. En la parte superior de la pantalla de Firebase Studio, busca el botón **"Zip and Download"**.
-2. Esto descargará un archivo llamado `soy-asesor.zip` (o similar).
+2. Esto descargará un archivo llamado `refere-elite.zip` (o similar).
 3. Guarda este archivo en un lugar seguro de tu computadora. **Este archivo contiene toda la lógica, componentes y diseño de tu App.**
 
 ## Paso 2: Opción A - Mudarse a Google Antigravity (Recomendado para PC)
@@ -29,7 +29,7 @@ Si prefieres seguir trabajando en el navegador:
 2. Cuando abras tu proyecto en Antigravity o lo subas a una plataforma como Vercel o Netlify, la App seguirá conectándose a tus datos actuales de Firebase automáticamente.
 
 ## Paso 5: Desarrollo Local Profesional (Opcional)
-Si quieres llevar "Asesor Pro" al siguiente nivel fuera de las herramientas de Google:
+Si quieres llevar "RefereElite" al siguiente nivel fuera de las herramientas de Google:
 1. Instala **Node.js** en tu computadora.
 2. Descarga **Visual Studio Code** (el editor más usado del mundo).
 3. Abre la carpeta de tu proyecto.
@@ -37,4 +37,4 @@ Si quieres llevar "Asesor Pro" al siguiente nivel fuera de las herramientas de G
 5. Podrás ver tu app en `localhost:3000` y editarla como un desarrollador profesional.
 
 ---
-*Guía generada para ayudar a la transición de Asesor Pro.*
+*Guía generada para ayudar a la transición de RefereElite.*

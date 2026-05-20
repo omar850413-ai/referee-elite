@@ -140,7 +140,7 @@ export default function SignUpPage() {
             Crear Cuenta
           </CardTitle>
           <CardDescription>
-            Regístrate para convertirte en asesor.
+            Regístrate para convertirte en asesor con RefereElite.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSignUp}>

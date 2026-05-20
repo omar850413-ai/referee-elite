@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef } from 'react';
@@ -74,7 +73,6 @@ export function ReportView({ matchState }: ReportViewProps) {
     const redCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟥')).length;
     
     let icons = '';
-    // Agregamos espacios extras ( ) para separar estéticamente los iconos del nombre
     if (goalsCount > 0) icons += `    ⚽${goalsCount}`;
     if (yellowCount > 0) icons += '   🟨';
     if (redCount > 0) icons += '   🟥';
@@ -105,7 +103,7 @@ export function ReportView({ matchState }: ReportViewProps) {
       <DialogHeader className="px-2 pb-4 text-left">
         <DialogTitle className="text-white font-black italic uppercase">Cédula Digital Profesional</DialogTitle>
         <DialogDescription className="text-slate-400">
-          Informe en formato JPG de alta resolución para compartir.
+          Informe en formato JPG de alta resolución generado por RefereElite.
         </DialogDescription>
       </DialogHeader>
       
@@ -211,7 +209,7 @@ export function ReportView({ matchState }: ReportViewProps) {
           </g>
 
           <text x="400" y={svgHeight - 30} textAnchor="middle" fill="white" opacity="0.4" fontSize="11" fontWeight="900" style={{ letterSpacing: '0.3em' }}>
-            CEDULA DIGITAL GENERADA POR ASESOR PRO
+            CEDULA DIGITAL GENERADA POR REFEREELITE
           </text>
         </svg>
       </div>
