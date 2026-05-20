@@ -1,6 +1,5 @@
-
 'use client';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, signOut } from 'firebase/auth';
@@ -58,6 +57,16 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+
+  // Clear canvas when a signature modal opens
+  useEffect(() => {
+    if (modal?.startsWith('sign-')) {
+      const timer = setTimeout(() => {
+        clearCanvas();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [modal]);
 
   if (isMatchLoading || !matchState) {
     return (
@@ -263,9 +272,19 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    // Capture pointer to track even outside boundaries
+    canvas.setPointerCapture(e.pointerId);
+
     const { x, y } = getCoordinates(e);
+    
     ctx.beginPath();
     ctx.moveTo(x, y);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
     setIsDrawing(true);
   };
 
@@ -275,16 +294,15 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
     const { x, y } = getCoordinates(e);
     ctx.lineTo(x, y);
     ctx.stroke();
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
   };
 
-  const stopDrawing = () => setIsDrawing(false);
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
 
   const clearCanvas = () => {
     const canvas = canvasRef.current;
@@ -292,12 +310,18 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Optional: set a white background if needed, but transparent is usually okay for signatures
   };
 
   const saveSignature = (type: 'captainHome' | 'captainAway' | 'referee') => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const dataUrl = canvas.toDataURL();
+    
+    // Ensure drawing is finished
+    setIsDrawing(false);
+    
+    const dataUrl = canvas.toDataURL('image/png');
     const currentSignatures = matchState.signatures || {};
     updateMatch({ signatures: { ...currentSignatures, [type]: dataUrl } });
     setModal(null);
@@ -346,7 +370,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 <td className="p-2">
                   <div className="flex justify-between items-center pr-2">
                     <p className="font-bold uppercase text-slate-700 text-xs truncate max-w-[150px]">{p.name}</p>
-                    <div className="flex gap-3 items-center ml-4">
+                    <div className="flex gap-4 items-center ml-4">
                       {goalsCount > 0 && <span className="text-[11px] font-black text-emerald-600">⚽{goalsCount}</span>}
                       {yellowCount > 0 && <span className="text-[11px]">🟨</span>}
                       {redCount > 0 && <span className="text-[11px]">🟥</span>}
@@ -706,11 +730,13 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 ref={canvasRef}
                 width={800}
                 height={400}
-                className="w-full h-48 cursor-crosshair touch-none"
+                className="w-full h-48 cursor-crosshair touch-none bg-white"
+                style={{ touchAction: 'none' }}
                 onPointerDown={startDrawing}
                 onPointerMove={draw}
                 onPointerUp={stopDrawing}
                 onPointerOut={stopDrawing}
+                onPointerCancel={stopDrawing}
               />
               <p className="absolute bottom-2 left-0 right-0 text-center text-[10px] text-slate-300 pointer-events-none">FIRME DENTRO DEL RECUADRO</p>
             </div>
