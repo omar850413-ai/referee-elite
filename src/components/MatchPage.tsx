@@ -202,7 +202,34 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     });
     
     setCurrentMinute('');
+    setModal(null);
     toast({ title: `Gol registrado para #${player.number}` });
+  };
+
+  const handleAddOwnGoal = (playerSide: 'home' | 'away', player: Player) => {
+    const opponentSide = playerSide === 'home' ? 'away' : 'home';
+    const currentScores = matchState.scores || { home: 0, away: 0 };
+    const newScores = { ...currentScores, [opponentSide]: (currentScores[opponentSide] || 0) + 1 };
+    
+    const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
+    const newEvent: MatchEvent = {
+      id: Date.now(),
+      time: timeDisplay,
+      category: 'goals',
+      message: `🥅 AUTOGOL #${player.number} ${player.name}${currentMinute ? ` (${currentMinute}')` : ''}`,
+      side: playerSide,
+      playerNumber: player.number,
+      playerName: player.name
+    };
+
+    updateMatch({ 
+      scores: newScores,
+      events: [newEvent, ...(matchState.events || [])]
+    });
+    
+    setCurrentMinute('');
+    setModal(null);
+    toast({ title: `Autogol registrado para #${player.number}` });
   };
 
   const handleAddCard = (side: 'home' | 'away', player: Player, type: 'yellow' | 'red', causalIdx: number, causalText: string) => {
@@ -236,10 +263,13 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     };
 
     if (event.category === 'goals' && event.side) {
+      const isOwnGoal = event.message.includes('AUTOGOL');
+      const pointSide = isOwnGoal ? (event.side === 'home' ? 'away' : 'home') : event.side;
+      
       const currentScores = matchState.scores;
       update.scores = { 
         ...currentScores, 
-        [event.side]: Math.max(0, (currentScores[event.side] || 0) - 1) 
+        [pointSide]: Math.max(0, (currentScores[pointSide] || 0) - 1) 
       };
     }
 
@@ -372,7 +402,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           )}
           {players.map((p) => {
             const playerEvs = getPlayerEvents(side, p.number);
-            const goalsCount = playerEvs.filter(e => e.category === 'goals').length;
+            const goalsCount = playerEvs.filter(e => e.category === 'goals' && !e.message.includes('AUTOGOL')).length;
+            const ownGoalsCount = playerEvs.filter(e => e.category === 'goals' && e.message.includes('AUTOGOL')).length;
             const yellowCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟨')).length;
             const redCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟥')).length;
             
@@ -392,6 +423,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                     <p className="font-bold uppercase text-slate-700 text-xs truncate max-w-[150px]">{p.name}</p>
                     <div className="flex gap-6 items-center ml-8">
                       {goalsCount > 0 && <span className="text-[11px] font-black text-emerald-600">⚽{goalsCount}</span>}
+                      {ownGoalsCount > 0 && <span className="text-[11px] font-black text-orange-600">🥅{ownGoalsCount}</span>}
                       {yellowCount > 0 && <span className="text-[11px]">🟨</span>}
                       {redCount > 0 && <span className="text-[11px]">🟥</span>}
                     </div>
@@ -413,13 +445,15 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           <div className="flex justify-between items-center w-full">
             <div className="flex items-center gap-4">
               <Logo className="scale-110" />
-              {isAdmin && (
-                <Link href="/admin">
-                  <Button variant="ghost" size="sm" className="text-primary font-bold gap-2">
-                    <ShieldAlert className="h-4 w-4" /> PANEL
-                  </Button>
-                </Link>
-              )}
+              <div className="flex items-center">
+                 {isAdmin && (
+                  <Link href="/admin">
+                    <Button variant="ghost" size="sm" className="text-primary font-bold gap-2">
+                      <ShieldAlert className="h-4 w-4" /> PANEL
+                    </Button>
+                  </Link>
+                )}
+              </div>
             </div>
             <Button onClick={handleLogout} variant="ghost" size="sm" className="text-red-500">
               <LogOut className="h-4 w-4" />
@@ -600,17 +634,25 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                     placeholder="Min" 
                     className="h-10 text-center font-bold text-lg"
                     value={currentMinute}
-                    onChange={e => setCurrentMinute(e.target.value)}
+                    onChange={e => currentMinute = e.target.value}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
-                  <Button 
-                    onClick={() => handleAddGoal(selectedPlayer.side, selectedPlayer.player)}
-                    className="h-16 text-xl font-black italic uppercase bg-emerald-600 hover:bg-emerald-700 shadow-lg text-white"
-                  >
-                    ⚽ REGISTRAR GOL
-                  </Button>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button 
+                      onClick={() => handleAddGoal(selectedPlayer.side, selectedPlayer.player)}
+                      className="h-16 text-lg font-black italic uppercase bg-emerald-600 hover:bg-emerald-700 shadow-lg text-white"
+                    >
+                      ⚽ GOL
+                    </Button>
+                    <Button 
+                      onClick={() => handleAddOwnGoal(selectedPlayer.side, selectedPlayer.player)}
+                      className="h-16 text-lg font-black italic uppercase bg-orange-600 hover:bg-orange-700 shadow-lg text-white"
+                    >
+                      🥅 AUTOGOL
+                    </Button>
+                  </div>
                   
                   <div className="grid grid-cols-2 gap-3">
                     <Button 
