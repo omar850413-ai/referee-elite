@@ -115,4 +115,5 @@ export interface UserProfile {
   isApproved: boolean;
   isAdmin: boolean;
   sessionId?: string;
+  appId?: string; // Identificador para separar apps en el mismo proyecto
 }

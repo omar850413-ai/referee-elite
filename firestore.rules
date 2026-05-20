@@ -4,9 +4,28 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function isSignedIn() { return request.auth != null; }
     function isSuperAdmin() { return isSignedIn() && request.auth.token.email == 'omar850413@gmail.com'; }
-    function getUserData() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
-    function isApproved() { return isSuperAdmin() || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().isApproved == true); }
-    function isAdmin() { return isSuperAdmin() || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().isAdmin == true); }
+    
+    // Función segura para obtener datos del usuario
+    function getUserData() { 
+      let userDoc = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(userDoc) ? get(userDoc).data : null;
+    }
+    
+    // Validación de que el usuario pertenezca a ESTA aplicación
+    function isFromThisApp() {
+      let data = getUserData();
+      return isSuperAdmin() || (data != null && data.appId == 'referee-elite');
+    }
+
+    function isApproved() { 
+      let data = getUserData();
+      return isSuperAdmin() || (data != null && data.isApproved == true && data.appId == 'referee-elite'); 
+    }
+    
+    function isAdmin() { 
+      let data = getUserData();
+      return isSuperAdmin() || (data != null && data.isAdmin == true && data.appId == 'referee-elite'); 
+    }
 
     match /users/{userId} {
       allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
@@ -16,8 +35,8 @@ service cloud.firestore {
     }
 
     match /matches/{matchId} {
-      // El matchId en el setup de partido único es el UID del usuario.
-      allow read, write: if isSignedIn() && (request.auth.uid == matchId || isAdmin() || isApproved());
+      // Solo permitimos acceso si el usuario es de esta app y está aprobado
+      allow read, write: if isSignedIn() && isFromThisApp() && (request.auth.uid == matchId || isAdmin() || isApproved());
     }
   }
 }

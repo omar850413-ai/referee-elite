@@ -1,9 +1,10 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
+import { signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from 'firebase/auth';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,58 +56,48 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      const sessionId = `${Date.now()}-${Math.random()}`;
-      localStorage.setItem('sessionId', sessionId);
       const userDocRef = doc(firestore, 'users', user.uid);
-
-      const userDoc = await getDoc(userDocRef).catch(err => {
-        const permissionError = new FirestorePermissionError({
-          path: userDocRef.path,
-          operation: 'get',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        throw err;
-      });
+      const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
-        const sessionData = { sessionId };
-        await updateDoc(userDocRef, sessionData).catch(err => {
+        const data = userDoc.data();
+        const isSuperAdmin = user.email === adminEmail;
+        
+        // Bloqueo de seguridad: Si el usuario existe pero es de otra app (Asesor Pro)
+        if (data.appId && data.appId !== 'referee-elite' && !isSuperAdmin) {
+          await signOut(auth);
+          setError('ESTA CUENTA PERTENECE A OTRA APLICACIÓN. POR FAVOR, REGÍSTRATE CON UN CORREO DIFERENTE PARA REFEREE ELITE.');
+          setIsLoading(false);
+          return;
+        }
+
+        const sessionId = `${Date.now()}-${Math.random()}`;
+        localStorage.setItem('sessionId', sessionId);
+        
+        await updateDoc(userDocRef, { sessionId }).catch(err => {
             const permissionError = new FirestorePermissionError({
                 path: userDocRef.path,
                 operation: 'update',
-                requestResourceData: sessionData
+                requestResourceData: { sessionId }
             });
             errorEmitter.emit('permission-error', permissionError);
             throw err;
         });
       } else {
-        const isSuperAdmin = user.email === adminEmail;
-        const profileData = {
-          email: user.email,
-          isAdmin: isSuperAdmin,
-          isApproved: isSuperAdmin,
-          sessionId: sessionId,
-        };
-        await setDoc(userDocRef, profileData).catch(err => {
-            const permissionError = new FirestorePermissionError({
-                path: userDocRef.path,
-                operation: 'create',
-                requestResourceData: profileData
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            throw err;
-        });
+        // Si no tiene perfil, lo mandamos a registro
+        await signOut(auth);
+        setError('NO SE ENCONTRÓ UN PERFIL PARA ESTA CUENTA. POR FAVOR, REGÍSTRATE.');
+        setIsLoading(false);
+        return;
       }
 
       router.push('/');
     } catch (err: any) {
-      if (err.code === 'permission-denied') {
-        setError('Error de permisos al actualizar la sesión. Contacta al administrador.');
-      } else if (err.code && err.code.startsWith('auth/')) {
-        setError('Correo o contraseña incorrectos. Por favor, inténtalo de nuevo.');
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('CORREO O CONTRASEÑA INCORRECTOS.');
       } else {
         console.error('Login Error:', err);
-        setError('Ocurrió un error inesperado al iniciar sesión.');
+        setError('OCURRIÓ UN ERROR AL INICIAR SESIÓN.');
       }
     } finally {
       setIsLoading(false);
@@ -115,38 +106,22 @@ export default function LoginPage() {
 
   const handleResetPassword = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    
-    if (!resetEmail) {
-      toast({
-        variant: "destructive",
-        title: "Correo requerido",
-        description: "Por favor, ingresa tu correo electrónico.",
-      });
-      return;
-    }
+    if (!resetEmail) return;
 
     setIsResetLoading(true);
     try {
       await sendPasswordResetEmail(auth, resetEmail);
       toast({
-        title: "Correo enviado",
-        description: `Se ha enviado un enlace de recuperación a ${resetEmail}. Revisa tu bandeja de entrada y carpeta de SPAM.`,
+        title: "CORREO ENVIADO",
+        description: `SE HA ENVIADO UN ENLACE A ${resetEmail}.`,
       });
       setIsResetDialogOpen(false);
       setResetEmail('');
     } catch (err: any) {
-      let errorMessage = "No se pudo enviar el correo de recuperación.";
-      
-      if (err.code === 'auth/user-not-found') {
-        errorMessage = "No existe ninguna cuenta con este correo electrónico.";
-      } else if (err.code === 'auth/invalid-email') {
-        errorMessage = "El formato del correo electrónico no es válido.";
-      }
-
       toast({
         variant: "destructive",
-        title: "Error",
-        description: errorMessage,
+        title: "ERROR",
+        description: "NO SE PUDO ENVIAR EL CORREO.",
       });
     } finally {
       setIsResetLoading(false);
@@ -162,19 +137,9 @@ export default function LoginPage() {
              <Skeleton className="h-4 w-64 mx-auto" />
           </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                 <Skeleton className="h-4 w-24" />
-                 <Skeleton className="h-10 w-full" />
-              </div>
-              <div className="space-y-2">
-                 <Skeleton className="h-4 w-24" />
-                 <Skeleton className="h-10 w-full" />
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-4">
               <Skeleton className="h-10 w-full" />
-               <Skeleton className="h-4 w-48" />
-            </CardFooter>
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
         </Card>
       </div>
     );
@@ -185,57 +150,48 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-black uppercase italic text-primary">Iniciar Sesión</CardTitle>
-          <CardDescription>Accede a tu panel de Referee Elite.</CardDescription>
+          <CardDescription>ACCEDE A TU PANEL DE REFEREE ELITE.</CardDescription>
         </CardHeader>
         <form onSubmit={handleSignIn}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Correo Electrónico</Label>
+              <Label htmlFor="email">CORREO ELECTRÓNICO</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="tu@email.com"
+                placeholder="TU@EMAIL.COM"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value.toUpperCase())}
                 required
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Contraseña</Label>
+                <Label htmlFor="password">CONTRASEÑA</Label>
                 <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
                   <DialogTrigger asChild>
                     <button type="button" className="text-xs text-primary hover:underline font-semibold">
-                      ¿Olvidaste tu contraseña?
+                      ¿OLVIDASTE TU CONTRASEÑA?
                     </button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Restablecer Contraseña</DialogTitle>
-                      <DialogDescription>
-                        Ingresa tu correo electrónico y te enviaremos un enlace para que puedas cambiar tu contraseña.
-                      </DialogDescription>
+                      <DialogTitle>RESTABLECER CONTRASEÑA</DialogTitle>
+                      <DialogDescription>INGRESA TU CORREO PARA RECIBIR EL ENLACE.</DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleResetPassword}>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="reset-email">Correo Electrónico</Label>
-                          <Input
-                            id="reset-email"
-                            type="email"
-                            placeholder="tu@email.com"
-                            value={resetEmail}
-                            onChange={(e) => setResetEmail(e.target.value)}
-                            required
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button type="submit" disabled={isResetLoading} className="w-full sm:w-auto">
-                          {isResetLoading ? 'Enviando...' : 'Enviar enlace'}
-                        </Button>
-                      </DialogFooter>
-                    </form>
+                    <div className="space-y-4 py-4">
+                       <Input
+                         type="email"
+                         placeholder="TU@EMAIL.COM"
+                         value={resetEmail}
+                         onChange={(e) => setResetEmail(e.target.value.toUpperCase())}
+                       />
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={handleResetPassword} disabled={isResetLoading}>
+                        {isResetLoading ? 'ENVIANDO...' : 'ENVIAR ENLACE'}
+                      </Button>
+                    </DialogFooter>
                   </DialogContent>
                 </Dialog>
               </div>
@@ -250,27 +206,22 @@ export default function LoginPage() {
                 <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
-                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
                 >
-                    {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                    ) : (
-                        <Eye className="h-5 w-5" />
-                    )}
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-red-600 font-bold">{error}</p>}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Ingresando...' : 'Ingresar'}
+            <Button type="submit" className="w-full font-black italic" disabled={isLoading}>
+              {isLoading ? 'INGRESANDO...' : 'INGRESAR'}
             </Button>
             <p className="text-xs text-center text-gray-600">
-              ¿No tienes cuenta?{' '}
+              ¿NO TIENES CUENTA?{' '}
               <Link href="/signup" className="text-primary hover:underline font-semibold">
-                Regístrate aquí
+                REGÍSTRATE AQUÍ
               </Link>
             </p>
           </CardFooter>

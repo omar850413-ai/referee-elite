@@ -26,14 +26,15 @@
         "email": { "type": "string" },
         "isApproved": { "type": "boolean" },
         "isAdmin": { "type": "boolean" },
-        "sessionId": { "type": "string" }
+        "sessionId": { "type": "string" },
+        "appId": { "type": "string", "description": "Identificador de la aplicación de origen." }
       }
     }
   },
   "auth": { "providers": ["email_password"] },
   "firestore": {
     "structure": [
-      { "path": "/users/{userId}", "definition": { "schema": { "$ref": "#/entities/UserProfile" }, "description": "User profile." } },
+      { "path": "/users/{userId}", "definition": { "schema": { "$ref": "#/entities/UserProfile" }, "description": "User profile with app tracking." } },
       { "path": "/matches/{matchId}", "definition": { "schema": { "$ref": "#/entities/MatchState" }, "description": "Single match report." } }
     ]
   }

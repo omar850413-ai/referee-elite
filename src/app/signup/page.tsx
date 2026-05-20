@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -34,7 +35,6 @@ export default function SignUpPage() {
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    // If the user is already logged in, redirect them to the home page.
     if (user && !isUserLoading) {
       router.push('/');
     }
@@ -46,7 +46,6 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      // 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -54,20 +53,18 @@ export default function SignUpPage() {
       );
       const user = userCredential.user;
 
-      // Generate and store session ID
       const sessionId = `${Date.now()}-${Math.random()}`;
       localStorage.setItem('sessionId', sessionId);
 
-      // 2. Create the user profile document in Firestore
       const userDocRef = doc(firestore, 'users', user.uid);
-
       const isSigningUpAsAdmin = user.email === adminEmail;
 
       const profileData = {
         email: user.email,
         isAdmin: isSigningUpAsAdmin,
-        isApproved: isSigningUpAsAdmin, // Admin is auto-approved
+        isApproved: isSigningUpAsAdmin,
         sessionId: sessionId,
+        appId: 'referee-elite', // Marcamos al usuario para esta app
       };
 
       await setDoc(userDocRef, profileData).catch((err) => {
@@ -80,16 +77,15 @@ export default function SignUpPage() {
         throw err;
       });
 
-      // 3. Redirect intelligently based on role
       if (isSigningUpAsAdmin) {
-        router.push('/'); // Admins go to home
+        router.push('/');
       } else {
-        router.push('/pending-approval'); // New users go to pending page
+        router.push('/pending-approval');
       }
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {
         setError(
-          'Este correo ya está registrado. Por favor, inicia sesión para reactivar tu cuenta.'
+          'Este correo ya está registrado en este proyecto. Por favor, inicia sesión.'
         );
       } else if (err.code === 'permission-denied') {
         setError('Error de permisos. No se pudo crear el perfil de usuario.');
@@ -102,8 +98,6 @@ export default function SignUpPage() {
     }
   };
 
-  // While checking user auth state, show a loading screen.
-  // Also, if the user is logged in, this will show until the redirect happens.
   if (isUserLoading || user) {
      return (
       <div className="flex items-center justify-center min-h-screen bg-sky-100">
@@ -131,7 +125,6 @@ export default function SignUpPage() {
     );
   }
 
-  // Only show signup page if user is not logged in.
   return (
     <div className="flex items-center justify-center min-h-screen bg-sky-100">
       <Card className="w-full max-w-md">
@@ -150,9 +143,9 @@ export default function SignUpPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="tu@email.com"
+                placeholder="TU@EMAIL.COM"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value.toUpperCase())}
                 required
               />
             </div>
@@ -162,7 +155,7 @@ export default function SignUpPage() {
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="MÍNIMO 6 CARACTERES"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -171,7 +164,6 @@ export default function SignUpPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
-                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
                     {showPassword ? (
                         <EyeOff className="h-5 w-5" />
@@ -181,19 +173,19 @@ export default function SignUpPage() {
                 </button>
               </div>
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-red-600 font-bold">{error}</p>}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Registrando...' : 'Registrarme'}
+            <Button type="submit" className="w-full font-black italic" disabled={isLoading}>
+              {isLoading ? 'REGISTRANDO...' : 'REGISTRARME'}
             </Button>
             <p className="text-xs text-center text-gray-600">
-              ¿Ya tienes cuenta?{' '}
+              ¿YA TIENES CUENTA?{' '}
               <Link
                 href="/login"
                 className="text-primary hover:underline font-semibold"
               >
-                Inicia sesión
+                INICIA SESIÓN
               </Link>
             </p>
           </CardFooter>
