@@ -67,8 +67,15 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
   
   const cardEvents = (events || []).filter(e => e.category === 'cards').sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
   
-  const homeCards = cardEvents.filter(e => e.side === 'home');
-  const awayCards = cardEvents.filter(e => e.side === 'away');
+  const getGroupedCards = (side: 'home' | 'away') => {
+    const sideCards = cardEvents.filter(e => e.side === side);
+    const yellows = sideCards.filter(e => e.message.includes('🟨'));
+    const reds = sideCards.filter(e => e.message.includes('🟥'));
+    return { yellows, reds };
+  };
+
+  const homeSanciones = getGroupedCards('home');
+  const awaySanciones = getGroupedCards('away');
 
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
@@ -165,31 +172,61 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           
           <div className="mb-6">
             <h3 className="text-[11px] font-black border-b border-black mb-2 uppercase">{teamNames.home} (LOCAL)</h3>
-            <div className="space-y-1 text-[10px]">
-              {homeCards.length > 0 ? (
-                homeCards.map(e => (
-                  <div key={e.id} className="border-b pb-1">
-                    <strong>#{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ')[0]} - {e.message.split(' - ')[1]}
-                  </div>
-                ))
-              ) : (
-                <p className="italic text-gray-400">Sin amonestaciones ni expulsiones para el equipo local.</p>
-              )}
+            <div className="space-y-4 text-[10px]">
+              <div>
+                <p className="font-bold underline mb-1">AMONESTACIONES:</p>
+                {homeSanciones.yellows.length > 0 ? (
+                  homeSanciones.yellows.map(e => (
+                    <div key={e.id} className="border-b pb-1">
+                      <strong>#{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
+                    </div>
+                  ))
+                ) : (
+                  <p className="italic text-gray-400">Sin amonestaciones.</p>
+                )}
+              </div>
+              <div>
+                <p className="font-bold underline mb-1">EXPULSIONES:</p>
+                {homeSanciones.reds.length > 0 ? (
+                  homeSanciones.reds.map(e => (
+                    <div key={e.id} className="border-b pb-1">
+                      <strong>#{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
+                    </div>
+                  ))
+                ) : (
+                  <p className="italic text-gray-400">Sin expulsiones.</p>
+                )}
+              </div>
             </div>
           </div>
 
           <div className="mb-6">
             <h3 className="text-[11px] font-black border-b border-black mb-2 uppercase">{teamNames.away} (VISITANTE)</h3>
-            <div className="space-y-1 text-[10px]">
-              {awayCards.length > 0 ? (
-                awayCards.map(e => (
-                  <div key={e.id} className="border-b pb-1">
-                    <strong>#{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ')[0]} - {e.message.split(' - ')[1]}
-                  </div>
-                ))
-              ) : (
-                <p className="italic text-gray-400">Sin amonestaciones ni expulsiones para el equipo visitante.</p>
-              )}
+            <div className="space-y-4 text-[10px]">
+              <div>
+                <p className="font-bold underline mb-1">AMONESTACIONES:</p>
+                {awaySanciones.yellows.length > 0 ? (
+                  awaySanciones.yellows.map(e => (
+                    <div key={e.id} className="border-b pb-1">
+                      <strong>#{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
+                    </div>
+                  ))
+                ) : (
+                  <p className="italic text-gray-400">Sin amonestaciones.</p>
+                )}
+              </div>
+              <div>
+                <p className="font-bold underline mb-1">EXPULSIONES:</p>
+                {awaySanciones.reds.length > 0 ? (
+                  awaySanciones.reds.map(e => (
+                    <div key={e.id} className="border-b pb-1">
+                      <strong>#{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
+                    </div>
+                  ))
+                ) : (
+                  <p className="italic text-gray-400">Sin expulsiones.</p>
+                )}
+              </div>
             </div>
           </div>
 

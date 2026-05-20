@@ -440,7 +440,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 <FileText className="h-5 w-5 mr-2" /> CÉDULA PDF
               </Button>
               <Button onClick={() => setIsImageReportOpen(true)} variant="default" size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white font-black h-12 shadow-md">
-                <ImageIcon className="h-5 w-5 mr-2" /> INFORME IMAGEN
+                <ImageIcon className="h-5 w-5 mr-2" /> IMAGEN
               </Button>
             </div>
           </div>

@@ -62,8 +62,16 @@ export function ReportView({ matchState }: ReportViewProps) {
   const awayStarters = awayPlayers.slice(0, 11);
   const awaySubs = awayPlayers.slice(11);
 
-  const homeCards = safeEvents.filter(e => e.side === 'home' && e.category === 'cards');
-  const awayCards = safeEvents.filter(e => e.side === 'away' && e.category === 'cards');
+  const getSanciones = (side: 'home' | 'away') => {
+    const sideCards = safeEvents.filter(e => e.side === side && e.category === 'cards');
+    const yellows = sideCards.filter(e => e.message.includes('🟨'));
+    const reds = sideCards.filter(e => e.message.includes('🟥'));
+    return { yellows, reds };
+  };
+
+  const homeSanciones = getSanciones('home');
+  const awaySanciones = getSanciones('away');
+
   const incidents = safeEvents.find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
   const getPlayerEventIcons = (side: 'home' | 'away', number: string) => {
@@ -95,7 +103,11 @@ export function ReportView({ matchState }: ReportViewProps) {
   
   const maxPlayersCount = Math.max(homePlayers.length, awayPlayers.length);
   const playersSecHeight = (maxPlayersCount * 18) + 120;
-  const cardsSecHeight = (Math.max(homeCards.length, awayCards.length) * 22) + 120;
+  
+  const homeCardsCount = homeSanciones.yellows.length + homeSanciones.reds.length + 2; 
+  const awayCardsCount = awaySanciones.yellows.length + awaySanciones.reds.length + 2;
+  const cardsSecHeight = (Math.max(homeCardsCount, awayCardsCount) * 22) + 120;
+  
   const svgHeight = 480 + playersSecHeight + cardsSecHeight + 400;
 
   return (
@@ -162,20 +174,38 @@ export function ReportView({ matchState }: ReportViewProps) {
           <g transform={`translate(0, ${520 + playersSecHeight})`}>
             <rect width="800" height={cardsSecHeight} fill="rgba(0,0,0,0.2)" />
             <g transform="translate(40, 40)">
-              <text fontSize="14" fontWeight="900" fill="white" textAnchor="start">TARJETAS LOCAL ({teamNames.home})</text>
-              {homeCards.map((e, idx) => (
-                <text key={e.id} y={30 + (idx * 20)} x="0" fill="white" fontSize="11" opacity="0.9">
+              <text fontSize="14" fontWeight="900" fill="white" textAnchor="start">SANCIONES {teamNames.home}</text>
+              <text y="25" fill="white" fontSize="10" fontWeight="800" opacity="0.6">AMONESTACIONES (🟨):</text>
+              {homeSanciones.yellows.map((e, idx) => (
+                <text key={e.id} y={45 + (idx * 20)} x="0" fill="white" fontSize="11" opacity="0.9">
                    #{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()}
                 </text>
               ))}
+              <g transform={`translate(0, ${40 + homeSanciones.yellows.length * 20})`}>
+                <text y="25" fill="white" fontSize="10" fontWeight="800" opacity="0.6">EXPULSIONES (🟥):</text>
+                {homeSanciones.reds.map((e, idx) => (
+                  <text key={e.id} y={45 + (idx * 20)} x="0" fill="white" fontSize="11" opacity="0.9">
+                    #{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()}
+                  </text>
+                ))}
+              </g>
             </g>
             <g transform="translate(440, 40)">
-              <text fontSize="14" fontWeight="900" fill="white" textAnchor="start">TARJETAS VISITA ({teamNames.away})</text>
-              {awayCards.map((e, idx) => (
-                <text key={e.id} y={30 + (idx * 20)} x="0" fill="white" fontSize="11" opacity="0.9">
-                  #{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()}
+              <text fontSize="14" fontWeight="900" fill="white" textAnchor="start">SANCIONES {teamNames.away}</text>
+              <text y="25" fill="white" fontSize="10" fontWeight="800" opacity="0.6">AMONESTACIONES (🟨):</text>
+              {awaySanciones.yellows.map((e, idx) => (
+                <text key={e.id} y={45 + (idx * 20)} x="0" fill="white" fontSize="11" opacity="0.9">
+                   #{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()}
                 </text>
               ))}
+              <g transform={`translate(0, ${40 + awaySanciones.yellows.length * 20})`}>
+                <text y="25" fill="white" fontSize="10" fontWeight="800" opacity="0.6">EXPULSIONES (🟥):</text>
+                {awaySanciones.reds.map((e, idx) => (
+                  <text key={e.id} y={45 + (idx * 20)} x="0" fill="white" fontSize="11" opacity="0.9">
+                    #{e.playerNumber} {e.playerName} {e.time !== '--' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()}
+                  </text>
+                ))}
+              </g>
             </g>
           </g>
 
