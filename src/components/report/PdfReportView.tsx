@@ -170,11 +170,15 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               <div className="text-[9px] space-y-2">
                 <p className="font-bold underline">AMONESTACIONES:</p>
                 {homeSanciones.yellows.map(e => (
-                  <div key={e.id} className="border-b pb-0.5 uppercase"><strong>#{e.playerNumber} ({e.time})</strong>: {e.message.split(' - ').pop()}</div>
+                  <div key={e.id} className="border-b pb-0.5 uppercase">
+                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
+                  </div>
                 ))}
                 <p className="font-bold underline pt-2">EXPULSIONES:</p>
                 {homeSanciones.reds.map(e => (
-                  <div key={e.id} className="border-b pb-0.5 uppercase"><strong>#{e.playerNumber} ({e.time})</strong>: {e.message.split(' - ').pop()}</div>
+                  <div key={e.id} className="border-b pb-0.5 uppercase">
+                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
+                  </div>
                 ))}
               </div>
             </div>
@@ -183,11 +187,15 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               <div className="text-[9px] space-y-2">
                 <p className="font-bold underline">AMONESTACIONES:</p>
                 {awaySanciones.yellows.map(e => (
-                  <div key={e.id} className="border-b pb-0.5 uppercase"><strong>#{e.playerNumber} ({e.time})</strong>: {e.message.split(' - ').pop()}</div>
+                  <div key={e.id} className="border-b pb-0.5 uppercase">
+                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
+                  </div>
                 ))}
                 <p className="font-bold underline pt-2">EXPULSIONES:</p>
                 {awaySanciones.reds.map(e => (
-                  <div key={e.id} className="border-b pb-0.5 uppercase"><strong>#{e.playerNumber} ({e.time})</strong>: {e.message.split(' - ').pop()}</div>
+                  <div key={e.id} className="border-b pb-0.5 uppercase">
+                    <strong>#{e.playerNumber} {e.time !== '--' ? `(${e.time})` : ''}</strong>: {e.message.split(' - ').pop()}
+                  </div>
                 ))}
               </div>
             </div>
