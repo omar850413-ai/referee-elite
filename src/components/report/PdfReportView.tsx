@@ -5,9 +5,9 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { MatchEvent, MatchState, Player } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { DialogClose, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogClose } from '@/components/ui/dialog';
 import { Download, X } from 'lucide-react';
-import { parseTimeToMinutes } from '@/lib/utils';
+import { parseTimeToMinutes, numberToSpanishWords } from '@/lib/utils';
 
 interface PdfReportViewProps {
   matchState: MatchState;
@@ -54,18 +54,18 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     });
   };
 
-  const getPlayersByType = (team: 'home' | 'away', type: 'starter' | 'substitute') => {
-    const teamLineup = lineups[team] || [];
-    return teamLineup.filter(p => p.type === type).sort((a, b) => parseInt(a.number) - parseInt(b.number));
+  const getPlayersByType = (team: 'home' | 'away') => {
+    return (lineups[team] || []).sort((a, b) => parseInt(a.number) - parseInt(b.number));
   };
 
   const getPlayerEvents = (team: 'home' | 'away', number: string) => {
     return events.filter(e => e.side === team && e.playerNumber === number);
   };
 
-  const homeStarters = getPlayersByType('home', 'starter');
-  const awayStarters = getPlayersByType('away', 'starter');
+  const homePlayers = getPlayersByType('home');
+  const awayPlayers = getPlayersByType('away');
   const cards = events.filter(e => e.category === 'cards').sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+  const incidentNote = events.find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
   return (
     <div className="bg-gray-100 p-4 max-h-screen overflow-y-auto rounded-lg relative">
@@ -80,44 +80,39 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
       </div>
 
       <div ref={reportRef} className="p-10 bg-white text-black font-sans mx-auto shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
-        {/* HEADER */}
         <div className="text-center space-y-1 mb-6">
           <h2 className="text-lg font-bold uppercase tracking-widest">{matchInfo.league || 'TORNEO LIGA'} JORNADA {matchInfo.round || 'S/N'}</h2>
-          <h1 className="text-2xl font-black uppercase">INFORME DEL ARBITRO</h1>
+          <h1 className="text-2xl font-black uppercase">INFORME DEL ÁRBITRO</h1>
           <div className="border-b-2 border-black w-full mt-2"></div>
         </div>
 
-        {/* OFFICIALS */}
         <div className="grid grid-cols-1 gap-1 text-[11px] mb-6">
           <p><strong>ÁRBITRO:</strong> {matchInfo.referee?.toUpperCase()}</p>
           <p><strong>ÁRBITRO ASISTENTE No. 1:</strong> {matchInfo.assistant1?.toUpperCase()}</p>
           <p><strong>ÁRBITRO ASISTENTE No. 2:</strong> {matchInfo.assistant2?.toUpperCase()}</p>
         </div>
 
-        {/* MATCH DESC */}
         <div className="text-[10px] text-center italic mb-6 px-10">
           INFORME ARBITRAL DEL PARTIDO DE FÚTBOL EFECTUADO EL {matchInfo.date || '___'} EN EL ESTADIO {matchInfo.place || '___'} ENTRE LOS EQUIPOS DE:
         </div>
 
-        {/* TEAMS HEADER */}
         <div className="grid grid-cols-2 gap-0 border-2 border-black mb-8 text-center bg-gray-50">
           <div className="border-r-2 border-black p-2">
             <p className="text-[10px] font-bold">CLUB LOCAL</p>
-            <p className="text-[9px]">Total Tantos: {scores.home}</p>
+            <p className="text-[12px] font-black">{scores.home} ({numberToSpanishWords(scores.home)})</p>
             <h3 className="text-lg font-black uppercase">{teamNames.home}</h3>
           </div>
           <div className="p-2">
             <p className="text-[10px] font-bold">CLUB VISITANTE</p>
-            <p className="text-[9px]">Total Tantos: {scores.away}</p>
+            <p className="text-[12px] font-black">{scores.away} ({numberToSpanishWords(scores.away)})</p>
             <h3 className="text-lg font-black uppercase">{teamNames.away}</h3>
           </div>
         </div>
 
-        {/* LINEUPS SECTION */}
-        <div className="text-center font-bold text-[12px] mb-2">ALINEACIÓN INICIAL</div>
+        <div className="text-center font-bold text-[12px] mb-2">REGISTRO DE JUGADORES Y ACCIONES</div>
         <div className="grid grid-cols-2 gap-10 mb-8">
           <div className="space-y-1">
-            {homeStarters.map(p => (
+            {homePlayers.map(p => (
               <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100">
                 <span>{p.number}.- {p.name}</span>
                 <div className="flex gap-2">
@@ -131,7 +126,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
             ))}
           </div>
           <div className="space-y-1">
-            {awayStarters.map(p => (
+            {awayPlayers.map(p => (
               <div key={p.id} className="flex justify-between items-center text-[10px] border-b border-gray-100">
                 <span>{p.number}.- {p.name}</span>
                 <div className="flex gap-2">
@@ -158,17 +153,11 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           </div>
 
           <h2 className="text-sm font-black mb-4 uppercase">INCIDENTES DEL PARTIDO:</h2>
-          <div className="text-[11px] space-y-4">
-            {events.filter(e => e.category === 'notes' || e.category === 'general').map((e, idx) => (
-              <p key={e.id}>{idx + 1}.- {e.message.replace('📝 ', '')}</p>
-            ))}
-            {events.filter(e => e.category === 'notes' || e.category === 'general').length === 0 && (
-              <p className="italic text-gray-400">Sin incidentes reportados.</p>
-            )}
+          <div className="text-[11px] p-4 border border-slate-200 rounded min-h-[150px] whitespace-pre-wrap">
+            {incidentNote}
           </div>
         </div>
 
-        {/* 3 SIGNATURES SECTION */}
         <div className="grid grid-cols-3 gap-6 mt-20 text-center">
           <div className="flex flex-col items-center">
             <div className="h-20 w-full flex items-center justify-center mb-1">

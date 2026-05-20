@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, signOut } from 'firebase/auth';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PdfReportView } from '@/components/report/PdfReportView';
 import { Logo } from '@/components/ui/Logo';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check, Pencil, X } from 'lucide-react';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check, Pencil, AlertCircle } from 'lucide-react';
 import { causalesAmarilla, causalesRoja } from '@/lib/causales';
 
 interface MatchPageProps {
@@ -43,12 +44,11 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const [selectedPlayer, setSelectedPlayer] = useState<{player: Player, side: 'home' | 'away'} | null>(null);
   const [cardType, setCardType] = useState<'yellow' | 'red' | null>(null);
 
-  // Form states
   const [newPlayerNumber, setNewPlayerNumber] = useState('');
   const [newPlayerName, setNewPlayerName] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [tempIncidents, setTempIncidents] = useState('');
 
-  // Signature state
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -85,7 +85,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       recognition.onstart = () => setIsListening(true);
       recognition.onend = () => setIsListening(false);
       recognition.onerror = (event: any) => {
-        console.error("Speech Recognition Error", event.error);
         setIsListening(false);
         toast({ variant: "destructive", title: "Error de audio", description: "No se pudo acceder al micrófono." });
       };
@@ -95,7 +94,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       };
       recognition.start();
     } catch (e) {
-      console.error(e);
       setIsListening(false);
     }
   };
@@ -162,29 +160,26 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     toast({ title: `Tarjeta registrada para #${player.number}` });
   };
 
-  const removeEvent = (eventId: number) => {
+  const handleSaveIncidents = () => {
     if (!matchState) return;
-    const eventToRemove = matchState.events.find(e => e.id === eventId);
-    let updatedScores = { ...matchState.scores };
-    
-    if (eventToRemove?.category === 'goals' && eventToRemove.side) {
-      updatedScores[eventToRemove.side] = Math.max(0, updatedScores[eventToRemove.side] - 1);
-    }
-
-    const updatedEvents = matchState.events.filter(e => e.id !== eventId);
-    updateMatch({ events: updatedEvents, scores: updatedScores });
+    const otherEvents = (matchState.events || []).filter(e => e.category !== 'notes');
+    const incidentEvent: MatchEvent = {
+      id: Date.now(),
+      time: '--',
+      category: 'notes',
+      message: `📝 ${tempIncidents}`
+    };
+    updateMatch({ events: [incidentEvent, ...otherEvents] });
+    setModal(null);
+    toast({ title: "Incidentes guardados" });
   };
 
-  // Signature Canvas Logic with Offset Fix
   const getCoordinates = (e: React.PointerEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    
-    // Scale factors to account for CSS sizing differences
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    
     return {
       x: (e.clientX - rect.left) * scaleX,
       y: (e.clientY - rect.top) * scaleY
@@ -196,9 +191,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
     const { x, y } = getCoordinates(e);
-
     ctx.beginPath();
     ctx.moveTo(x, y);
     setIsDrawing(true);
@@ -210,9 +203,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
     const { x, y } = getCoordinates(e);
-
     ctx.lineTo(x, y);
     ctx.stroke();
     ctx.strokeStyle = '#000000';
@@ -221,9 +212,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     ctx.lineJoin = 'round';
   };
 
-  const stopDrawing = () => {
-    setIsDrawing(false);
-  };
+  const stopDrawing = () => setIsDrawing(false);
 
   const clearCanvas = () => {
     const canvas = canvasRef.current;
@@ -259,7 +248,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     );
   }
 
-  const { teamNames, matchInfo, lineups = { home: [], away: [] }, events = [], signatures = {} } = matchState;
+  const { teamNames, matchInfo, lineups = { home: [], away: [] }, events = [], signatures = {}, scores } = matchState;
+  const currentIncidents = events.find(e => e.category === 'notes')?.message.replace('📝 ', '') || '';
 
   const getPlayerEvents = (side: 'home' | 'away', number: string) => {
     return events.filter(e => e.side === side && e.playerNumber === number);
@@ -269,15 +259,17 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     <div className="p-2 md:p-6 bg-slate-50 min-h-screen font-sans text-slate-900">
       <div className="max-w-5xl mx-auto space-y-6">
         
-        {/* HEADER & NAV */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border">
           <Logo className="scale-110" />
           <div className="flex gap-2 flex-wrap justify-center">
             <Button onClick={() => setModal('info')} variant="outline" size="sm" className="font-bold border-2">
-              <Settings2 className="h-4 w-4 mr-2" /> DATOS DEL PARTIDO
+              <Settings2 className="h-4 w-4 mr-2" /> DATOS PARTIDO
+            </Button>
+            <Button onClick={() => { setTempIncidents(currentIncidents); setModal('incidents'); }} variant="outline" size="sm" className="font-bold border-2">
+              <AlertCircle className="h-4 w-4 mr-2" /> INCIDENTES
             </Button>
             <Button onClick={() => setIsPdfReportOpen(true)} variant="default" size="sm" className="bg-slate-800 font-bold">
-              <FileText className="h-4 w-4 mr-2" /> GENERAR CÉDULA PDF
+              <FileText className="h-4 w-4 mr-2" /> CÉDULA PDF
             </Button>
             {isAdmin && (
               <Link href="/admin">
@@ -290,7 +282,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           </div>
         </div>
 
-        {/* INFO CÉDULA DISPLAY */}
         <div className="bg-white p-4 rounded-xl border-t-4 border-primary shadow-sm text-center">
           <h1 className="text-xl font-black uppercase italic text-slate-700">Informe de Árbitro</h1>
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
@@ -298,15 +289,20 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           </p>
         </div>
 
-        {/* MAIN GRID - 2 COLUMNS (LOCAL / VISITANTE) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {(['home', 'away'] as const).map(side => (
             <Card key={side} className="border-none shadow-md overflow-hidden">
-              <CardHeader className={`${side === 'home' ? 'bg-amber-500' : 'bg-blue-600'} text-white p-4 flex flex-row justify-between items-center`}>
-                <CardTitle className="text-lg font-black uppercase italic">{teamNames[side]}</CardTitle>
-                <Button onClick={() => { setCurrentSide(side); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 hover:bg-white/90">
-                  <UserPlus className="h-4 w-4 mr-2" /> INSCRIBIR
-                </Button>
+              <CardHeader className={`${side === 'home' ? 'bg-amber-500' : 'bg-blue-600'} text-white p-4`}>
+                <div className="flex justify-between items-center mb-2">
+                  <CardTitle className="text-lg font-black uppercase italic">{teamNames[side]}</CardTitle>
+                  <Button onClick={() => { setCurrentSide(side); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 hover:bg-white/90">
+                    <UserPlus className="h-4 w-4 mr-2" /> INSCRIBIR
+                  </Button>
+                </div>
+                <div className="text-center bg-black/20 rounded-lg p-2">
+                   <p className="text-[10px] font-bold opacity-70">MARCADOR ACTUAL</p>
+                   <p className="text-4xl font-black">{scores[side]}</p>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -388,7 +384,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
           ))}
         </div>
 
-        {/* SIGNATURE SECTION - 3 BOXES */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10 pb-20">
           <div className="text-center">
             <button 
@@ -435,7 +430,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
       </div>
 
-      {/* MODAL: ADD PLAYER */}
       <Dialog open={modal === 'add-player'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
@@ -476,7 +470,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         </DialogContent>
       </Dialog>
 
-      {/* MODAL: CAUSALES */}
       <Dialog open={modal === 'causales'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
@@ -499,7 +492,25 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         </DialogContent>
       </Dialog>
 
-      {/* MODAL: SIGNATURE CAPTURE */}
+      <Dialog open={modal === 'incidents'} onOpenChange={() => setModal(null)}>
+        <DialogContent className="max-w-lg rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-center font-black uppercase">Incidentes del Partido</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Textarea 
+              placeholder="Describe lo ocurrido durante el encuentro..."
+              className="min-h-[200px]"
+              value={tempIncidents}
+              onChange={e => setTempIncidents(e.target.value)}
+            />
+            <Button onClick={handleSaveIncidents} className="w-full font-bold bg-primary uppercase italic h-12">
+              Guardar Incidentes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog 
         open={modal === 'sign-captainHome' || modal === 'sign-captainAway' || modal === 'sign-referee'} 
         onOpenChange={() => setModal(null)}
@@ -541,11 +552,20 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         </DialogContent>
       </Dialog>
 
-      {/* MODAL: INFO & OTHER */}
       <Dialog open={modal === 'info'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-h-[80vh] overflow-y-auto rounded-2xl">
           <DialogHeader><DialogTitle className="font-black text-center uppercase">Datos Generales del Acta</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
+             <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Marcador Local (Edit)</Label>
+                <Input type="number" value={scores.home} onChange={e => updateMatch({scores: {...scores, home: parseInt(e.target.value) || 0}})} />
+              </div>
+              <div className="space-y-2">
+                <Label>Marcador Visita (Edit)</Label>
+                <Input type="number" value={scores.away} onChange={e => updateMatch({scores: {...scores, away: parseInt(e.target.value) || 0}})} />
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Nombre Equipo Local</Label>
