@@ -22,7 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PdfReportView } from '@/components/report/PdfReportView';
 import { Logo } from '@/components/ui/Logo';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check, Pencil, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, Eraser, Check, Pencil, AlertCircle, X } from 'lucide-react';
 import { causalesAmarilla, causalesRoja } from '@/lib/causales';
 
 interface MatchPageProps {
@@ -46,6 +46,9 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
   const [newPlayerNumber, setNewPlayerNumber] = useState('');
   const [newPlayerName, setNewPlayerName] = useState('');
+  const [editPlayerNumber, setEditPlayerNumber] = useState('');
+  const [editPlayerName, setEditPlayerName] = useState('');
+  
   const [isListening, setIsListening] = useState(false);
   const [tempIncidents, setTempIncidents] = useState('');
 
@@ -69,7 +72,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       });
   };
 
-  const startListening = () => {
+  const startListening = (target: 'new' | 'edit') => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       toast({ title: "No soportado", description: "El dictado no es compatible con este navegador." });
@@ -90,7 +93,11 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       };
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
-        setNewPlayerName(transcript.toUpperCase());
+        if (target === 'new') {
+          setNewPlayerName(transcript.toUpperCase());
+        } else {
+          setEditPlayerName(transcript.toUpperCase());
+        }
       };
       recognition.start();
     } catch (e) {
@@ -109,10 +116,43 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     setModal(null);
   };
 
+  const handleUpdatePlayer = () => {
+    if (!matchState || !selectedPlayer || !editPlayerNumber || !editPlayerName) return;
+    const { side, player } = selectedPlayer;
+    const lineups = matchState.lineups || { home: [], away: [] };
+    
+    const updatedPlayers = lineups[side].map(p => 
+      p.id === player.id ? { ...p, number: editPlayerNumber, name: editPlayerName.toUpperCase() } : p
+    );
+
+    // Update events that reference this player
+    const updatedEvents = (matchState.events || []).map(e => {
+      if (e.side === side && e.playerNumber === player.number) {
+        return { 
+          ...e, 
+          playerNumber: editPlayerNumber, 
+          playerName: editPlayerName.toUpperCase(),
+          message: e.message.replace(`#${player.number} ${player.name}`, `#${editPlayerNumber} ${editPlayerName.toUpperCase()}`)
+        };
+      }
+      return e;
+    });
+
+    updateMatch({ 
+      lineups: { ...lineups, [side]: updatedPlayers },
+      events: updatedEvents
+    });
+    
+    setModal('player-actions');
+    toast({ title: "Datos actualizados" });
+  };
+
   const handleRemovePlayer = (side: 'home' | 'away', id: string) => {
     const lineups = matchState!.lineups || { home: [], away: [] };
     const updatedPlayers = lineups[side].filter(p => p.id !== id);
     updateMatch({ lineups: { ...lineups, [side]: updatedPlayers } });
+    setModal(null);
+    toast({ title: "Jugador eliminado" });
   };
 
   const handleAddGoal = (side: 'home' | 'away', player: Player) => {
@@ -156,8 +196,29 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       events: [newEvent, ...(matchState.events || [])]
     });
     
-    setModal(null);
+    setModal('player-actions');
     toast({ title: `Tarjeta registrada para #${player.number}` });
+  };
+
+  const handleRemoveEvent = (eventId: number) => {
+    if (!matchState) return;
+    const event = matchState.events.find(e => e.id === eventId);
+    if (!event) return;
+
+    let update: Partial<MatchState> = {
+      events: matchState.events.filter(e => e.id !== eventId)
+    };
+
+    if (event.category === 'goals' && event.side) {
+      const currentScores = matchState.scores;
+      update.scores = { 
+        ...currentScores, 
+        [event.side]: Math.max(0, (currentScores[event.side] || 0) - 1) 
+      };
+    }
+
+    updateMatch(update);
+    toast({ title: "Evento eliminado" });
   };
 
   const handleSaveIncidents = () => {
@@ -283,7 +344,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         </div>
 
         <div className="bg-white p-4 rounded-xl border-t-4 border-primary shadow-sm text-center">
-          <h1 className="text-xl font-black uppercase italic text-slate-700">Informe de Árbitro</h1>
+          <h1 className="text-xl font-black uppercase italic text-slate-700">Cédula Arbitral</h1>
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
             {matchInfo.league || 'LIGA'} | JORNADA {matchInfo.round || 'S/N'} | {matchInfo.date || 'FECHA'}
           </p>
@@ -310,67 +371,38 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                     <thead className="bg-slate-100 text-[9px] font-black uppercase text-slate-500">
                       <tr>
                         <th className="p-2 border-b w-10 text-center">NO.</th>
-                        <th className="p-2 border-b">NOMBRE</th>
-                        <th className="p-2 border-b w-32 text-center">ACCIONES</th>
-                        <th className="p-2 border-b w-10"></th>
+                        <th className="p-2 border-b">NOMBRE DEL JUGADOR</th>
+                        <th className="p-2 border-b w-16 text-center">ESTS</th>
                       </tr>
                     </thead>
                     <tbody className="text-sm">
                       {lineups[side].length === 0 && (
-                        <tr><td colSpan={4} className="p-8 text-center text-slate-300 italic">No hay jugadores</td></tr>
+                        <tr><td colSpan={3} className="p-8 text-center text-slate-300 italic">No hay jugadores registrados</td></tr>
                       )}
                       {lineups[side].map(p => {
                         const playerEvs = getPlayerEvents(side, p.number);
                         const goalsCount = playerEvs.filter(e => e.category === 'goals').length;
+                        const yellowCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟨')).length;
+                        const redCount = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟥')).length;
+                        
                         return (
-                          <tr key={p.id} className="border-b hover:bg-slate-50 group">
-                            <td className="p-2 text-center font-bold text-slate-500">#{p.number}</td>
-                            <td className="p-2 font-medium uppercase truncate max-w-[120px]">
-                              {p.name}
-                              <div className="flex gap-1 mt-1">
-                                {playerEvs.filter(e => e.category === 'cards').map(e => (
-                                  <span key={e.id} className="text-[10px] font-bold">
-                                    {e.message.split(' - ')[0].split(' ')[0]} {e.message.split(' - ')[0].split(' ')[2] || ''}
-                                  </span>
-                                ))}
-                              </div>
+                          <tr 
+                            key={p.id} 
+                            className="border-b hover:bg-slate-50 cursor-pointer active:bg-slate-100"
+                            onClick={() => {
+                              setSelectedPlayer({ player: p, side });
+                              setModal('player-actions');
+                            }}
+                          >
+                            <td className="p-3 text-center font-bold text-slate-500">#{p.number}</td>
+                            <td className="p-3">
+                              <p className="font-bold uppercase text-slate-700">{p.name}</p>
                             </td>
-                            <td className="p-2">
-                              <div className="flex gap-1 justify-center">
-                                <Button 
-                                  onClick={() => handleAddGoal(side, p)}
-                                  size="icon" variant="outline" className="h-7 w-7 bg-emerald-50 border-emerald-200 text-emerald-700"
-                                >
-                                  {goalsCount > 0 ? goalsCount : <span className="text-[10px]">⚽</span>}
-                                </Button>
-                                <Button 
-                                  onClick={() => { setSelectedPlayer({player: p, side}); setCardType('yellow'); setModal('causales'); }}
-                                  size="icon" variant="outline" className="h-7 w-7 bg-yellow-50 border-yellow-200 text-yellow-600"
-                                >
-                                  🟨
-                                </Button>
-                                <Button 
-                                  onClick={() => { setSelectedPlayer({player: p, side}); setCardType('red'); setModal('causales'); }}
-                                  size="icon" variant="outline" className="h-7 w-7 bg-red-50 border-red-200 text-red-600"
-                                >
-                                  🟥
-                                </Button>
-                              </div>
-                            </td>
-                            <td className="p-2 text-right">
-                              <div className="flex gap-1">
-                                <Button 
-                                  onClick={() => { setSelectedPlayer({player: p, side}); setModal('edit-player'); }} 
-                                  variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-primary"
-                                >
-                                  <Pencil className="h-3 w-3" />
-                                </Button>
-                                <Button 
-                                  onClick={() => handleRemovePlayer(side, p.id)} 
-                                  variant="ghost" size="icon" className="h-7 w-7 text-slate-300 hover:text-red-500"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
+                            <td className="p-3">
+                              <div className="flex gap-1 justify-center items-center">
+                                {goalsCount > 0 && <span className="text-xs font-bold text-emerald-600">⚽{goalsCount}</span>}
+                                {yellowCount > 0 && <span className="text-[10px]">🟨</span>}
+                                {redCount > 0 && <span className="text-[10px]">🟥</span>}
                               </div>
                             </td>
                           </tr>
@@ -393,7 +425,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
               {signatures.captainHome ? (
                 <img src={signatures.captainHome} alt="Firma Cap Local" className="max-h-full" />
               ) : (
-                <span className="text-slate-300 italic text-xs">PULSAR PARA FIRMAR</span>
+                <span className="text-slate-300 italic text-xs">FIRMA CAPITÁN LOCAL</span>
               )}
             </button>
             <p className="text-[10px] font-black uppercase text-slate-400">Capitán / Delegado (LOCAL)</p>
@@ -407,7 +439,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
               {signatures.captainAway ? (
                 <img src={signatures.captainAway} alt="Firma Cap Visitante" className="max-h-full" />
               ) : (
-                <span className="text-slate-300 italic text-xs">PULSAR PARA FIRMAR</span>
+                <span className="text-slate-300 italic text-xs">FIRMA CAPITÁN VISITANTE</span>
               )}
             </button>
             <p className="text-[10px] font-black uppercase text-slate-400">Capitán / Delegado (VISITANTE)</p>
@@ -421,7 +453,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
               {signatures.referee ? (
                 <img src={signatures.referee} alt="Firma Árbitro" className="max-h-full" />
               ) : (
-                <span className="text-slate-300 italic text-xs">PULSAR PARA FIRMAR</span>
+                <span className="text-slate-300 italic text-xs">FIRMA ÁRBITRO CENTRAL</span>
               )}
             </button>
             <p className="text-[10px] font-black uppercase text-slate-400">Árbitro Central</p>
@@ -456,7 +488,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                   onChange={e => setNewPlayerName(e.target.value)}
                 />
                 <button 
-                  onClick={startListening}
+                  onClick={() => startListening('new')}
                   className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}
                 >
                   {isListening ? <MicOff size={20} /> : <Mic size={20} />}
@@ -470,7 +502,131 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         </DialogContent>
       </Dialog>
 
-      <Dialog open={modal === 'causales'} onOpenChange={() => setModal(null)}>
+      <Dialog open={modal === 'player-actions'} onOpenChange={() => setModal(null)}>
+        <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          {selectedPlayer && (
+            <div className="flex flex-col">
+              <div className={`p-6 text-white text-center ${selectedPlayer.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}>
+                <p className="text-4xl font-black mb-1">#{selectedPlayer.player.number}</p>
+                <p className="text-xl font-bold uppercase italic tracking-tight">{selectedPlayer.player.name}</p>
+                <p className="text-[10px] font-bold opacity-70 mt-2 uppercase">{teamNames[selectedPlayer.side]}</p>
+              </div>
+              
+              <div className="p-6 space-y-4 bg-white">
+                <div className="grid grid-cols-1 gap-3">
+                  <Button 
+                    onClick={() => handleAddGoal(selectedPlayer.side, selectedPlayer.player)}
+                    className="h-16 text-xl font-black italic uppercase bg-emerald-600 hover:bg-emerald-700 shadow-lg"
+                  >
+                    ⚽ REGISTRAR GOL
+                  </Button>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button 
+                      onClick={() => { setCardType('yellow'); setModal('causales'); }}
+                      className="h-14 font-black bg-yellow-400 text-yellow-900 hover:bg-yellow-500 shadow-md"
+                    >
+                      🟨 AMARILLA
+                    </Button>
+                    <Button 
+                      onClick={() => { setCardType('red'); setModal('causales'); }}
+                      className="h-14 font-black bg-red-600 text-white hover:bg-red-700 shadow-md"
+                    >
+                      🟥 ROJA
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 space-y-3">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Eventos Registrados</p>
+                  <div className="max-h-32 overflow-y-auto space-y-2">
+                    {getPlayerEvents(selectedPlayer.side, selectedPlayer.player.number).length === 0 ? (
+                      <p className="text-xs text-slate-300 italic text-center py-2">Sin eventos registrados</p>
+                    ) : (
+                      getPlayerEvents(selectedPlayer.side, selectedPlayer.player.number).map(ev => (
+                        <div key={ev.id} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg border">
+                          <span className="text-[11px] font-bold text-slate-600">{ev.message.split(' - ')[0]}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-red-400 hover:text-red-600"
+                            onClick={() => handleRemoveEvent(ev.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setEditPlayerName(selectedPlayer.player.name);
+                      setEditPlayerNumber(selectedPlayer.player.number);
+                      setModal('edit-player');
+                    }}
+                    className="text-[10px] font-bold uppercase"
+                  >
+                    <Pencil className="h-3 w-3 mr-1" /> Editar Datos
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleRemovePlayer(selectedPlayer.side, selectedPlayer.player.id)}
+                    className="text-[10px] font-bold uppercase text-red-500 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" /> Eliminar Jugador
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modal === 'edit-player'} onOpenChange={() => setModal('player-actions')}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-center font-black uppercase">Editar Jugador</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Número</Label>
+              <Input 
+                type="number" 
+                className="text-2xl h-14 text-center font-black" 
+                value={editPlayerNumber} 
+                onChange={e => setEditPlayerNumber(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Nombre</Label>
+              <div className="relative">
+                <Input 
+                  className="uppercase font-bold pr-10"
+                  value={editPlayerName} 
+                  onChange={e => setEditPlayerName(e.target.value)}
+                />
+                <button 
+                  onClick={() => startListening('edit')}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}
+                >
+                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                </button>
+              </div>
+            </div>
+            <Button onClick={handleUpdatePlayer} className="w-full h-12 font-black uppercase bg-primary">
+              Guardar Cambios
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modal === 'causales'} onOpenChange={() => setModal('player-actions')}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-center font-black uppercase">
