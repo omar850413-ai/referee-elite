@@ -14,7 +14,16 @@ interface PdfReportViewProps {
 }
 
 export function PdfReportView({ matchState }: PdfReportViewProps) {
-  const { matchInfo, teamNames, scores, events, lineups, staff, attendance, timing } = matchState;
+  const { 
+    matchInfo, 
+    teamNames, 
+    scores, 
+    events, 
+    lineups = { home: [], away: [] }, 
+    staff = { home: [], away: [] }, 
+    attendance, 
+    timing 
+  } = matchState;
   const reportRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadPdf = () => {
@@ -48,7 +57,8 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
   };
 
   const getPlayersByType = (team: 'home' | 'away', type: 'starter' | 'substitute') => {
-    return lineups[team].filter(p => p.type === type).sort((a, b) => parseInt(a.number) - parseInt(b.number));
+    const teamLineup = lineups[team] || [];
+    return teamLineup.filter(p => p.type === type).sort((a, b) => parseInt(a.number) - parseInt(b.number));
   };
 
   const getPlayerEvents = (team: 'home' | 'away', number: string) => {
@@ -178,12 +188,12 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
         <div className="text-center font-bold text-[12px] mb-2">CUERPO TÉCNICO</div>
         <div className="grid grid-cols-2 gap-10 mb-10 text-[10px]">
           <div className="space-y-1">
-            {staff.home.map(s => (
+            {(staff.home || []).map(s => (
               <div key={s.id} className="flex justify-between"><span>{s.name}</span> <span className="italic">{s.role}</span></div>
             ))}
           </div>
           <div className="space-y-1">
-            {staff.away.map(s => (
+            {(staff.away || []).map(s => (
               <div key={s.id} className="flex justify-between"><span>{s.name}</span> <span className="italic">{s.role}</span></div>
             ))}
           </div>

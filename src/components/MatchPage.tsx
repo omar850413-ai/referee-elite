@@ -277,7 +277,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const registerGoal = (type: string | null) => {
     if (!matchState || !type) return;
     const n = playerNumber || 'S/N';
-    const player = matchState.lineups[currentSide].find(p => p.number === n);
+    const lineups = matchState.lineups || { home: [], away: [] };
+    const player = lineups[currentSide].find(p => p.number === n);
     const sideToScore = type === 'AUTOGOL' ? (currentSide === 'home' ? 'away' : 'home') : currentSide;
     const newScores = { ...matchState.scores, [sideToScore]: (matchState.scores[sideToScore] ?? 0) + 1 };
     addEvent('goals', `⚽ ${type} #${n} (${matchState.teamNames[currentSide]})`, capturedTimeRef.current, currentSide, n, player?.name);
@@ -325,7 +326,8 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const registerCard = (causal: string | null) => {
     if (!matchState || !causal) return;
     const p = playerNumber || 'S/N';
-    const player = matchState.lineups[currentSide].find(pl => pl.number === p);
+    const lineups = matchState.lineups || { home: [], away: [] };
+    const player = lineups[currentSide].find(pl => pl.number === p);
     const symbol = currentCardType === 'amarilla' ? '🟨' : '🟥';
     const target = currentCardTarget === 'jugador' ? `#${p}` : currentStaffRole;
     const message = `${symbol} ${target} (${matchState.teamNames[currentSide]}) - ${causal}`;
@@ -339,27 +341,31 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
   const handleAddPlayer = () => {
     if (!matchState || !newPlayerNumber || !newPlayerName) return;
+    const lineups = matchState.lineups || { home: [], away: [] };
     const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName, type: newPlayerType };
-    const updatedLineups = { ...matchState.lineups, [currentSide]: [...matchState.lineups[currentSide], player] };
+    const updatedLineups = { ...lineups, [currentSide]: [...lineups[currentSide], player] };
     updateMatch({ lineups: updatedLineups });
     setNewPlayerNumber('');
     setNewPlayerName('');
   };
 
   const handleRemovePlayer = (id: string) => {
-    const updatedPlayers = matchState!.lineups[currentSide].filter(p => p.id !== id);
-    updateMatch({ lineups: { ...matchState!.lineups, [currentSide]: updatedPlayers } });
+    const lineups = matchState!.lineups || { home: [], away: [] };
+    const updatedPlayers = lineups[currentSide].filter(p => p.id !== id);
+    updateMatch({ lineups: { ...lineups, [currentSide]: updatedPlayers } });
   };
 
   const handleAddStaff = () => {
     if (!matchState || !newStaffName) return;
+    const staff = matchState.staff || { home: [], away: [] };
     const member: StaffMember = { id: Date.now().toString(), name: newStaffName, role: newStaffRole };
-    updateMatch({ staff: { ...matchState.staff, [currentSide]: [...matchState.staff[currentSide], member] } });
+    updateMatch({ staff: { ...staff, [currentSide]: [...staff[currentSide], member] } });
     setNewStaffName('');
   };
 
   const handleRemoveStaff = (id: string) => {
-    updateMatch({ staff: { ...matchState!.staff, [currentSide]: matchState!.staff[currentSide].filter(s => s.id !== id) } });
+    const staff = matchState!.staff || { home: [], away: [] };
+    updateMatch({ staff: { ...staff, [currentSide]: staff[currentSide].filter(s => s.id !== id) } });
   };
 
   const handleLogout = async () => {
@@ -378,7 +384,17 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     );
   }
 
-  const { scores, fouls, teamNames, events, matchInfo, timer, attendance } = matchState;
+  const { 
+    scores, 
+    fouls, 
+    teamNames, 
+    events, 
+    matchInfo, 
+    timer, 
+    attendance,
+    lineups = { home: [], away: [] },
+    staff = { home: [], away: [] }
+  } = matchState;
 
   return (
     <div className="p-4 bg-sky-100 min-h-screen">
@@ -477,7 +493,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
             </div>
             <div className="space-y-2">
               <p className="text-xs font-bold uppercase text-gray-500">Jugadores Registrados:</p>
-              {matchState.lineups[currentSide].map(p => (
+              {lineups[currentSide].map(p => (
                 <div key={p.id} className="flex justify-between items-center p-2 bg-slate-50 rounded border">
                   <span className="text-sm font-bold">#{p.number} - {p.name} <span className="text-[10px] text-gray-400">({p.type === 'starter' ? 'T' : 'S'})</span></span>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => handleRemovePlayer(p.id)}><Trash2 className="h-4 w-4"/></Button>
@@ -496,7 +512,7 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
                 </select>
                 <Button size="icon" onClick={handleAddStaff}><Plus className="h-4 w-4"/></Button>
               </div>
-              {matchState.staff[currentSide].map(s => (
+              {staff[currentSide].map(s => (
                 <div key={s.id} className="flex justify-between items-center p-2 bg-slate-50 rounded border">
                   <span className="text-sm">{s.name} <span className="text-[10px] font-bold">({s.role})</span></span>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => handleRemoveStaff(s.id)}><Trash2 className="h-4 w-4"/></Button>
