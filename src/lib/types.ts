@@ -21,6 +21,26 @@ export interface Timer {
   firstHalfEndSeconds?: number;
 }
 
+export interface Player {
+  id: string;
+  number: string;
+  name: string;
+  type: 'starter' | 'substitute';
+}
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  role: string;
+}
+
+export interface MatchTiming {
+  firstHalfStart: string;
+  firstHalfEnd: string;
+  secondHalfStart: string;
+  secondHalfEnd: string;
+}
+
 export interface MatchEvent {
   id: number;
   time: string;
@@ -29,6 +49,8 @@ export interface MatchEvent {
   side?: 'home' | 'away';
   pdfDescription?: string;
   valuation?: 'correcta' | 'incorrecta';
+  playerNumber?: string;
+  playerName?: string;
 }
 
 export interface MatchInfo {
@@ -64,6 +86,16 @@ export interface MatchState {
   matchInfo: MatchInfo;
   penaltyShootout?: PenaltyShootout;
   reportSettings?: ReportSettings;
+  lineups: {
+    home: Player[];
+    away: Player[];
+  };
+  staff: {
+    home: StaffMember[];
+    away: StaffMember[];
+  };
+  attendance?: string;
+  timing?: MatchTiming;
 }
 
 export interface UserProfile {

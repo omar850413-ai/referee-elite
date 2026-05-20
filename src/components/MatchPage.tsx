@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
-import { MatchEvent, MatchInfo, TeamNames, Scores, UserProfile, Timer, MatchState } from '@/lib/types';
+import { MatchEvent, MatchInfo, TeamNames, Scores, UserProfile, Timer, MatchState, Player, StaffMember } from '@/lib/types';
 import { formatTime, cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ReportView } from '@/components/report/ReportView';
@@ -29,6 +29,7 @@ import { PdfReportView } from '@/components/report/PdfReportView';
 import { Logo } from '@/components/ui/Logo';
 import { Skeleton } from '@/components/ui/skeleton';
 import { causalesAmarilla, causalesRoja, causalesStaff } from '@/lib/causales';
+import { Plus, Trash2, Users } from 'lucide-react';
 
 interface MatchPageProps {
   user: User;
@@ -74,6 +75,13 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const [selectedGoalType, setSelectedGoalType] = useState<'GOL' | 'PENAL' | 'AUTOGOL' | null>(null);
   const [selectedCausal, setSelectedCausal] = useState<string | null>(null);
 
+  // Player Management
+  const [newPlayerNumber, setNewPlayerNumber] = useState('');
+  const [newPlayerName, setNewPlayerName] = useState('');
+  const [newPlayerType, setNewPlayerType] = useState<'starter' | 'substitute'>('starter');
+  const [newStaffName, setNewStaffName] = useState('');
+  const [newStaffRole, setNewStaffRole] = useState('DT');
+
   const capturedTimeRef = useRef('00:00');
 
   // --- Firestore update helper ---
@@ -112,51 +120,32 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
   useEffect(() => {
     if (!matchState) return;
-
     const { timer } = matchState;
-
     const calculateTotalElapsedSeconds = () => {
-        if (!timer.isRunning) {
-            return timer.elapsedSeconds;
-        }
+        if (!timer.isRunning) return timer.elapsedSeconds;
         const timeSinceStart = (Date.now() - timer.startTime) / 1000;
         return timer.elapsedSeconds + timeSinceStart;
     };
-
-    if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-    }
-    
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     setDisplaySeconds(calculateTotalElapsedSeconds());
-
     if (timer.isRunning) {
         timerIntervalRef.current = setInterval(() => {
             setDisplaySeconds(calculateTotalElapsedSeconds());
         }, 1000);
     }
-
     return () => {
-        if (timerIntervalRef.current) {
-            clearInterval(timerIntervalRef.current);
-        }
+        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
-}, [matchState?.timer]);
-
+  }, [matchState?.timer]);
 
   const getSmartTime = () => {
     if (!matchState) return '00:00';
-
     const totalSeconds = displaySeconds;
     const { status, firstHalfEndSeconds } = matchState.timer;
-
-    if (status === 'NOT_STARTED') {
-        return '00:00';
-    }
-    
+    if (status === 'NOT_STARTED') return '00:00';
     if (status === 'FIRST_HALF' || status === 'HALF_TIME') {
       const secondsToFormat = status === 'HALF_TIME' ? (firstHalfEndSeconds ?? 2700) : totalSeconds;
       const minutes = Math.floor(secondsToFormat / 60);
-
       if (minutes >= 45) {
         const extraSeconds = secondsToFormat - 45 * 60;
         const extraMinutes = Math.floor(extraSeconds / 60) + 1;
@@ -164,39 +153,34 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
       }
       return formatTime(secondsToFormat);
     }
-    
     if (status === 'SECOND_HALF' || status === 'FINISHED') {
         const firstHalfDuration = firstHalfEndSeconds ?? 2700;
         const secondHalfSeconds = Math.max(0, totalSeconds - firstHalfDuration);
         const gameTimeSeconds = (45 * 60) + secondHalfSeconds;
         const gameMinute = Math.floor(gameTimeSeconds / 60);
-        
         if (gameMinute >= 90) {
-            const regulationTimeInSeconds = 90 * 60;
-            const extraTimeSeconds = gameTimeSeconds - regulationTimeInSeconds;
+            const extraTimeSeconds = gameTimeSeconds - 90 * 60;
             const extraMinutes = Math.floor(extraTimeSeconds / 60) + 1;
             return `90+${extraMinutes}`;
         }
-        
         return formatTime(gameTimeSeconds);
     }
-
     return formatTime(totalSeconds);
   };
 
-
-  const addEvent = (category: string, message: string, time: string, side?: 'home' | 'away') => {
-    const newEvent: MatchEvent = { id: Date.now(), time, category, message, side };
+  const addEvent = (category: string, message: string, time: string, side?: 'home' | 'away', pNum?: string, pName?: string) => {
+    const newEvent: MatchEvent = { id: Date.now(), time, category, message, side, playerNumber: pNum, playerName: pName };
     const updatedEvents = [newEvent, ...(matchState?.events ?? [])];
     updateMatch({ events: updatedEvents });
   };
   
- const handleTimerClick = () => {
+  const handleTimerClick = () => {
     if (!matchState) return;
-
-    const { timer } = matchState;
+    const { timer, timing } = matchState;
     const now = Date.now();
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     let newTimerState: Partial<Timer> = {};
+    let newTiming: Partial<MatchState['timing']> = { ...timing };
 
     const calculateCurrentElapsed = () => {
         if (!timer.isRunning) return timer.elapsedSeconds;
@@ -205,76 +189,42 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
     switch (timer.status) {
         case 'NOT_STARTED':
-            newTimerState = {
-                status: 'FIRST_HALF',
-                isRunning: true,
-                startTime: now,
-                elapsedSeconds: 0,
-            };
+            newTimerState = { status: 'FIRST_HALF', isRunning: true, startTime: now, elapsedSeconds: 0 };
+            newTiming.firstHalfStart = timeStr;
             break;
         case 'FIRST_HALF':
             const firstHalfElapsed = calculateCurrentElapsed();
-            newTimerState = {
-                status: 'HALF_TIME',
-                isRunning: false,
-                startTime: 0,
-                elapsedSeconds: firstHalfElapsed,
-                firstHalfEndSeconds: firstHalfElapsed,
-            };
+            newTimerState = { status: 'HALF_TIME', isRunning: false, startTime: 0, elapsedSeconds: firstHalfElapsed, firstHalfEndSeconds: firstHalfElapsed };
+            newTiming.firstHalfEnd = timeStr;
             break;
         case 'HALF_TIME':
-            newTimerState = {
-                status: 'SECOND_HALF',
-                isRunning: true,
-                startTime: now,
-                elapsedSeconds: matchState.timer.firstHalfEndSeconds ?? 2700,
-            };
+            newTimerState = { status: 'SECOND_HALF', isRunning: true, startTime: now, elapsedSeconds: matchState.timer.firstHalfEndSeconds ?? 2700 };
+            newTiming.secondHalfStart = timeStr;
             break;
         case 'SECOND_HALF':
-            newTimerState = {
-                status: 'FINISHED',
-                isRunning: false,
-                startTime: 0,
-                elapsedSeconds: calculateCurrentElapsed(),
-            };
+            newTimerState = { status: 'FINISHED', isRunning: false, startTime: 0, elapsedSeconds: calculateCurrentElapsed() };
+            newTiming.secondHalfEnd = timeStr;
             break;
-        case 'FINISHED':
-            return;
+        case 'FINISHED': return;
     }
-    updateMatch({ timer: { ...timer, ...newTimerState } });
-};
+    updateMatch({ timer: { ...timer, ...newTimerState }, timing: newTiming as any });
+  };
 
   const triggerResetCrono = () => setModal('reset-crono-confirm');
-
   const handleResetCrono = () => {
       if (!matchState) return;
       const { status, firstHalfEndSeconds } = matchState.timer;
-  
       let newTimerState: Timer;
-  
       if (status === 'NOT_STARTED' || status === 'FIRST_HALF' || status === 'HALF_TIME') {
-        newTimerState = {
-          status: 'NOT_STARTED',
-          startTime: 0,
-          elapsedSeconds: 0,
-          isRunning: false,
-        };
+        newTimerState = { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false };
       } else {
-        newTimerState = {
-          status: 'HALF_TIME',
-          startTime: 0,
-          elapsedSeconds: firstHalfEndSeconds || 2700,
-          isRunning: false,
-          firstHalfEndSeconds: firstHalfEndSeconds,
-        };
+        newTimerState = { status: 'HALF_TIME', startTime: 0, elapsedSeconds: firstHalfEndSeconds || 2700, isRunning: false, firstHalfEndSeconds: firstHalfEndSeconds };
       }
-      
       updateMatch({ timer: newTimerState });
       setModal(null);
   };
   
   const triggerFullReset = () => setModal('reset-full-confirm');
-
   const handleFullReset = () => {
       const initialState: MatchState = {
         scores: { home: 0, away: 0 },
@@ -285,6 +235,10 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
         timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
         penaltyShootout: { home: 0, away: 0, active: false },
         reportSettings: { showFouls: false },
+        lineups: { home: [], away: [] },
+        staff: { home: [], away: [] },
+        attendance: '',
+        timing: { firstHalfStart: '', firstHalfEnd: '', secondHalfStart: '', secondHalfEnd: '' }
       };
       setDoc(matchDocRef, initialState).catch((error) => {
         const permissionError = new FirestorePermissionError({
@@ -299,72 +253,35 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
   const addFoul = (side: 'home' | 'away') => {
     if (!matchState || matchState.timer.status === 'NOT_STARTED') {
-      toast({
-        title: 'El partido no ha comenzado.',
-        description: 'No se pueden registrar faltas cuando el juego está detenido.',
-        variant: 'destructive',
-      });
+      toast({ title: 'El partido no ha comenzado.', variant: 'destructive' });
       return;
     }
-    
     const time = getSmartTime();
     const newFoulsCount = (matchState.fouls[side] ?? 0) + 1;
     const newEvent: MatchEvent = { 
-      id: Date.now(), 
-      time, 
-      category: 'fouls', 
-      message: `🚩 Falta ${matchState.teamNames[side]}`, 
-      side 
+      id: Date.now(), time, category: 'fouls', message: `🚩 Falta ${matchState.teamNames[side]}`, side 
     };
-    
-    const updatedEvents = [newEvent, ...(matchState.events ?? [])];
-    const updatedFouls = { ...matchState.fouls, [side]: newFoulsCount };
-    
-    updateMatch({ 
-      events: updatedEvents,
-      fouls: updatedFouls
-    });
+    updateMatch({ events: [newEvent, ...(matchState.events ?? [])], fouls: { ...matchState.fouls, [side]: newFoulsCount } });
   };
 
   const captureTimeAndTrigger = (type: string, side: 'home' | 'away') => {
     if (!matchState || matchState.timer.status === 'NOT_STARTED') {
-      toast({
-        title: 'El partido no ha comenzado',
-        description: 'Debes iniciar el cronómetro para registrar eventos.',
-        variant: 'destructive',
-      });
+      toast({ title: 'El partido no ha comenzado', variant: 'destructive' });
       return;
     }
-
-    if (matchState.timer.status === 'HALF_TIME') {
-      capturedTimeRef.current = '45';
-    } else {
-      capturedTimeRef.current = getSmartTime();
-    }
-
-    if (type === 'goal') {
-      setSelectedGoalType(null);
-    }
-    
+    capturedTimeRef.current = matchState.timer.status === 'HALF_TIME' ? '45' : getSmartTime();
     setCurrentSide(side);
     setModal(type);
   };
 
   const registerGoal = (type: string | null) => {
     if (!matchState || !type) return;
-
     const n = playerNumber || 'S/N';
-    const otherSide = currentSide === 'home' ? 'away' : 'home';
-    const sideToScore = type === 'AUTOGOL' ? otherSide : currentSide;
-    
-    const newScores = {
-        ...matchState.scores,
-        [sideToScore]: (matchState.scores[sideToScore] ?? 0) + 1,
-    };
-    
-    addEvent('goals', `⚽ ${type} #${n} (${matchState.teamNames[currentSide]})`, capturedTimeRef.current, currentSide);
+    const player = matchState.lineups[currentSide].find(p => p.number === n);
+    const sideToScore = type === 'AUTOGOL' ? (currentSide === 'home' ? 'away' : 'home') : currentSide;
+    const newScores = { ...matchState.scores, [sideToScore]: (matchState.scores[sideToScore] ?? 0) + 1 };
+    addEvent('goals', `⚽ ${type} #${n} (${matchState.teamNames[currentSide]})`, capturedTimeRef.current, currentSide, n, player?.name);
     updateMatch({ scores: newScores });
-    
     setPlayerNumber('');
     setSelectedGoalType(null);
     setModal(null);
@@ -382,20 +299,10 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
 
   const openCardSubMenu = (side: 'home' | 'away', type: 'amarilla' | 'roja') => {
     if (!matchState || matchState.timer.status === 'NOT_STARTED') {
-      toast({
-        title: 'El partido no ha comenzado',
-        description: 'Debes iniciar el cronómetro para registrar tarjetas.',
-        variant: 'destructive',
-      });
+      toast({ title: 'El partido no ha comenzado', variant: 'destructive' });
       return;
     }
-    
-    if (matchState.timer.status === 'HALF_TIME') {
-      capturedTimeRef.current = '45';
-    } else {
-      capturedTimeRef.current = getSmartTime();
-    }
-
+    capturedTimeRef.current = matchState.timer.status === 'HALF_TIME' ? '45' : getSmartTime();
     setSelectedCausal(null);
     setCurrentCardTarget('jugador');
     setCurrentStaffRole('');
@@ -409,8 +316,6 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     setModal('card-detail');
   };
   
-  const openStaffRoleMenu = () => setModal('staff-role');
-
   const selectStaffRole = (role: string) => {
     setCurrentCardTarget('staff');
     setCurrentStaffRole(role);
@@ -420,10 +325,11 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
   const registerCard = (causal: string | null) => {
     if (!matchState || !causal) return;
     const p = playerNumber || 'S/N';
+    const player = matchState.lineups[currentSide].find(pl => pl.number === p);
     const symbol = currentCardType === 'amarilla' ? '🟨' : '🟥';
     const target = currentCardTarget === 'jugador' ? `#${p}` : currentStaffRole;
     const message = `${symbol} ${target} (${matchState.teamNames[currentSide]}) - ${causal}`;
-    addEvent('cards', message, capturedTimeRef.current, currentSide);
+    addEvent('cards', message, capturedTimeRef.current, currentSide, p, player?.name);
     setPlayerNumber('');
     setSelectedCausal(null);
     setCurrentStaffRole('');
@@ -431,896 +337,248 @@ export default function MatchPage({ user, userProfile, matchDocRef }: MatchPageP
     setModal(null);
   };
 
-  const openNoteModal = () => {
-    capturedTimeRef.current = getSmartTime();
-    setModal('note');
-  };
-  
-  const saveNote = () => {
-    if (noteInput.trim()) {
-      addEvent('notes', `📝 ${noteInput.trim()}`, capturedTimeRef.current);
-    }
-    setNoteInput('');
-    setModal(null);
-  };
-  
-  const openEditEvent = (event: MatchEvent) => {
-    setEditingEventId(event.id);
-    setEditEventMsg(event.message);
-    setEditEventTime(event.time);
-    setEditEventPdfDescription(event.pdfDescription || '');
-    setEditEventSide(event.side);
-    setModal('edit-event');
-  }
-
-  const saveEventEdit = () => {
-    if (!matchState) return;
-    const updatedEvents = matchState.events.map(e => 
-      e.id === editingEventId 
-        ? {...e, message: editEventMsg, time: editEventTime, side: editEventSide} 
-        : e
-    );
-    updateMatch({ events: updatedEvents });
-    setModal(null);
-  }
-
-  const handleSetValuation = (valuation: 'correcta' | 'incorrecta') => {
-    if (!matchState || editingEventId === null) return;
-    const updatedEvents = matchState.events.map(e =>
-      e.id === editingEventId
-        ? { ...e, valuation }
-        : e
-    );
-    updateMatch({ events: updatedEvents });
-    setModal('edit-event');
+  const handleAddPlayer = () => {
+    if (!matchState || !newPlayerNumber || !newPlayerName) return;
+    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName, type: newPlayerType };
+    const updatedLineups = { ...matchState.lineups, [currentSide]: [...matchState.lineups[currentSide], player] };
+    updateMatch({ lineups: updatedLineups });
+    setNewPlayerNumber('');
+    setNewPlayerName('');
   };
 
-  const deleteEvent = () => {
-    if (!matchState) return;
-    const updatedEvents = matchState.events.filter(e => e.id !== editingEventId);
-    updateMatch({ events: updatedEvents });
-    setModal(null);
-  }
-
-  const openPegiModal = () => {
-    capturedTimeRef.current = getSmartTime();
-    setPegiDecision(null);
-    setPegiDescription('');
-    setModal('pegi');
+  const handleRemovePlayer = (id: string) => {
+    const updatedPlayers = matchState!.lineups[currentSide].filter(p => p.id !== id);
+    updateMatch({ lineups: { ...matchState!.lineups, [currentSide]: updatedPlayers } });
   };
 
-  const handleSavePegi = () => {
-    if (!pegiDecision) {
-      toast({
-        title: 'Selección requerida',
-        description: 'Por favor, elige "Sí" o "No".',
-        variant: 'destructive',
-      });
-      return;
-    }
-    if (pegiDecision === 'yes' && !pegiDescription.trim()) {
-      toast({
-        title: 'Descripción requerida',
-        description: 'Por favor, ingresa una descripción para la jugada PEGI.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    const message = pegiDecision === 'yes' ? `🔎 JUGADAS PEGI: Sí - ${pegiDescription.trim()}` : '🔎 JUGADAS PEGI: No';
-    addEvent('pegi', message, capturedTimeRef.current);
-    setModal(null);
-  };
-  
-  const openPenaltyModal = () => {
-    if (!matchState) return;
-    if (matchState.timer.status !== 'FINISHED') {
-        toast({
-            title: 'Partido no ha finalizado',
-            description: 'La tanda de penales solo se registra al finalizar el partido.',
-            variant: 'destructive',
-        });
-        return;
-    }
-    setManualPenaltyScores(matchState.penaltyShootout ?? { home: 0, away: 0, active: false });
-    setModal('penalties');
+  const handleAddStaff = () => {
+    if (!matchState || !newStaffName) return;
+    const member: StaffMember = { id: Date.now().toString(), name: newStaffName, role: newStaffRole };
+    updateMatch({ staff: { ...matchState.staff, [currentSide]: [...matchState.staff[currentSide], member] } });
+    setNewStaffName('');
   };
 
-  const openScoreEditor = () => {
-    setManualScores(matchState?.scores ?? { home: 0, away: 0 });
-    setModal('edit-score');
+  const handleRemoveStaff = (id: string) => {
+    updateMatch({ staff: { ...matchState!.staff, [currentSide]: matchState!.staff[currentSide].filter(s => s.id !== id) } });
   };
-  
+
   const handleLogout = async () => {
     localStorage.removeItem('sessionId');
     await signOut(auth);
     router.push('/login');
   };
   
-  const getTeamNameSizeClass = (name: string | undefined) => {
-    if (!name) return 'text-lg';
-    if (name.length > 12) return 'text-base';
-    if (name.length > 9) return 'text-lg';
-    return 'text-xl';
-  };
+  const isAdmin = userProfile?.isAdmin || user?.email === 'omar850413@gmail.com';
 
-  if (isMatchLoading || !matchState) {
-     return (
-      <div className="p-4 bg-sky-100 min-h-screen flex items-center justify-center">
-        <div className="max-w-md mx-auto space-y-4 w-full">
-          <Skeleton className="h-12 w-full" />
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-16 w-full mb-2" />
-              <Skeleton className="h-10 w-full" />
-            </CardHeader>
-            <CardContent className="p-6 flex flex-col gap-6">
-              <div className="flex justify-between items-start gap-4">
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-20 mx-auto" />
-                  <Skeleton className="h-20 w-full" />
-                  <Skeleton className="h-24 w-full" />
-                </div>
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-20 mx-auto" />
-                  <Skeleton className="h-20 w-full" />
-                  <Skeleton className="h-24 w-full" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  const { scores, fouls, teamNames, events, matchInfo, timer, attendance } = matchState;
 
-  const { scores, fouls, teamNames, events, matchInfo, timer, penaltyShootout, reportSettings } = matchState;
-  const matchStatus = timer.status;
-  const timerButtonLabel = {
-    'NOT_STARTED': 'Iniciar Partido',
-    'FIRST_HALF': 'Fin 1er Tiempo',
-    'HALF_TIME': 'Iniciar 2do Tiempo',
-    'SECOND_HALF': 'Fin Partido',
-    'FINISHED': 'Finalizado',
-  }[matchStatus];
-  const periodIndicator = `Status: ${
-    {
-      'NOT_STARTED': 'Sin iniciar',
-      'FIRST_HALF': '1T Corriendo',
-      'HALF_TIME': 'Descanso',
-      'SECOND_HALF': '2T Corriendo',
-      'FINISHED': 'Finalizado',
-    }[matchStatus]
-  }`;
-
-  const isSuperAdmin = user?.email === 'omar850413@gmail.com';
-  const isAdmin = userProfile?.isAdmin || isSuperAdmin;
-  
   return (
-    <div className="p-4 bg-sky-100">
+    <div className="p-4 bg-sky-100 min-h-screen">
       <div className="max-w-md mx-auto space-y-4 pb-12">
         <div className="flex items-center justify-center gap-3 border-b-4 border-primary/50 pb-2">
           <Logo />
           {isAdmin && (
             <Link href="/admin">
-              <Button variant="outline" size="sm">Panel de Control</Button>
+              <Button variant="outline" size="sm">Admin</Button>
             </Link>
           )}
         </div>
 
         <Card>
           <CardHeader className="rounded-t-lg p-6 text-center border-b bg-sky-100">
-            <div
-              id="timer-display"
-              className="text-7xl font-mono font-black text-gray-800 tracking-tighter mb-2 bg-amber-100 rounded-2xl py-4 border-b-4 border-amber-200"
-            >
+            <div className="text-7xl font-mono font-black text-gray-800 tracking-tighter mb-2 bg-amber-100 rounded-2xl py-4 border-b-4 border-amber-200">
               {getSmartTime()}
             </div>
-            <div className="flex flex-col gap-2">
-              <Button
-                onClick={handleTimerClick}
-                size="lg"
-                className="w-full font-black text-lg shadow-lg uppercase italic bg-slate-800 hover:bg-slate-900 text-white"
-                disabled={matchStatus === 'FINISHED'}
-              >
-                {timerButtonLabel}
-              </Button>
-              <div className="flex justify-between items-center px-2">
-                <div className="text-[10px] font-black text-primary/80 uppercase tracking-widest italic">
-                  {periodIndicator}
-                </div>
-                {matchStatus !== 'NOT_STARTED' && (
-                  <button
-                    onClick={triggerResetCrono}
-                    className="text-[10px] font-black text-red-500 uppercase italic underline bg-transparent border-none cursor-pointer"
-                  >
-                    Reiniciar Crono
-                  </button>
-                )}
-              </div>
+            <Button onClick={handleTimerClick} size="lg" className="w-full font-black text-lg shadow-lg uppercase italic bg-slate-800 hover:bg-slate-900 text-white" disabled={timer.status === 'FINISHED'}>
+              { { 'NOT_STARTED': 'Iniciar Partido', 'FIRST_HALF': 'Fin 1T', 'HALF_TIME': 'Iniciar 2T', 'SECOND_HALF': 'Fin Partido', 'FINISHED': 'Finalizado' }[timer.status] }
+            </Button>
+            <div className="flex justify-between items-center px-2 mt-2">
+              <span className="text-[10px] font-black text-primary/80 uppercase italic">Status: {timer.status}</span>
+              {timer.status !== 'NOT_STARTED' && <button onClick={triggerResetCrono} className="text-[10px] font-black text-red-500 uppercase italic underline">Reiniciar Crono</button>}
             </div>
           </CardHeader>
-
-          <CardContent className="p-6 flex flex-col gap-6">
+          <CardContent className="p-4">
             <div className="grid grid-cols-2 gap-4">
-              <div
-                onClick={openScoreEditor}
-                className="cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between text-center space-y-2"
-                title="Haz clic para corregir el marcador"
-              >
-                <div className="h-16 flex items-center justify-center">
-                  <p
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentSide('home');
-                        setNewTeamName(teamNames.home);
-                        setModal('edit-name');
-                      }}
-                      className={cn(
-                        "font-black text-blue-900 uppercase border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2",
-                        getTeamNameSizeClass(teamNames.home)
-                      )}
-                    >
-                      {teamNames.home}
-                    </p>
-                  </div>
-                  <div className="text-center text-5xl font-black text-gray-800 leading-none py-2">
-                    {scores.home}
-                  </div>
-                 <Button
-                    onClick={(e) => { e.stopPropagation(); addFoul('home'); }}
-                    className="mt-2 w-28 mx-auto bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
-                  >
-                    <span className="text-sm flex items-center justify-center gap-1.5">🚩 FALTAS</span>
-                    <span className="text-4xl font-black leading-none mt-1">{fouls.home}</span>
-                  </Button>
+              <div className="text-center space-y-2">
+                <Button variant="ghost" className="font-black text-lg p-0 h-auto" onClick={() => { setCurrentSide('home'); setNewTeamName(teamNames.home); setModal('edit-name'); }}>{teamNames.home}</Button>
+                <div className="text-5xl font-black">{scores.home}</div>
+                <Button onClick={() => addFoul('home')} className="bg-slate-800 text-white w-full h-auto py-2 flex flex-col">
+                  <span className="text-[10px]">FALTAS</span>
+                  <span className="text-2xl font-black">{fouls.home}</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => { setCurrentSide('home'); setModal('manage-lineup'); }} className="w-full"><Users className="h-4 w-4 mr-2"/> Plantilla</Button>
               </div>
-
-              <div
-                onClick={openScoreEditor}
-                className="cursor-pointer p-2 rounded-2xl hover:bg-primary/5 transition-colors flex flex-col justify-between text-center space-y-2"
-                title="Haz clic para corregir el marcador"
-              >
-                <div className="h-16 flex items-center justify-center">
-                    <p
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentSide('away');
-                        setNewTeamName(teamNames.away);
-                        setModal('edit-name');
-                      }}
-                      className={cn(
-                        "font-black text-blue-900 uppercase border-b-2 border-dashed border-blue-900/20 inline-block cursor-pointer px-2",
-                        getTeamNameSizeClass(teamNames.away)
-                      )}
-                    >
-                      {teamNames.away}
-                    </p>
-                  </div>
-                  <div className="text-center text-5xl font-black text-gray-800 leading-none py-2">
-                    {scores.away}
-                  </div>
-                <Button
-                    onClick={(e) => { e.stopPropagation(); addFoul('away'); }}
-                    className="mt-2 w-28 mx-auto bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-2xl font-bold uppercase text-xs italic flex flex-col items-center h-auto shadow-md"
-                  >
-                    <span className="text-sm flex items-center justify-center gap-1.5">🚩 FALTAS</span>
-                    <span className="text-4xl font-black leading-none mt-1">{fouls.away}</span>
-                  </Button>
+              <div className="text-center space-y-2">
+                <Button variant="ghost" className="font-black text-lg p-0 h-auto" onClick={() => { setCurrentSide('away'); setNewTeamName(teamNames.away); setModal('edit-name'); }}>{teamNames.away}</Button>
+                <div className="text-5xl font-black">{scores.away}</div>
+                <Button onClick={() => addFoul('away')} className="bg-slate-800 text-white w-full h-auto py-2 flex flex-col">
+                  <span className="text-[10px]">FALTAS</span>
+                  <span className="text-2xl font-black">{fouls.away}</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => { setCurrentSide('away'); setModal('manage-lineup'); }} className="w-full"><Users className="h-4 w-4 mr-2"/> Plantilla</Button>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* QUICK ACTION BUTTONS */}
-        <div className="grid grid-cols-2 gap-4">
-          <Button
-            onClick={() => captureTimeAndTrigger('goal', 'home')}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white py-6 rounded-3xl font-black shadow-lg uppercase text-[11px] italic leading-tight"
-          >
-            ⚽ GOL {teamNames.home}
-          </Button>
-          <Button
-            onClick={() => captureTimeAndTrigger('goal', 'away')}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white py-6 rounded-3xl font-black shadow-lg uppercase text-[11px] italic leading-tight"
-          >
-            ⚽ GOL {teamNames.away}
-          </Button>
+        <div className="grid grid-cols-2 gap-3">
+          <Button onClick={() => captureTimeAndTrigger('goal', 'home')} className="bg-emerald-600 font-black h-16 uppercase italic">⚽ GOL {teamNames.home}</Button>
+          <Button onClick={() => captureTimeAndTrigger('goal', 'away')} className="bg-emerald-600 font-black h-16 uppercase italic">⚽ GOL {teamNames.away}</Button>
+          <Button onClick={() => openCardSubMenu('home', 'amarilla')} className="bg-yellow-400 text-black font-black uppercase italic">🟨 Amarilla {teamNames.home}</Button>
+          <Button onClick={() => openCardSubMenu('away', 'amarilla')} className="bg-yellow-400 text-black font-black uppercase italic">🟨 Amarilla {teamNames.away}</Button>
+          <Button onClick={() => openCardSubMenu('home', 'roja')} className="bg-red-600 text-white font-black uppercase italic">🟥 Roja {teamNames.home}</Button>
+          <Button onClick={() => openCardSubMenu('away', 'roja')} className="bg-red-600 text-white font-black uppercase italic">🟥 Roja {teamNames.away}</Button>
+          <Button onClick={() => captureTimeAndTrigger('sub', 'home')} className="bg-blue-500 font-black uppercase italic">🔄 Cambio {teamNames.home}</Button>
+          <Button onClick={() => captureTimeAndTrigger('sub', 'away')} className="bg-blue-500 font-black uppercase italic">🔄 Cambio {teamNames.away}</Button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Button
-              onClick={() => openCardSubMenu('home', 'amarilla')}
-              className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-4 rounded-2xl font-black text-[9px] border-b-4 border-yellow-600 uppercase italic"
-            >
-              🟨 Amonestación {teamNames.home}
-            </Button>
-            <Button
-              onClick={() => openCardSubMenu('home', 'roja')}
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl font-black text-[9px] border-b-4 border-red-800 uppercase italic"
-            >
-              🟥 Expulsión {teamNames.home}
-            </Button>
-          </div>
-          <div className="space-y-2">
-            <Button
-              onClick={() => openCardSubMenu('away', 'amarilla')}
-              className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-4 rounded-2xl font-black text-[9px] border-b-4 border-yellow-600 uppercase italic"
-            >
-              🟨 Amonestación {teamNames.away}
-            </Button>
-            <Button
-              onClick={() => openCardSubMenu('away', 'roja')}
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl font-black text-[9px] border-b-4 border-red-800 uppercase italic"
-            >
-              🟥 Expulsión {teamNames.away}
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <Button
-            onClick={() => captureTimeAndTrigger('sub', 'home')}
-            className="bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-2xl font-bold uppercase text-[10px] italic"
-          >
-            🔄 Cambio {teamNames.home}
-          </Button>
-          <Button
-            onClick={() => captureTimeAndTrigger('sub', 'away')}
-            className="bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-2xl font-bold uppercase text-[10px] italic"
-          >
-            🔄 Cambio {teamNames.away}
-          </Button>
-        </div>
-
-        <div className="pt-2 space-y-3">
-          <Button
-            onClick={openNoteModal}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
-          >
-            📝 Anotación de Asesor
-          </Button>
-          <Button
-            onClick={openPenaltyModal}
-            className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
-          >
-            🥅 Tanda de Penales
-          </Button>
-          <Button
-            onClick={() => setModal('info')}
-            variant="outline"
-            className="w-full bg-white text-primary/90 py-4 rounded-2xl font-black border-2 border-primary/5 uppercase text-xs shadow-sm italic"
-          >
-            🏟️ Datos del Partido
-          </Button>
-          <Button
-            onClick={openPegiModal}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-md italic"
-          >
-            🔎 JUGADAS PEGI / CONFIG
-          </Button>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <Button
-              onClick={() => {
-                if (!matchState || matchState.events.length === 0) {
-                  toast({
-                    title: 'No hay datos suficientes',
-                    description: 'Aún no han ocurrido eventos para generar un informe.',
-                    variant: 'destructive'
-                  });
-                  return;
-                }
-                setIsReportOpen(true);
-              }}
-              className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
-            >
-              Imagen
-            </Button>
-            <Button
-              onClick={() => {
-                 if (!matchState || matchState.events.length === 0) {
-                  toast({
-                    title: 'No hay datos suficientes',
-                    description: 'Aún no han ocurrido eventos para generar un informe.',
-                    variant: 'destructive'
-                  });
-                  return;
-                }
-                setIsPdfReportOpen(true);
-              }}
-              className="w-full bg-slate-700 hover:bg-slate-800 text-white py-5 rounded-2xl font-black uppercase text-sm shadow-xl italic"
-            >
-              PDF
-            </Button>
-          </div>
-
-          <Button
-            onClick={triggerFullReset}
-            variant="destructive"
-            className="w-full bg-red-100 text-red-800 py-4 rounded-2xl font-bold uppercase text-[11px] italic"
-          >
-            Reiniciar Partido Completo
-          </Button>
+        <div className="space-y-2 pt-2">
+          <Button onClick={() => setModal('info')} variant="outline" className="w-full font-black uppercase italic">📋 Datos de Cédula</Button>
+          <Button onClick={() => setIsPdfReportOpen(true)} className="w-full bg-slate-700 h-14 font-black text-lg uppercase italic">📄 Generar Cédula (PDF)</Button>
+          <Button onClick={triggerFullReset} variant="destructive" className="w-full font-bold uppercase italic text-[10px]">Reiniciar Todo</Button>
         </div>
 
         <div className="space-y-2">
-          <p className="text-[10px] font-black text-gray-400 uppercase ml-2 italic">
-            Bitácora de eventos
-          </p>
-          <div className="space-y-2 text-sm max-h-80 overflow-y-auto bg-white p-4 rounded-3xl border border-primary/10 shadow-inner">
+          <p className="text-[10px] font-black text-gray-400 uppercase italic">Bitácora de eventos</p>
+          <div className="space-y-2 text-sm max-h-60 overflow-y-auto bg-white p-4 rounded-2xl border shadow-inner">
             {events.map((e) => (
-              <div
-                key={e.id}
-                onClick={() => openEditEvent(e)}
-                className={cn(
-                  "flex justify-between p-3 border-b bg-white rounded-lg mb-1 shadow-sm cursor-pointer hover:bg-slate-50",
-                  e.side === 'home' ? 'border-l-4 border-l-blue-300' : e.side === 'away' ? 'border-l-4 border-l-green-300' : ''
-                )}
-              >
-                <span className="text-[11px] font-black uppercase text-slate-700">
-                  {e.message}
-                </span>
-                <span className="font-mono text-primary font-black ml-2">
-                  {e.time}
-                </span>
+              <div key={e.id} className="flex justify-between p-2 border-b last:border-0">
+                <span className="font-bold">{e.message}</span>
+                <span className="font-mono text-primary">{e.time}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="text-center mt-8">
-          <p className="text-xs text-gray-400 font-light">by Omar Saldaña</p>
-        </div>
-
-        <div className="pt-4">
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="w-full bg-white/60"
-          >
-            Cerrar Sesión
-          </Button>
-        </div>
+        <Button onClick={handleLogout} variant="outline" className="w-full">Cerrar Sesión</Button>
       </div>
 
       {/* MODALS */}
-      <Dialog open={modal === 'goal'} onOpenChange={() => setModal(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-center text-emerald-600 uppercase italic">
-              Registro de GOL
-            </DialogTitle>
-            <p className="text-center text-[11px] font-black text-gray-400 uppercase">
-              {teamNames[currentSide]}
-            </p>
-            <p className="text-center text-[10px] font-mono font-bold text-emerald-500 italic">
-              {capturedTimeRef.current}
-            </p>
-          </DialogHeader>
-          <Input
-            type="number"
-            value={playerNumber}
-            onChange={(e) => setPlayerNumber(e.target.value)}
-            className="w-full text-center text-5xl font-black border-2 p-4 rounded-2xl my-4 h-auto"
-            placeholder="00"
-          />
-          <div className="grid grid-cols-1 gap-2">
-            <Button onClick={() => setSelectedGoalType('GOL')} className={cn("text-white", selectedGoalType === 'GOL' ? 'bg-emerald-800 ring-2 ring-white ring-offset-2' : 'bg-emerald-600 hover:bg-emerald-700')}>Gol Normal</Button>
-            <Button onClick={() => setSelectedGoalType('PENAL')} className={cn("text-white", selectedGoalType === 'PENAL' ? 'bg-blue-800 ring-2 ring-white ring-offset-2' : 'bg-blue-600 hover:bg-blue-700')}>Penal</Button>
-            <Button onClick={() => setSelectedGoalType('AUTOGOL')} className={cn("text-white", selectedGoalType === 'AUTOGOL' ? 'bg-red-800 ring-2 ring-white ring-offset-2' : 'bg-red-600 hover:bg-red-700')}>Autogol</Button>
-          </div>
-          <Button onClick={() => registerGoal(selectedGoalType)} disabled={!selectedGoalType} className="w-full mt-4 shadow-lg">Confirmar GOL</Button>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={modal === 'sub'} onOpenChange={() => setModal(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-center text-blue-600 uppercase italic">Sustitución</DialogTitle>
-             <p className="text-center text-[11px] font-black text-gray-400 mb-1 uppercase">{teamNames[currentSide]}</p>
-             <p className="text-center text-[10px] font-mono font-bold text-blue-500 mb-4 italic">{capturedTimeRef.current}</p>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-                <label className="block text-[10px] font-black text-emerald-600 uppercase text-center mb-1">Entra ↑</label>
-                <Input type="number" value={playerIn} onChange={e => setPlayerIn(e.target.value)} className="w-full text-center text-4xl font-black border-2 p-3 rounded-2xl shadow-inner outline-none h-auto" placeholder="00" />
+      <Dialog open={modal === 'manage-lineup'} onOpenChange={() => setModal(null)}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Plantilla - {teamNames[currentSide]}</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex gap-2">
+              <Input placeholder="#" className="w-16" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)}/>
+              <Input placeholder="Nombre del Jugador" className="flex-1" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)}/>
+              <select className="border rounded px-2 text-xs" value={newPlayerType} onChange={e => setNewPlayerType(e.target.value as any)}>
+                <option value="starter">Titular</option>
+                <option value="substitute">Suplente</option>
+              </select>
+              <Button size="icon" onClick={handleAddPlayer}><Plus className="h-4 w-4"/></Button>
             </div>
-            <div>
-                <label className="block text-[10px] font-black text-red-600 uppercase text-center mb-1">Sale ↓</label>
-                <Input type="number" value={playerOut} onChange={e => setPlayerOut(e.target.value)} className="w-full text-center text-4xl font-black border-2 p-3 rounded-2xl shadow-inner outline-none h-auto" placeholder="00" />
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase text-gray-500">Jugadores Registrados:</p>
+              {matchState.lineups[currentSide].map(p => (
+                <div key={p.id} className="flex justify-between items-center p-2 bg-slate-50 rounded border">
+                  <span className="text-sm font-bold">#{p.number} - {p.name} <span className="text-[10px] text-gray-400">({p.type === 'starter' ? 'T' : 'S'})</span></span>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => handleRemovePlayer(p.id)}><Trash2 className="h-4 w-4"/></Button>
+                </div>
+              ))}
+            </div>
+            <div className="border-t pt-4 space-y-2">
+              <p className="text-xs font-bold uppercase text-gray-500">Cuerpo Técnico:</p>
+              <div className="flex gap-2">
+                <Input placeholder="Nombre" className="flex-1" value={newStaffName} onChange={e => setNewStaffName(e.target.value)}/>
+                <select className="border rounded px-2 text-xs" value={newStaffRole} onChange={e => setNewStaffRole(e.target.value)}>
+                  <option value="DT">DT</option>
+                  <option value="AUX">Auxiliar</option>
+                  <option value="MED">Médico</option>
+                  <option value="PF">PF</option>
+                </select>
+                <Button size="icon" onClick={handleAddStaff}><Plus className="h-4 w-4"/></Button>
+              </div>
+              {matchState.staff[currentSide].map(s => (
+                <div key={s.id} className="flex justify-between items-center p-2 bg-slate-50 rounded border">
+                  <span className="text-sm">{s.name} <span className="text-[10px] font-bold">({s.role})</span></span>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => handleRemoveStaff(s.id)}><Trash2 className="h-4 w-4"/></Button>
+                </div>
+              ))}
             </div>
           </div>
-          <Button onClick={registerSub} className="w-full shadow-lg">Confirmar Cambio</Button>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={modal === 'card-submenu'} onOpenChange={() => setModal(null)}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle className="text-center uppercase text-primary/90 italic">{currentCardType === 'amarilla' ? '🟨' : '🟥'} Sanción ({teamNames[currentSide]})</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-1 gap-4 mt-6">
-                <Button onClick={() => selectCardTarget('jugador')} variant="outline" className="py-6 font-black uppercase italic text-base">🏃 Jugador</Button>
-                <Button onClick={openStaffRoleMenu} variant="outline" className="py-6 font-black uppercase italic text-base">👔 Cuerpo Técnico</Button>
-            </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={modal === 'staff-role'} onOpenChange={() => setModal(null)}>
-        <DialogContent>
-            <DialogHeader>
-                 <DialogTitle className="text-center uppercase italic text-primary/90">Seleccionar Rol</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-1 gap-3 mt-6">
-                <Button onClick={() => selectStaffRole('DT')} className="bg-blue-900 text-white py-5 font-black uppercase italic">Director Técnico</Button>
-                <Button onClick={() => selectStaffRole('AUX')} className="bg-slate-800 text-white py-5 font-black uppercase italic">Auxiliar Técnico</Button>
-                <Button onClick={() => selectStaffRole('OTROS')} variant="outline" className="py-5 font-black uppercase italic">Otros (Médico / PF)</Button>
-            </div>
-        </DialogContent>
-      </Dialog>
-
-       <Dialog open={modal === 'card-detail'} onOpenChange={() => setModal(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-center uppercase italic">{currentCardType === 'amarilla' ? '🟨 Amonestación' : '🟥 Expulsión'}</DialogTitle>
-            <p className="text-center text-[11px] font-black text-gray-400 uppercase">{teamNames[currentSide]}</p>
-          </DialogHeader>
-          {currentCardTarget === 'jugador' && (
-             <div className="mb-4">
-                <label className="text-[10px] font-black text-gray-400 uppercase text-center block mb-1">Número</label>
-                <Input type="number" value={playerNumber} onChange={e => setPlayerNumber(e.target.value)} className="w-full text-center text-5xl font-black border-4 p-4 rounded-2xl h-auto" placeholder="00" />
-            </div>
-          )}
-           <p className="text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">Selecciona Causal:</p>
-           <div className="space-y-1 max-h-64 overflow-y-auto p-1">
-             <RadioGroup value={selectedCausal ?? ''} onValueChange={setSelectedCausal}>
-                {(currentCardTarget === 'jugador' ? (currentCardType === 'amarilla' ? causalesAmarilla : causalesRoja) : causalesStaff).map(c => (
-                  <div key={c} className="flex items-center space-x-3 p-2 rounded-md hover:bg-slate-100 cursor-pointer">
-                    <RadioGroupItem value={c} id={c} />
-                    <Label htmlFor={c} className="font-normal w-full cursor-pointer text-[11px] uppercase">{c}</Label>
-                  </div>
-                ))}
-            </RadioGroup>
-           </div>
-           <Button onClick={() => registerCard(selectedCausal)} disabled={!selectedCausal} className="w-full mt-4 shadow-lg">Confirmar Tarjeta</Button>
         </DialogContent>
       </Dialog>
 
       <Dialog open={modal === 'info'} onOpenChange={() => setModal(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-center uppercase italic text-primary/90">Ficha Técnica</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 mt-4 max-h-[60vh] overflow-y-auto p-1">
-            <Input value={matchInfo.advisor} onChange={e => updateMatch({matchInfo: {...matchInfo, advisor: e.target.value}})} placeholder="Nombre Asesor" />
-            <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value}})} placeholder="Torneo / Liga" />
-            <Input type="number" value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value}})} placeholder="Jornada" />
-            <Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value}})} placeholder="Lugar" />
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Datos de la Cédula</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-4">
+            <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value}})} placeholder="Torneo" />
+            <Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value}})} placeholder="Jornada" />
+            <Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value}})} placeholder="Estadio / Lugar" />
             <Input value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} placeholder="Fecha" />
-            <Input value={matchInfo.referee || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value}})} placeholder="Árbitro" />
-            <Input value={matchInfo.assistant1 || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value}})} placeholder="Asistente 1" />
-            <Input value={matchInfo.assistant2 || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value}})} placeholder="Asistente 2" />
-            <Input value={matchInfo.fourthOfficial || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, fourthOfficial: e.target.value}})} placeholder="Cuarto Árbitro" />
-            <Input value={matchInfo.var || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, var: e.target.value}})} placeholder="VAR" />
-            <Input value={matchInfo.avar || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, avar: e.target.value}})} placeholder="AVAR" />
-          </div>
-          <Button onClick={() => setModal(null)} className="w-full mt-6 shadow-lg">Cerrar</Button>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={modal === 'note'} onOpenChange={() => setModal(null)}>
-          <DialogContent>
-              <DialogHeader>
-                  <DialogTitle className="text-center uppercase italic text-blue-600">Nueva Observación</DialogTitle>
-              </DialogHeader>
-              <Textarea value={noteInput} onChange={e => setNoteInput(e.target.value)} className="my-4" rows={5} placeholder="Escribe aquí tu nota..." />
-              <Button onClick={saveNote} className="w-full shadow-lg">Guardar Nota</Button>
-          </DialogContent>
-      </Dialog>
-
-      <Dialog open={modal === 'edit-name'} onOpenChange={() => setModal(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-center uppercase italic text-gray-400">Editar Nombre</DialogTitle>
-          </DialogHeader>
-          <Input value={newTeamName} onChange={e => setNewTeamName(e.target.value)} className="w-full text-center text-xl font-black border-2 p-4 rounded-2xl uppercase h-auto my-4" maxLength={15} />
-          <Button onClick={() => { updateMatch({ teamNames: { ...teamNames, [currentSide]: newTeamName }}); setModal(null); }} className="w-full shadow-lg">Actualizar</Button>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={modal === 'edit-event'} onOpenChange={() => setModal(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-center uppercase italic text-primary/90">Editar Registro</DialogTitle>
-            {matchState.events.find(e => e.id === editingEventId)?.valuation && (
-                <DialogDescription className="text-center !mt-2">
-                Valoración actual: <span className={cn('font-bold', matchState.events.find(e => e.id === editingEventId)?.valuation === 'correcta' ? 'text-emerald-600' : 'text-red-600' )}>
-                    {matchState.events.find(e => e.id === editingEventId)?.valuation?.toUpperCase()}
-                </span>
-                </DialogDescription>
-            )}
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label className="text-[10px] font-black uppercase text-gray-400">Mensaje:</Label>
-              <Input value={editEventMsg} onChange={e => setEditEventMsg(e.target.value)} className="font-bold" />
-            </div>
-             <div>
-              <Label className="text-[10px] font-black uppercase text-gray-400">Tiempo:</Label>
-              <Input value={editEventTime} onChange={e => setEditEventTime(e.target.value)} className="font-mono font-bold" />
-            </div>
-
-            {editEventSide !== undefined && (
-              <div>
-                <Label className="text-[10px] font-black uppercase text-gray-400">Equipo:</Label>
-                <RadioGroup 
-                  value={editEventSide} 
-                  onValueChange={(value: 'home' | 'away') => setEditEventSide(value)} 
-                  className="grid grid-cols-2 gap-4 mt-1"
-                >
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="home" id="edit-side-home" />
-                        <Label htmlFor="edit-side-home" className="font-normal">{teamNames.home}</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="away" id="edit-side-away" />
-                        <Label htmlFor="edit-side-away" className="font-normal">{teamNames.away}</Label>
-                    </div>
-                </RadioGroup>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-2 pt-2">
-               <div className="flex gap-2">
-                <Button onClick={saveEventEdit} className="flex-1">Guardar</Button>
-                <Button onClick={deleteEvent} variant="destructive" className="px-4">🗑️</Button>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => setModal('edit-pdf-description')}
-              >
-                Descripción de la jugada (PDF)
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setModal('edit-valuation')}
-              >
-                Valoración
-              </Button>
+            <Input value={attendance} onChange={e => updateMatch({attendance: e.target.value})} placeholder="Asistencia" />
+            <div className="grid grid-cols-1 gap-2 border-t pt-4">
+              <p className="text-xs font-bold uppercase">Cuerpo Arbitral:</p>
+              <Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value}})} placeholder="Árbitro Central" />
+              <Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value}})} placeholder="Asistente 1" />
+              <Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value}})} placeholder="Asistente 2" />
+              <Input value={matchInfo.fourthOfficial} onChange={e => updateMatch({matchInfo: {...matchInfo, fourthOfficial: e.target.value}})} placeholder="4to Árbitro" />
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-       <Dialog open={modal === 'edit-pdf-description'} onOpenChange={() => setModal('edit-event')}>
+      {/* Goal, Sub, Card modals similar to original but using Dialog components */}
+      <Dialog open={modal === 'goal'} onOpenChange={() => setModal(null)}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-center uppercase italic text-primary/90">Descripción para PDF</DialogTitle>
-            <DialogDescription className="text-center pt-2">
-              Esta descripción detallada solo aparecerá en el informe PDF.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            value={editEventPdfDescription}
-            onChange={(e) => setEditEventPdfDescription(e.target.value)}
-            className="my-4"
-            rows={6}
-            placeholder="Añade una descripción detallada de la jugada..."
-          />
-          <Button onClick={() => {
-            if (!matchState || editingEventId === null) return;
-            const updatedEvents = matchState.events.map(e => 
-              e.id === editingEventId 
-                ? { ...e, pdfDescription: editEventPdfDescription } 
-                : e
-            );
-            updateMatch({ events: updatedEvents });
-            setModal('edit-event');
-          }}>
-            Guardar Descripción
-          </Button>
+          <DialogHeader><DialogTitle>Registro de GOL - {teamNames[currentSide]}</DialogTitle></DialogHeader>
+          <Input type="number" value={playerNumber} onChange={e => setPlayerNumber(e.target.value)} className="text-center text-4xl font-black h-20" placeholder="00" />
+          <div className="grid grid-cols-1 gap-2">
+            <Button onClick={() => setSelectedGoalType('GOL')} className={cn(selectedGoalType === 'GOL' && 'ring-2 ring-primary')}>Gol Jugada</Button>
+            <Button onClick={() => setSelectedGoalType('PENAL')} className={cn(selectedGoalType === 'PENAL' && 'ring-2 ring-primary')}>Penal</Button>
+            <Button onClick={() => setSelectedGoalType('AUTOGOL')} className={cn(selectedGoalType === 'AUTOGOL' && 'ring-2 ring-primary')}>Autogol</Button>
+          </div>
+          <Button onClick={() => registerGoal(selectedGoalType)} disabled={!selectedGoalType} className="w-full mt-4">Confirmar</Button>
         </DialogContent>
       </Dialog>
-      
-      <Dialog open={modal === 'pegi'} onOpenChange={() => setModal(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-                <DialogTitle className="text-center uppercase italic text-purple-600">Configuración del Reporte</DialogTitle>
-            </DialogHeader>
-            
-            <div className="space-y-6 my-4">
-              <div>
-                <Label className="text-[11px] font-black uppercase text-gray-400 mb-2 block">Análisis PEGI</Label>
-                <RadioGroup value={pegiDecision ?? undefined} onValueChange={(value: 'yes' | 'no') => setPegiDecision(value)} className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="yes" id="pegi-yes" />
-                        <Label htmlFor="pegi-yes" className="text-2xl font-black text-emerald-600">SÍ</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="no" id="pegi-no" />
-                        <Label htmlFor="pegi-no" className="text-2xl font-black text-red-600">NO</Label>
-                    </div>
-                </RadioGroup>
-                {pegiDecision === 'yes' && (
-                    <Textarea 
-                        value={pegiDescription}
-                        onChange={e => setPegiDescription(e.target.value)}
-                        placeholder="Describe brevemente la jugada..."
-                        className="mt-2"
-                    />
-                )}
-              </div>
 
-              <div className="border-t pt-4">
-                  <div className="flex items-center justify-between">
-                      <Label htmlFor="show-fouls" className="font-bold text-gray-700">Bitácora de Faltas en Informe</Label>
-                      <Switch
-                          id="show-fouls"
-                          checked={reportSettings?.showFouls ?? false}
-                          onCheckedChange={(checked) => {
-                              updateMatch({ reportSettings: { ...reportSettings, showFouls: checked } });
-                          }}
-                      />
-                  </div>
-              </div>
-            </div>
-            
-            <DialogFooter className="mt-4">
-                <Button onClick={handleSavePegi} className="w-full shadow-lg">Aceptar PEGI</Button>
-                <Button onClick={() => setModal(null)} variant="outline" className="w-full mt-2">Cerrar</Button>
-            </DialogFooter>
+      <Dialog open={modal === 'card-submenu'} onOpenChange={() => setModal(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{currentCardType === 'amarilla' ? '🟨' : '🟥'} Sanción - {teamNames[currentSide]}</DialogTitle></DialogHeader>
+          <div className="grid gap-2">
+            <Button onClick={() => selectCardTarget('jugador')}>🏃 Jugador</Button>
+            <Button onClick={() => selectStaffRole('DT')}>👔 Staff</Button>
+          </div>
         </DialogContent>
       </Dialog>
-      
-      <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
-        <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none">
-          {isReportOpen && <ReportView matchState={matchState} />}
+
+      <Dialog open={modal === 'card-detail'} onOpenChange={() => setModal(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{currentCardType === 'amarilla' ? '🟨' : '🟥'} Detalles</DialogTitle></DialogHeader>
+          <Input type="number" value={playerNumber} onChange={e => setPlayerNumber(e.target.value)} className="text-center text-4xl font-black h-20" placeholder="00" />
+          <p className="text-xs font-bold uppercase mt-2">Causal:</p>
+          <div className="max-h-60 overflow-y-auto space-y-1">
+            {(currentCardTarget === 'jugador' ? (currentCardType === 'amarilla' ? causalesAmarilla : causalesRoja) : causalesStaff).map(c => (
+              <Button key={c} variant="ghost" className={cn("w-full text-left justify-start text-[10px] h-auto py-2", selectedCausal === c && "bg-primary/10")} onClick={() => setSelectedCausal(c)}>{c}</Button>
+            ))}
+          </div>
+          <Button onClick={() => registerCard(selectedCausal)} disabled={!selectedCausal} className="w-full mt-4">Confirmar</Button>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modal === 'sub'} onOpenChange={() => setModal(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Sustitución - {teamNames[currentSide]}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-4">
+            <div><Label>Entra ↑</Label><Input type="number" value={playerIn} onChange={e => setPlayerIn(e.target.value)} placeholder="00"/></div>
+            <div><Label>Sale ↓</Label><Input type="number" value={playerOut} onChange={e => setPlayerOut(e.target.value)} placeholder="00"/></div>
+          </div>
+          <Button onClick={registerSub} className="w-full mt-4">Confirmar Cambio</Button>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isPdfReportOpen} onOpenChange={setIsPdfReportOpen}>
-        <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none">
+        <DialogContent className="max-w-5xl p-0 bg-transparent border-none shadow-none h-[95vh]">
           <PdfReportView matchState={matchState} />
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={modal === 'edit-score'} onOpenChange={() => setModal(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-center uppercase italic text-primary/90">Corregir Marcador</DialogTitle>
-            <DialogDescription className="text-center pt-2">
-                Ajusta los marcadores directamente. Esto registrará un evento de corrección.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 my-4">
-            <div className="text-center">
-                <Label htmlFor="home-score" className="text-xs font-black text-primary/80 uppercase mb-3">{teamNames.home}</Label>
-                <Input
-                    id="home-score"
-                    type="number"
-                    value={manualScores.home}
-                    onChange={(e) => setManualScores(s => ({ ...s, home: Math.max(0, parseInt(e.target.value) || 0) }))}
-                    className="w-full text-center text-5xl font-black border-2 p-4 rounded-2xl my-2 h-auto"
-                />
-            </div>
-            <div className="text-center">
-                <Label htmlFor="away-score" className="text-xs font-black text-primary/80 uppercase mb-3">{teamNames.away}</Label>
-                <Input
-                    id="away-score"
-                    type="number"
-                    value={manualScores.away}
-                    onChange={(e) => setManualScores(s => ({ ...s, away: Math.max(0, parseInt(e.target.value) || 0) }))}
-                     className="w-full text-center text-5xl font-black border-2 p-4 rounded-2xl my-2 h-auto"
-                />
-            </div>
-          </div>
-          <Button onClick={() => {
-            addEvent('general', `✏️ Marcador corregido a ${manualScores.home} - ${manualScores.away}`, getSmartTime());
-            updateMatch({ scores: manualScores });
-            setModal(null);
-          }} className="w-full shadow-lg">Actualizar Marcador</Button>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={modal === 'edit-valuation'} onOpenChange={() => setModal('edit-event')}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle className="text-center uppercase italic text-primary/90">Valoración de la Jugada</DialogTitle>
-                <DialogDescription className="text-center pt-2">
-                    Califica la decisión arbitral para esta jugada.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 pt-4">
-                <Button onClick={() => handleSetValuation('correcta')} className="bg-emerald-600 hover:bg-emerald-700 text-white">Correcta</Button>
-                <Button onClick={() => handleSetValuation('incorrecta')} variant="destructive">Incorrecta</Button>
-            </div>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={modal === 'penalties'} onOpenChange={() => setModal(null)}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle className="text-center uppercase italic text-cyan-600">Tanda de Penales</DialogTitle>
-                <DialogDescription className="text-center pt-2">
-                    Registra el resultado de la tanda de penales para el desempate.
-                    Este resultado solo se mostrará en los informes si se activa.
-                </DialogDescription>
-            </DialogHeader>
-
-            <div className="flex items-center justify-center space-x-3 my-4">
-                <Label htmlFor="penalty-active" className="font-bold">Mostrar en Informe</Label>
-                <Switch
-                    id="penalty-active"
-                    checked={penaltyShootout?.active ?? false}
-                    onCheckedChange={(checked) => {
-                        const currentScores = penaltyShootout ?? { home: 0, away: 0, active: false };
-                        updateMatch({ penaltyShootout: { ...currentScores, active: checked } });
-                    }}
-                />
-            </div>
-            <div className="grid grid-cols-2 gap-4 my-4">
-                <div className="text-center">
-                    <Label htmlFor="home-penalty-score" className="text-xs font-black text-primary/80 uppercase mb-3">{teamNames.home}</Label>
-                    <Input
-                        id="home-penalty-score"
-                        type="number"
-                        value={manualPenaltyScores.home}
-                        onChange={(e) => setManualPenaltyScores(s => ({ ...s, home: Math.max(0, parseInt(e.target.value) || 0) }))}
-                        className="w-full text-center text-5xl font-black border-2 p-4 rounded-2xl my-2 h-auto"
-                    />
-                </div>
-                <div className="text-center">
-                    <Label htmlFor="away-penalty-score" className="text-xs font-black text-primary/80 uppercase mb-3">{teamNames.away}</Label>
-                    <Input
-                        id="away-penalty-score"
-                        type="number"
-                        value={manualPenaltyScores.away}
-                        onChange={(e) => setManualPenaltyScores(s => ({ ...s, away: Math.max(0, parseInt(e.target.value) || 0) }))}
-                        className="w-full text-center text-5xl font-black border-2 p-4 rounded-2xl my-2 h-auto"
-                    />
-                </div>
-            </div>
-
-            <Button onClick={() => {
-                const currentPenaltyState = matchState.penaltyShootout ?? { home: 0, away: 0, active: false };
-                addEvent('general', `🥅 Tanda de Penales: ${manualPenaltyScores.home} - ${manualPenaltyScores.away}`, 'PEN');
-                updateMatch({ penaltyShootout: { ...currentPenaltyState, home: manualPenaltyScores.home, away: manualPenaltyScores.away } });
-                setModal(null);
-            }} className="w-full shadow-lg">
-                Actualizar Marcador de Penales
-            </Button>
         </DialogContent>
       </Dialog>
 
       {/* Confirmation Modals */}
-      <Dialog open={modal === 'reset-crono-confirm'} onOpenChange={() => setModal(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>¿Reiniciar cronómetro?</DialogTitle>
-            <DialogDescription className="pt-2">
-              Se reiniciará el tiempo para el periodo actual. Esta acción no se puede deshacer.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="pt-4">
-              <Button variant="outline" onClick={() => setModal(null)}>Cancelar</Button>
-              <Button variant="destructive" onClick={handleResetCrono}>Sí, reiniciar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={modal === 'reset-full-confirm'} onOpenChange={() => setModal(null)}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>🚨 ¿Estás absolutamente seguro?</DialogTitle>
-            <DialogDescription className="pt-2">
-              Esto borrará TODOS los datos del partido de forma permanente: marcadores, faltas, bitácora e información.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="pt-4">
-              <Button variant="outline" onClick={() => setModal(null)}>Cancelar</Button>
-              <Button variant="destructive" onClick={handleFullReset}>Sí, borrar todo</Button>
-          </DialogFooter>
+          <DialogHeader><DialogTitle>¿Borrar todo?</DialogTitle><DialogDescription>Esta acción eliminará alineaciones y eventos permanentemente.</DialogDescription></DialogHeader>
+          <DialogFooter><Button variant="outline" onClick={() => setModal(null)}>Cancelar</Button><Button variant="destructive" onClick={handleFullReset}>Eliminar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

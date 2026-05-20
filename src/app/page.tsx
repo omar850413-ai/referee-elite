@@ -47,6 +47,10 @@ export default function Home() {
             timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
             penaltyShootout: { home: 0, away: 0, active: false },
             reportSettings: { showFouls: false },
+            lineups: { home: [], away: [] },
+            staff: { home: [], away: [] },
+            attendance: '',
+            timing: { firstHalfStart: '', firstHalfEnd: '', secondHalfStart: '', secondHalfEnd: '' }
         };
         setDoc(ref, initialState).then(() => {
           setMatchDocRef(ref);
