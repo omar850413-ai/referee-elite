@@ -21,6 +21,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -389,6 +390,9 @@ export default function Home() {
 
       <Dialog open={modal === 'player-actions'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Acciones del Jugador</DialogTitle>
+          </DialogHeader>
           {selectedPlayer && (
             <div className="flex flex-col">
               <div className={`p-6 text-white text-center ${selectedPlayer.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}><p className="text-4xl font-black">#{selectedPlayer.player.number}</p><p className="text-xl font-bold uppercase italic">{selectedPlayer.player.name}</p></div>
@@ -456,8 +460,22 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isPdfReportOpen} onOpenChange={setIsPdfReportOpen}><DialogContent className="max-w-5xl h-[95vh] p-0 overflow-auto bg-transparent border-none"><PdfReportView matchState={matchState} /></DialogContent></Dialog>
-      <Dialog open={isImageReportOpen} onOpenChange={setIsImageReportOpen}><DialogContent className="max-w-5xl p-0 bg-transparent border-none"><ReportView matchState={matchState} /></DialogContent></Dialog>
+      <Dialog open={isPdfReportOpen} onOpenChange={setIsPdfReportOpen}>
+        <DialogContent className="max-w-5xl h-[95vh] p-0 overflow-auto bg-transparent border-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Vista Previa de Cédula PDF</DialogTitle>
+          </DialogHeader>
+          <PdfReportView matchState={matchState} />
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isImageReportOpen} onOpenChange={setIsImageReportOpen}>
+        <DialogContent className="max-w-5xl p-0 bg-transparent border-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Vista Previa de Cédula Imagen</DialogTitle>
+          </DialogHeader>
+          <ReportView matchState={matchState} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
