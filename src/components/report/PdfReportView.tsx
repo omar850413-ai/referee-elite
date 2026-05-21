@@ -1,10 +1,9 @@
-
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { MatchEvent, MatchState, Player, StaffMember } from '@/lib/types';
+import { MatchState, Player, StaffMember } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { DialogClose } from '@/components/ui/dialog';
 import { Download, X } from 'lucide-react';
@@ -37,13 +36,12 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     const handleResize = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
-        const targetWidth = 794; 
-        const newScale = Math.min(1, (containerWidth - 32) / targetWidth);
+        const targetWidth = 800; 
+        const newScale = Math.min(1, (containerWidth - 40) / targetWidth);
         setScale(newScale);
         setOffset({ x: 0, y: 0 });
       }
     };
-
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -89,271 +87,166 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     const input = reportRef.current;
     if (!input) return;
 
-    // Crear una captura de alta calidad ignorando los estilos de zoom interactivos
     const canvas = await html2canvas(input, { 
-      scale: 3, // Mayor resolución
+      scale: 3, 
       useCORS: true,
-      logging: false,
       backgroundColor: '#FFFFFF',
-      onclone: (clonedDoc) => {
-        const clonedReport = clonedDoc.getElementById('pdf-printable-content');
-        if (clonedReport) {
-          // Resetear cualquier transformación que pueda afectar la captura
-          clonedReport.style.transform = 'none';
-          clonedReport.style.position = 'relative';
-          clonedReport.style.left = '0';
-          clonedReport.style.top = '0';
-          clonedReport.style.margin = '0';
-        }
-      }
     });
 
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    
     const imgWidth = pdfWidth;
     const imgHeight = (canvas.height * pdfWidth) / canvas.width;
     
     pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-    
-    const fileName = `${teamNames.home || 'LOCAL'}-VS-${teamNames.away || 'VISITA'}.pdf`.toUpperCase();
-    pdf.save(fileName);
+    pdf.save(`${teamNames.home}-VS-${teamNames.away}.pdf`.toUpperCase());
   };
 
-  const getStarters = (team: 'home' | 'away') => (lineups[team] || []).slice(0, 11);
-  const getSubs = (team: 'home' | 'away') => (lineups[team] || []).slice(11);
-
-  const getPlayerEventsSummary = (side: 'home' | 'away', number: string, isSub: boolean, p?: Player) => {
+  const getPlayerEventsSummary = (side: 'home' | 'away', number: string, p?: Player) => {
     const playerEvs = (events || []).filter(e => e.side === side && e.playerNumber === number);
-    const goals = playerEvs.filter(e => e.category === 'goals');
-    const yellows = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟨'));
-    const reds = playerEvs.filter(e => e.category === 'cards' && e.message.includes('🟥'));
-    const subEv = playerEvs.find(e => e.category === 'substitution');
-    
     let summary = [];
-    goals.forEach(e => { 
-      const icon = e.message.includes('AUTOGOL') ? '🥅' : '⚽';
-      summary.push(`${icon}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`); 
+    playerEvs.forEach(e => {
+      if (e.category === 'goals') {
+        summary.push(`${e.message.includes('AUTOGOL') ? '🥅' : '⚽'}${e.time !== '--' ? ` (${e.time})` : ''}`);
+      }
+      if (e.category === 'cards') {
+        summary.push(`${e.message.includes('🟨') ? '🟨' : '🟥'}${e.time !== '--' ? ` (${e.time})` : ''}`);
+      }
+      if (e.category === 'substitution' && p?.replacedNumber) {
+        summary.push(` (POR: #${p.replacedNumber}${e.time !== '--' ? ` ${e.time}` : ''})`);
+      }
     });
-    yellows.forEach(e => { summary.push(` 🟨${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`); });
-    reds.forEach(e => { summary.push(` 🟥${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`); });
-    
-    if (isSub && p?.replacedNumber) {
-      summary.push(` (POR: #${p.replacedNumber}${subEv?.time !== '--' && subEv?.time !== '' ? ` ${subEv?.time}` : ''})`);
-    }
-    
     return summary.join(' ');
   };
 
   const getStaffEventsSummary = (side: 'home' | 'away', name: string) => {
     const staffEvs = (events || []).filter(e => e.side === side && e.playerName === name);
-    const yellows = staffEvs.filter(e => e.category === 'cards' && e.message.includes('🟨'));
-    const reds = staffEvs.filter(e => e.category === 'cards' && e.message.includes('🟥'));
-    
-    let summary = [];
-    yellows.forEach(e => { summary.push(` 🟨${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`); });
-    reds.forEach(e => { summary.push(` 🟥${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`); });
-    
-    return summary.join(' ');
+    return staffEvs.map(e => `${e.message.includes('🟨') ? '🟨' : '🟥'}${e.time !== '--' ? ` (${e.time})` : ''}`).join(' ');
   };
 
-  const cardEventsSorted = [...(events || [])]
-    .filter(e => e.category === 'cards')
-    .sort((a, b) => {
-      const numA = parseInt(a.playerNumber || '999');
-      const numB = parseInt(b.playerNumber || '999');
-      if (numA !== numB) return numA - numB;
-      return parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
-    });
-  
-  const getGroupedCards = (side: 'home' | 'away') => {
-    const sideCards = cardEventsSorted.filter(e => e.side === side);
-    const yellows = sideCards.filter(e => e.message.includes('🟨'));
-    const reds = sideCards.filter(e => e.message.includes('🟥'));
-    return { yellows, reds };
+  const getSortedCards = (side: 'home' | 'away') => {
+    return (events || [])
+      .filter(e => e.side === side && e.category === 'cards')
+      .sort((a, b) => {
+        const numA = parseInt(a.playerNumber || '999');
+        const numB = parseInt(b.playerNumber || '999');
+        if (numA !== numB) return numA - numB;
+        return parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
+      });
   };
 
-  const homeSanciones = getGroupedCards('home');
-  const awaySanciones = getGroupedCards('away');
+  const renderSection = (title: string, homeContent: React.ReactNode, awayContent: React.ReactNode) => (
+    <div className="mt-6">
+      <div className="text-center font-black text-[12px] border-b-2 border-black mb-3 pb-1 uppercase">{title}</div>
+      <div className="grid grid-cols-2 gap-8">
+        <div>{homeContent}</div>
+        <div>{awayContent}</div>
+      </div>
+    </div>
+  );
+
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
-
-  const renderPlayerList = (players: Player[], side: 'home' | 'away', isSub: boolean) => (
-    <div className="space-y-1">
-      {players.map(p => {
-        const eventsSummary = getPlayerEventsSummary(side, p.number, isSub, p);
-        return (
-          <div key={p.id} className="flex justify-between items-center text-[9px] border-b border-gray-100 py-0.5">
-            <div className="flex items-center gap-1 uppercase flex-1 truncate">
-              <span className="font-bold">{p.number}.- {p.name.toUpperCase()}</span>
-              <span className="ml-1">{eventsSummary}</span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  const renderStaffList = (staffMembers: StaffMember[], side: 'home' | 'away') => (
-    <div className="space-y-1">
-      {staffMembers.map(s => {
-        const eventsSummary = getStaffEventsSummary(side, s.name);
-        return (
-          <div key={s.id} className="flex justify-between items-center text-[9px] border-b border-gray-100 py-0.5">
-            <div className="flex items-center gap-1 uppercase flex-1 truncate">
-              <span className="font-bold">{s.role.toUpperCase()}: {s.name.toUpperCase()}</span>
-              <span className="ml-1">{eventsSummary}</span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
 
   return (
     <div className="w-full h-full flex flex-col bg-slate-900 overflow-hidden" ref={containerRef}>
       <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 shrink-0 z-10">
-        <div>
-          <h2 className="text-white font-black italic uppercase text-sm md:text-base">Vista Previa PDF</h2>
-          <p className="text-slate-400 text-[10px] uppercase font-bold">Pellizca para zoom, desliza para mover.</p>
-        </div>
-        <DialogClose className="text-white hover:bg-white/10 p-2 rounded-full">
-          <X size={24} />
-        </DialogClose>
+        <div className="text-white font-black uppercase text-sm italic">Vista Previa Reporte</div>
+        <DialogClose className="text-white p-2 hover:bg-white/10 rounded-full"><X size={24} /></DialogClose>
       </div>
 
-      <div 
-        className="flex-1 overflow-auto touch-none p-4 flex justify-center bg-slate-900 items-start"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        <div 
-          style={{ 
-            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, 
-            transformOrigin: 'center top',
-            transition: initialDistance || lastTouch ? 'none' : 'transform 0.1s ease-out'
-          }}
-          className="shrink-0"
-        >
-          <div id="pdf-printable-content" ref={reportRef} className="p-10 bg-white text-black font-sans shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
-            <div className="text-center space-y-1 mb-6">
+      <div className="flex-1 overflow-auto touch-none bg-slate-900 p-4 flex justify-center items-start" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+        <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center top' }}>
+          <div ref={reportRef} className="p-10 bg-white text-black font-sans shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
+            <div className="text-center mb-6">
               <h1 className="text-2xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
-              <h2 className="text-xs font-bold uppercase tracking-widest">{matchInfo.league?.toUpperCase() || 'LIGA'} | JORNADA {matchInfo.round?.toUpperCase() || 'S/N'}</h2>
-              <div className="border-b-2 border-black w-full mt-2"></div>
+              <p className="text-[10px] font-bold uppercase">{matchInfo.league} | JORNADA {matchInfo.round}</p>
+              <div className="h-0.5 bg-black w-full mt-2"></div>
             </div>
 
-            <div className="grid grid-cols-1 gap-1 text-[10px] mb-4">
-              <p><strong>ÁRBITRO:</strong> {matchInfo.referee?.toUpperCase()}</p>
-              <div className="grid grid-cols-2 gap-4">
-                <p><strong>ASISTENTE 1:</strong> {matchInfo.assistant1?.toUpperCase()}</p>
-                <p><strong>ASISTENTE 2:</strong> {matchInfo.assistant2?.toUpperCase()}</p>
+            <div className="grid grid-cols-2 gap-4 text-[10px] mb-6">
+              <div className="space-y-1">
+                <p><strong>ÁRBITRO CENTRAL:</strong> <span className="uppercase">{matchInfo.referee}</span></p>
+                <p><strong>ASISTENTE 1:</strong> <span className="uppercase">{matchInfo.assistant1}</span></p>
+                <p><strong>ASISTENTE 2:</strong> <span className="uppercase">{matchInfo.assistant2}</span></p>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-0 border-2 border-black mb-6 text-center bg-gray-50">
-              <div className="border-r-2 border-black p-2">
-                <p className="text-[9px] font-bold">CLUB LOCAL</p>
-                <p className="text-[12px] font-black">{scores.home} ({numberToSpanishWords(scores.home)})</p>
-                <h3 className="text-lg font-black uppercase">{teamNames.home.toUpperCase()}</h3>
-              </div>
-              <div className="p-2">
-                <p className="text-[9px] font-bold">CLUB VISITANTE</p>
-                <p className="text-[12px] font-black">{scores.away} ({numberToSpanishWords(scores.away)})</p>
-                <h3 className="text-lg font-black uppercase">{teamNames.away.toUpperCase()}</h3>
+              <div className="space-y-1 text-right">
+                <p><strong>LUGAR:</strong> <span className="uppercase">{matchInfo.place}</span></p>
+                <p><strong>FECHA:</strong> <span className="uppercase">{matchInfo.date}</span></p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-10">
-              <div>
-                <div className="text-center font-black text-[12px] mb-2 border-b uppercase">ALINEACIONES LOCAL</div>
-                <p className="text-[8px] font-black text-slate-400 mb-1">TITULARES</p>
-                {renderPlayerList(getStarters('home'), 'home', false)}
-                <p className="text-[8px] font-black text-slate-400 mt-4 mb-1">SUPLENTES / CAMBIOS</p>
-                {renderPlayerList(getSubs('home'), 'home', true)}
-                <p className="text-[8px] font-black text-slate-400 mt-4 mb-1">CUERPO TÉCNICO</p>
-                {renderStaffList(staff.home, 'home')}
+            <div className="grid grid-cols-2 border-2 border-black mb-8 text-center divide-x-2 divide-black">
+              <div className="p-3 bg-gray-50">
+                <p className="text-[9px] font-bold">LOCAL</p>
+                <p className="text-sm font-black">{scores.home} ({numberToSpanishWords(scores.home)})</p>
+                <p className="text-lg font-black uppercase">{teamNames.home}</p>
               </div>
-              <div>
-                <div className="text-center font-black text-[12px] mb-2 border-b uppercase">ALINEACIONES VISITA</div>
-                <p className="text-[8px] font-black text-slate-400 mb-1">TITULARES</p>
-                {renderPlayerList(getStarters('away'), 'away', false)}
-                <p className="text-[8px] font-black text-slate-400 mt-4 mb-1">SUPLENTES / CAMBIOS</p>
-                {renderPlayerList(getSubs('away'), 'away', true)}
-                <p className="text-[8px] font-black text-slate-400 mt-4 mb-1">CUERPO TÉCNICO</p>
-                {renderStaffList(staff.away, 'away')}
+              <div className="p-3 bg-gray-50">
+                <p className="text-[9px] font-bold">VISITA</p>
+                <p className="text-sm font-black">{scores.away} ({numberToSpanishWords(scores.away)})</p>
+                <p className="text-lg font-black uppercase">{teamNames.away}</p>
               </div>
             </div>
 
-            <div className="mt-8 border-t-2 border-black pt-4">
-              <h2 className="text-[11px] font-black mb-2 uppercase">DETALLE DE SANCIONES:</h2>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-[10px] font-black border-b uppercase">{teamNames.home.toUpperCase()}</h3>
-                  <div className="text-[9px] space-y-2">
-                    <p className="font-bold underline">AMONESTACIONES:</p>
-                    {homeSanciones.yellows.map(e => (
-                      <div key={e.id} className="border-b pb-0.5 uppercase">
-                        <strong>#{e.playerNumber} {e.playerName?.toUpperCase()} 🟨 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>
-                      </div>
-                    ))}
-                    <p className="font-bold underline pt-2">EXPULSIONES:</p>
-                    {homeSanciones.reds.map(e => (
-                      <div key={e.id} className="border-b pb-0.5 uppercase">
-                        <strong>#{e.playerNumber} {e.playerName?.toUpperCase()} 🟥 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>
-                      </div>
-                    ))}
-                  </div>
+            {renderSection("Alineaciones y Cuerpo Técnico", 
+              <div className="space-y-4">
+                <div className="text-[10px]">
+                  <p className="text-[8px] font-black text-gray-400 mb-1 border-b">TITULARES</p>
+                  {(lineups.home || []).slice(0, 11).map(p => <p key={p.id} className="uppercase py-0.5 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}
+                  <p className="text-[8px] font-black text-gray-400 mt-3 mb-1 border-b">SUPLENTES</p>
+                  {(lineups.home || []).slice(11).map(p => <p key={p.id} className="uppercase py-0.5 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}
+                  <p className="text-[8px] font-black text-gray-400 mt-3 mb-1 border-b">STAFF</p>
+                  {(staff.home || []).map(s => <p key={s.id} className="uppercase py-0.5 border-b border-gray-50"><strong>{s.role}:</strong> {s.name} {getStaffEventsSummary('home', s.name)}</p>)}
                 </div>
-                <div className="space-y-4">
-                  <h3 className="text-[10px] font-black border-b uppercase">{teamNames.away.toUpperCase()}</h3>
-                  <div className="text-[9px] space-y-2">
-                    <p className="font-bold underline">AMONESTACIONES:</p>
-                    {awaySanciones.yellows.map(e => (
-                      <div key={e.id} className="border-b pb-0.5 uppercase">
-                        <strong>#{e.playerNumber} {e.playerName?.toUpperCase()} 🟨 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>
-                      </div>
-                    ))}
-                    <p className="font-bold underline pt-2">EXPULSIONES:</p>
-                    {awaySanciones.reds.map(e => (
-                      <div key={e.id} className="border-b pb-0.5 uppercase">
-                        <strong>#{e.playerNumber} {e.playerName?.toUpperCase()} 🟥 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>
-                      </div>
-                    ))}
-                  </div>
+              </div>,
+              <div className="space-y-4">
+                <div className="text-[10px]">
+                  <p className="text-[8px] font-black text-gray-400 mb-1 border-b">TITULARES</p>
+                  {(lineups.away || []).slice(0, 11).map(p => <p key={p.id} className="uppercase py-0.5 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}
+                  <p className="text-[8px] font-black text-gray-400 mt-3 mb-1 border-b">SUPLENTES</p>
+                  {(lineups.away || []).slice(11).map(p => <p key={p.id} className="uppercase py-0.5 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}
+                  <p className="text-[8px] font-black text-gray-400 mt-3 mb-1 border-b">STAFF</p>
+                  {(staff.away || []).map(s => <p key={s.id} className="uppercase py-0.5 border-b border-gray-50"><strong>{s.role}:</strong> {s.name} {getStaffEventsSummary('away', s.name)}</p>)}
                 </div>
               </div>
+            )}
 
-              <h2 className="text-[11px] font-black mt-6 mb-2 uppercase">INCIDENTES:</h2>
-              <div className="text-[9px] p-2 border border-slate-200 rounded min-h-[100px] whitespace-pre-wrap uppercase">
-                {incidentNote.toUpperCase()}
+            {renderSection("Detalle de Sanciones",
+              <div className="text-[9px] space-y-2 uppercase">
+                <p className="font-bold border-b">LOCAL: {teamNames.home}</p>
+                {getSortedCards('home').map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' ? `(${e.time})` : ''}</p>)}
+              </div>,
+              <div className="text-[9px] space-y-2 uppercase">
+                <p className="font-bold border-b">VISITA: {teamNames.away}</p>
+                {getSortedCards('away').map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' ? `(${e.time})` : ''}</p>)}
               </div>
+            )}
+
+            <div className="mt-8">
+              <div className="text-center font-black text-[12px] border-b-2 border-black mb-3 pb-1 uppercase">Incidentes del Partido</div>
+              <div className="text-[10px] p-4 border border-gray-200 min-h-[120px] whitespace-pre-wrap uppercase font-bold bg-gray-50">{incidentNote}</div>
             </div>
 
-            <div className="grid grid-cols-3 gap-6 mt-12 text-center">
-              <div className="flex flex-col items-center">
-                <div className="h-14 w-full flex items-center justify-center mb-1">
-                  {signatures.captainHome && <img src={signatures.captainHome} alt="Firma Cap Local" className="max-h-full" />}
-                </div>
-                <div className="border-t border-black w-full mb-1"></div>
-                <p className="text-[7px] font-bold uppercase">CAPITÁN LOCAL</p>
+            <div className="grid grid-cols-3 gap-8 mt-16 text-center">
+              <div className="space-y-2">
+                <div className="h-16 flex items-center justify-center">{signatures.captainHome && <img src={signatures.captainHome} className="max-h-full" />}</div>
+                <div className="h-px bg-black w-full"></div>
+                <p className="text-[8px] font-black uppercase">Capitán Local</p>
               </div>
-              <div className="flex flex-col items-center">
-                <div className="h-14 w-full flex items-center justify-center mb-1">
-                  {signatures.referee && <img src={signatures.referee} alt="Firma Arb" className="max-h-full" />}
-                </div>
-                <div className="border-t border-black w-full mb-1"></div>
-                <p className="text-[7px] font-bold uppercase">ÁRBITRO CENTRAL</p>
+              <div className="space-y-2">
+                <div className="h-16 flex items-center justify-center">{signatures.referee && <img src={signatures.referee} className="max-h-full" />}</div>
+                <div className="h-px bg-black w-full"></div>
+                <p className="text-[8px] font-black uppercase">Árbitro Central</p>
               </div>
-              <div className="flex flex-col items-center">
-                <div className="h-14 w-full flex items-center justify-center mb-1">
-                  {signatures.captainAway && <img src={signatures.captainAway} alt="Firma Cap Visitante" className="max-h-full" />}
-                </div>
-                <div className="border-t border-black w-full mb-1"></div>
-                <p className="text-[7px] font-bold uppercase">CAPITÁN VISITANTE</p>
+              <div className="space-y-2">
+                <div className="h-16 flex items-center justify-center">{signatures.captainAway && <img src={signatures.captainAway} className="max-h-full" />}</div>
+                <div className="h-px bg-black w-full"></div>
+                <p className="text-[8px] font-black uppercase">Capitán Visitante</p>
               </div>
             </div>
+            
+            <p className="text-center text-[7px] text-gray-400 mt-10 font-bold uppercase tracking-widest">REFEREE ELITE - REPORTE OFICIAL INDEPENDIENTE</p>
           </div>
         </div>
       </div>
