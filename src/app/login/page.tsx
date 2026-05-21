@@ -159,9 +159,9 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="TU@EMAIL.COM"
+                placeholder="tu@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value.toUpperCase())}
+                onChange={(e) => setEmail(e.target.value.toLowerCase())}
                 required
               />
             </div>
@@ -182,9 +182,9 @@ export default function LoginPage() {
                     <div className="space-y-4 py-4">
                        <Input
                          type="email"
-                         placeholder="TU@EMAIL.COM"
+                         placeholder="tu@email.com"
                          value={resetEmail}
-                         onChange={(e) => setResetEmail(e.target.value.toUpperCase())}
+                         onChange={(e) => setResetEmail(e.target.value.toLowerCase())}
                        />
                     </div>
                     <DialogFooter>

@@ -143,9 +143,9 @@ export default function SignUpPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="TU@EMAIL.COM"
+                placeholder="tu@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value.toUpperCase())}
+                onChange={(e) => setEmail(e.target.value.toLowerCase())}
                 required
               />
             </div>
