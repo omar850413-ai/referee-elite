@@ -122,14 +122,14 @@ export function ReportView({ matchState }: ReportViewProps) {
       
       <div className="flex-1 overflow-auto touch-none bg-slate-900 p-4 flex justify-center items-start" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove}>
         <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center top' }}>
-          <div ref={reportRef} className="p-12 bg-white text-black font-sans shadow-2xl" style={{ width: '800px', minHeight: '1100px' }}>
-            <div className="text-center mb-8">
+          <div ref={reportRef} className="p-8 bg-white text-black font-sans shadow-2xl" style={{ width: '800px', minHeight: '1100px' }}>
+            <div className="text-center mb-6">
               <h1 className="text-3xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
               <p className="text-[12px] font-bold uppercase tracking-widest">{matchInfo.league} | JORNADA {matchInfo.round}</p>
               <div className="h-1 bg-black w-full mt-2"></div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-[11px] mb-8">
+            <div className="grid grid-cols-2 gap-4 text-[10px] mb-6">
               <div className="space-y-1">
                 <p><strong>ÁRBITRO CENTRAL:</strong> <span className="uppercase">{matchInfo.referee}</span></p>
                 <p><strong>ASISTENTE 1:</strong> <span className="uppercase">{matchInfo.assistant1}</span></p>
@@ -141,63 +141,97 @@ export function ReportView({ matchState }: ReportViewProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 border-2 border-black mb-10 text-center divide-x-2 divide-black">
-              <div className="p-4 bg-gray-50">
-                <p className="text-[10px] font-bold">LOCAL</p>
-                <p className="text-lg font-black">{scores.home} ({numberToSpanishWords(scores.home)})</p>
-                <p className="text-2xl font-black uppercase">{teamNames.home}</p>
+            <div className="grid grid-cols-2 border-2 border-black mb-6 text-center divide-x-2 divide-black">
+              <div className="p-3 bg-gray-50">
+                <p className="text-[9px] font-bold text-gray-400">LOCAL</p>
+                <p className="text-sm font-black">{scores.home} ({numberToSpanishWords(scores.home)})</p>
+                <p className="text-xl font-black uppercase leading-tight">{teamNames.home}</p>
               </div>
-              <div className="p-4 bg-gray-50">
-                <p className="text-[10px] font-bold">VISITA</p>
-                <p className="text-lg font-black">{scores.away} ({numberToSpanishWords(scores.away)})</p>
-                <p className="text-2xl font-black uppercase">{teamNames.away}</p>
-              </div>
-            </div>
-
-            <div className="text-center font-black text-[14px] border-b-2 border-black mb-4 pb-1 uppercase">Alineaciones</div>
-            <div className="grid grid-cols-2 gap-10">
-              <div className="text-[10px] space-y-4">
-                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">Titulares</p>{lineups.home.slice(0, 11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}</div>
-                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">Suplentes</p>{lineups.home.slice(11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}</div>
-                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">Cuerpo Técnico</p>{staff.home.map(s => <p key={s.id} className="uppercase py-1 border-b border-gray-50"><strong>{s.role}:</strong> {s.name}</p>)}</div>
-              </div>
-              <div className="text-[10px] space-y-4">
-                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">Titulares</p>{lineups.away.slice(0, 11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}</div>
-                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">Suplentes</p>{lineups.away.slice(11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}</div>
-                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">Cuerpo Técnico</p>{staff.away.map(s => <p key={s.id} className="uppercase py-1 border-b border-gray-50"><strong>{s.role}:</strong> {s.name}</p>)}</div>
+              <div className="p-3 bg-gray-50">
+                <p className="text-[9px] font-bold text-gray-400">VISITA</p>
+                <p className="text-sm font-black">{scores.away} ({numberToSpanishWords(scores.away)})</p>
+                <p className="text-xl font-black uppercase leading-tight">{teamNames.away}</p>
               </div>
             </div>
 
-            <div className="mt-10">
-              <div className="text-center font-black text-[14px] border-b-2 border-black mb-4 pb-1 uppercase">Sanciones</div>
-              <div className="grid grid-cols-2 gap-10">
-                <div className="text-[9px] space-y-2 uppercase">
-                  <p className="font-bold border-b text-gray-400">AMONESTACIÓN LOCAL</p>
-                  {getSortedCards('home').filter(e => e.message.includes('🟨')).map(e => <p key={e.id} className="border-b border-gray-50 pb-1">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</p>)}
-                  <p className="font-bold border-b text-gray-400 mt-2">EXPULSIÓN LOCAL</p>
-                  {getSortedCards('home').filter(e => e.message.includes('🟥')).map(e => <p key={e.id} className="border-b border-gray-50 pb-1">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</p>)}
+            <div className="grid grid-cols-2 gap-8">
+              <div className="text-[9px] space-y-3">
+                <div>
+                  <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">LOCAL - TITULARES</p>
+                  {lineups.home.slice(0, 11).map(p => <p key={p.id} className="uppercase leading-none py-0.5"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}
                 </div>
-                <div className="text-[9px] space-y-2 uppercase">
-                  <p className="font-bold border-b text-gray-400">AMONESTACIÓN VISITA</p>
-                  {getSortedCards('away').filter(e => e.message.includes('🟨')).map(e => <p key={e.id} className="border-b border-gray-50 pb-1">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</p>)}
-                  <p className="font-bold border-b text-gray-400 mt-2">EXPULSIÓN VISITA</p>
-                  {getSortedCards('away').filter(e => e.message.includes('🟥')).map(e => <p key={e.id} className="border-b border-gray-50 pb-1">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</p>)}
+                <div>
+                  <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">LOCAL - SUPLENTES</p>
+                  {lineups.home.slice(11).map(p => <p key={p.id} className="uppercase leading-none py-0.5"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">LOCAL - STAFF</p>
+                  {staff.home.map(s => <p key={s.id} className="uppercase leading-none py-0.5"><strong>{s.role}:</strong> {s.name}</p>)}
                 </div>
               </div>
+              <div className="text-[9px] space-y-3">
+                <div>
+                  <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">VISITA - TITULARES</p>
+                  {lineups.away.slice(0, 11).map(p => <p key={p.id} className="uppercase leading-none py-0.5"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">VISITA - SUPLENTES</p>
+                  {lineups.away.slice(11).map(p => <p key={p.id} className="uppercase leading-none py-0.5"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">VISITA - STAFF</p>
+                  {staff.away.map(s => <p key={s.id} className="uppercase leading-none py-0.5"><strong>{s.role}:</strong> {s.name}</p>)}
+                </div>
+              </div>
             </div>
 
-            <div className="mt-10">
-              <div className="text-center font-black text-[14px] border-b-2 border-black mb-4 pb-1 uppercase">Incidentes del Partido</div>
-              <div className="text-[11px] p-5 border border-gray-200 min-h-[150px] whitespace-pre-wrap uppercase font-bold bg-gray-50 leading-relaxed">{incidentNote}</div>
+            <div className="mt-6 border-t pt-4">
+              <div className="grid grid-cols-2 gap-8">
+                <div className="text-[8px] space-y-1 uppercase relative">
+                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0">
+                    <span className="text-2xl font-black rotate-[-15deg]">AMONESTACIÓN / EXPULSIÓN</span>
+                  </div>
+                  <p className="font-bold border-b border-gray-100 mb-1 text-gray-500">SANCIONES LOCAL</p>
+                  {getSortedCards('home').filter(e => e.message.includes('🟨')).map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
+                  <p className="text-[6px] font-black text-gray-300 mt-2">EXPULSIÓN</p>
+                  {getSortedCards('home').filter(e => e.message.includes('🟥')).map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
+                </div>
+                <div className="text-[8px] space-y-1 uppercase relative">
+                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0">
+                    <span className="text-2xl font-black rotate-[-15deg]">AMONESTACIÓN / EXPULSIÓN</span>
+                  </div>
+                  <p className="font-bold border-b border-gray-100 mb-1 text-gray-500">SANCIONES VISITA</p>
+                  {getSortedCards('away').filter(e => e.message.includes('🟨')).map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
+                  <p className="text-[6px] font-black text-gray-300 mt-2">EXPULSIÓN</p>
+                  {getSortedCards('away').filter(e => e.message.includes('🟥')).map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-10 mt-20 text-center">
-              <div className="space-y-3"><div className="h-20 flex items-center justify-center">{signatures.captainHome && <img src={signatures.captainHome} className="max-h-full" />}</div><div className="h-0.5 bg-black w-full"></div><p className="text-[10px] font-black uppercase">Capitán Local</p></div>
-              <div className="space-y-3"><div className="h-20 flex items-center justify-center">{signatures.referee && <img src={signatures.referee} className="max-h-full" />}</div><div className="h-0.5 bg-black w-full"></div><p className="text-[10px] font-black uppercase">Árbitro Central</p></div>
-              <div className="space-y-3"><div className="h-20 flex items-center justify-center">{signatures.captainAway && <img src={signatures.captainAway} className="max-h-full" />}</div><div className="h-0.5 bg-black w-full"></div><p className="text-[10px] font-black uppercase">Capitán Visitante</p></div>
+            <div className="mt-6">
+              <p className="text-[9px] font-black uppercase text-gray-400 border-b mb-1">INCIDENTES DEL PARTIDO</p>
+              <div className="text-[9px] p-4 border border-gray-100 min-h-[100px] whitespace-pre-wrap uppercase font-bold bg-gray-50 leading-tight">{incidentNote}</div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-10 mt-12 text-center">
+              <div className="space-y-2">
+                <div className="h-16 flex items-center justify-center">{signatures.captainHome && <img src={signatures.captainHome} className="max-h-full" />}</div>
+                <div className="h-0.5 bg-black w-full"></div>
+                <p className="text-[8px] font-black uppercase">Capitán Local</p>
+              </div>
+              <div className="space-y-2">
+                <div className="h-16 flex items-center justify-center">{signatures.referee && <img src={signatures.referee} className="max-h-full" />}</div>
+                <div className="h-0.5 bg-black w-full"></div>
+                <p className="text-[8px] font-black uppercase">Árbitro Central</p>
+              </div>
+              <div className="space-y-2">
+                <div className="h-16 flex items-center justify-center">{signatures.captainAway && <img src={signatures.captainAway} className="max-h-full" />}</div>
+                <div className="h-0.5 bg-black w-full"></div>
+                <p className="text-[8px] font-black uppercase">Capitán Visitante</p>
+              </div>
             </div>
             
-            <p className="text-center text-[8px] text-gray-400 mt-12 font-bold uppercase tracking-[0.2em]">REFEREE ELITE - REPORTE OFICIAL INDEPENDIENTE</p>
+            <p className="text-center text-[7px] text-gray-400 mt-10 font-bold uppercase tracking-[0.2em]">REFEREE ELITE - REPORTE OFICIAL INDEPENDIENTE</p>
           </div>
         </div>
       </div>
