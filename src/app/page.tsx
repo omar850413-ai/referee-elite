@@ -393,12 +393,15 @@ export default function Home() {
                     <div>
                       <div className="flex items-center gap-1 flex-wrap">
                         <p className="font-bold uppercase text-slate-700 text-xs">{p.name}</p>
-                        {playerEvs.map(e => (
-                          <span key={e.id} className="text-[10px]">
-                            {e.category === 'goals' ? (e.message.includes('AUTOGOL') ? '🥅' : '⚽') : (e.message.includes('🟨') ? '🟨' : e.message.includes('🟥') ? '🟥' : '')}
-                            {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}
-                          </span>
-                        ))}
+                        {playerEvs.map(ev => {
+                           if (ev.category === 'goals') {
+                             return <span key={ev.id} className="text-[10px]">{ev.message.includes('AUTOGOL') ? '🥅' : '⚽'}{ev.time !== '--' && ev.time !== '' ? ` (${ev.time})` : ''}</span>
+                           }
+                           if (ev.category === 'cards') {
+                             return <span key={ev.id} className="text-[10px]">{ev.message.includes('🟨') ? '🟨' : '🟥'}{ev.time !== '--' && ev.time !== '' ? ` (${ev.time})` : ''}</span>
+                           }
+                           return null;
+                        })}
                       </div>
                       {p.replacedNumber && <p className="text-[9px] font-black text-slate-400">ENTRÓ POR: #{p.replacedNumber}</p>}
                     </div>
@@ -426,12 +429,12 @@ export default function Home() {
                     <div>
                       <div className="flex items-center gap-1 flex-wrap">
                         <p className="font-bold uppercase text-slate-700 text-xs">{s.name}</p>
-                        {staffEvs.map(e => (
-                          <span key={e.id} className="text-[10px]">
-                            {e.message.includes('🟨') ? '🟨' : e.message.includes('🟥') ? '🟥' : ''}
-                            {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}
-                          </span>
-                        ))}
+                        {staffEvs.map(ev => {
+                           if (ev.category === 'cards') {
+                             return <span key={ev.id} className="text-[10px]">{ev.message.includes('🟨') ? '🟨' : '🟥'}{ev.time !== '--' && ev.time !== '' ? ` (${ev.time})` : ''}</span>
+                           }
+                           return null;
+                        })}
                       </div>
                       <p className="text-[9px] font-black text-slate-400">{s.role}</p>
                     </div>
@@ -823,7 +826,7 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={isPdfReportOpen} onOpenChange={setIsPdfReportOpen}>
-        <DialogContent className="max-w-5xl h-[95vh] p-0 overflow-auto bg-transparent border-none">
+        <DialogContent className="max-w-[95vw] w-[95vw] md:max-w-5xl h-[95vh] p-0 overflow-hidden bg-transparent border-none">
           <DialogHeader className="sr-only">
             <DialogTitle>Vista Previa de Cédula PDF</DialogTitle>
           </DialogHeader>
@@ -831,7 +834,7 @@ export default function Home() {
         </DialogContent>
       </Dialog>
       <Dialog open={isImageReportOpen} onOpenChange={setIsImageReportOpen}>
-        <DialogContent className="max-w-5xl p-0 bg-transparent border-none">
+        <DialogContent className="max-w-[95vw] w-[95vw] md:max-w-5xl h-[95vh] p-0 bg-transparent border-none overflow-hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>Vista Previa de Cédula Imagen</DialogTitle>
           </DialogHeader>
