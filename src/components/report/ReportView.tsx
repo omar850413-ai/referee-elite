@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { MatchState, MatchEvent, Player, StaffMember } from '@/lib/types';
+import { MatchState, Player, StaffMember } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { DialogClose } from '@/components/ui/dialog';
@@ -82,7 +82,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     svg.insertBefore(style, svg.firstChild);
     
     const svgWidth = 800;
-    const svgHeight = parseFloat(svg.getAttribute('height') || '1800');
+    const svgHeight = parseFloat(svg.getAttribute('height') || '2000');
     const svgData = new XMLSerializer().serializeToString(svg);
     svg.removeChild(style);
 
@@ -122,8 +122,10 @@ export function ReportView({ matchState }: ReportViewProps) {
       const numA = parseInt(a.playerNumber || '999');
       const numB = parseInt(b.playerNumber || '999');
       if (numA !== numB) return numA - numB;
-      if ((a.playerName || '') < (b.playerName || '')) return -1;
-      if ((a.playerName || '') > (b.playerName || '')) return 1;
+      const nameA = a.playerName || '';
+      const nameB = b.playerName || '';
+      if (nameA < nameB) return -1;
+      if (nameA > nameB) return 1;
       return parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
     });
 
@@ -170,20 +172,24 @@ export function ReportView({ matchState }: ReportViewProps) {
     return summary;
   };
 
-  const ROW_HEIGHT = 18;
-  const SECTION_SPACING = 40;
+  // CONFIGURACIÓN DE ESPACIADO
+  const ROW_HEIGHT = 24;
+  const SECTION_GAP = 80;
   
-  const homeRows = homePlayers.length + homeStaff.length;
-  const awayRows = awayPlayers.length + awayStaff.length;
-  const lineupsHeight = Math.max(homeRows, awayRows) * ROW_HEIGHT + (SECTION_SPACING * 3);
+  const homeRows = homePlayers.length + homeStaff.length + 3; // +3 para títulos y gaps
+  const awayRows = awayPlayers.length + awayStaff.length + 3;
+  const lineupsHeight = Math.max(homeRows, awayRows) * ROW_HEIGHT + SECTION_GAP;
   
-  const homeSancionesRows = homeSanciones.yellows.length + homeSanciones.reds.length;
-  const awaySancionesRows = awaySanciones.yellows.length + awaySanciones.reds.length;
-  const sancionesHeight = Math.max(homeSancionesRows, awaySancionesRows) * 22 + (SECTION_SPACING * 2);
+  const maxSancionesPerSide = Math.max(
+    (homeSanciones.yellows.length + homeSanciones.reds.length + 4),
+    (awaySanciones.yellows.length + awaySanciones.reds.length + 4)
+  );
+  const sancionesHeight = maxSancionesPerSide * ROW_HEIGHT + SECTION_GAP;
   
-  const incidentRows = Math.ceil(incidents.length / 80); 
-  const incidentsHeight = Math.max(100, incidentRows * 16 + 50);
-  const totalHeight = 500 + lineupsHeight + sancionesHeight + incidentsHeight + 200;
+  const incidentRows = Math.ceil(incidents.length / 70); 
+  const incidentsHeight = Math.max(150, incidentRows * 20 + 60);
+  
+  const totalHeight = 550 + lineupsHeight + sancionesHeight + incidentsHeight + 250;
 
   const homeColor = '#064E3B'; 
   const awayColor = '#1E3A8A'; 
@@ -193,7 +199,7 @@ export function ReportView({ matchState }: ReportViewProps) {
       <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 shrink-0 z-10">
         <div>
           <h2 className="text-white font-black italic uppercase text-sm md:text-base">Cédula Digital Profesional</h2>
-          <p className="text-slate-400 text-[10px] uppercase font-bold">Desliza con un dedo para mover, pellizca para zoom.</p>
+          <p className="text-slate-400 text-[10px] uppercase font-bold">Pellizca para zoom, desliza para mover.</p>
         </div>
         <DialogClose className="text-white hover:bg-white/10 p-2 rounded-full">
           <X size={24} />
@@ -222,47 +228,55 @@ export function ReportView({ matchState }: ReportViewProps) {
             xmlns="http://www.w3.org/2000/svg"
             className="block"
           >
+            {/* FONDOS LATERALES */}
             <rect x="0" y="0" width="400" height={totalHeight} fill={homeColor} />
             <rect x="400" y="0" width="400" height={totalHeight} fill={awayColor} />
 
-            <rect x="0" y="0" width="800" height="200" fill="rgba(0,0,0,0.3)" />
-            <g transform="translate(400, 50)">
-              <text textAnchor="middle" fill="white" fontSize="32" fontWeight="900" style={{ letterSpacing: '0.1em' }} className="uppercase">INFORME ARBITRAL</text>
-              <text y="35" textAnchor="middle" fill="white" fontSize="18" fontWeight="800" className="uppercase">{matchInfo.league || 'LIGA'}</text>
-              <text y="60" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="14" fontWeight="700" className="uppercase">{`JORNADA ${matchInfo.round || 'S/N'} | ${matchInfo.date || ''}`}</text>
+            {/* HEADER */}
+            <rect x="0" y="0" width="800" height="220" fill="rgba(0,0,0,0.4)" />
+            <g transform="translate(400, 60)">
+              <text textAnchor="middle" fill="white" fontSize="38" fontWeight="900" style={{ letterSpacing: '0.15em' }} className="uppercase">INFORME ARBITRAL</text>
+              <text y="45" textAnchor="middle" fill="white" fontSize="20" fontWeight="800" className="uppercase">{matchInfo.league || 'LIGA'}</text>
+              <text y="75" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16" fontWeight="700" className="uppercase">{`JORNADA ${matchInfo.round || 'S/N'} | ${matchInfo.date || ''}`}</text>
+              <text y="100" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="14" fontWeight="600" className="uppercase">{matchInfo.place || 'CAMPO'}</text>
             </g>
 
-            <g transform="translate(200, 300)">
-               <text textAnchor="middle" fill="white" fontSize="36" fontWeight="900" className="uppercase">{teamNames.home}</text>
-               <text y="100" textAnchor="middle" fill="white" fontSize="130" fontWeight="900">{scores.home}</text>
-               <text y="140" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="20" fontWeight="800">{`(${numberToSpanishWords(scores.home)})`}</text>
+            {/* MARCADOR */}
+            <g transform="translate(200, 320)">
+               <text textAnchor="middle" fill="white" fontSize="42" fontWeight="900" className="uppercase" style={{ letterSpacing: '0.05em' }}>{teamNames.home}</text>
+               <text y="110" textAnchor="middle" fill="white" fontSize="150" fontWeight="900">{scores.home}</text>
+               <text y="155" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="24" fontWeight="800">{`(${numberToSpanishWords(scores.home)})`}</text>
             </g>
-            <g transform="translate(600, 300)">
-               <text textAnchor="middle" fill="white" fontSize="36" fontWeight="900" className="uppercase">{teamNames.away}</text>
-               <text y="100" textAnchor="middle" fill="white" fontSize="130" fontWeight="900">{scores.away}</text>
-               <text y="140" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="20" fontWeight="800">{`(${numberToSpanishWords(scores.away)})`}</text>
+            <g transform="translate(600, 320)">
+               <text textAnchor="middle" fill="white" fontSize="42" fontWeight="900" className="uppercase" style={{ letterSpacing: '0.05em' }}>{teamNames.away}</text>
+               <text y="110" textAnchor="middle" fill="white" fontSize="150" fontWeight="900">{scores.away}</text>
+               <text y="155" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="24" fontWeight="800">{`(${numberToSpanishWords(scores.away)})`}</text>
             </g>
 
-            <g transform="translate(40, 480)">
-               <text x="0" y="0" fontSize="18" fontWeight="900" fill="white" textAnchor="start" className="uppercase">Alineaciones {teamNames.home}</text>
-               <g transform="translate(0, 30)">
-                 <text x="0" y="-10" fontSize="10" fontWeight="900" fill="white" opacity="0.6" className="uppercase">TITULARES</text>
+            {/* ALINEACIONES LOCAL */}
+            <g transform="translate(40, 560)">
+               <text x="0" y="0" fontSize="22" fontWeight="900" fill="white" textAnchor="start" className="uppercase">ALINEACIÓN LOCAL</text>
+               <rect x="0" y="10" width="320" height="2" fill="white" opacity="0.3" />
+               <g transform="translate(0, 50)">
+                 <text x="0" y="-15" fontSize="12" fontWeight="900" fill="white" opacity="0.5" className="uppercase">TITULARES</text>
                  {homePlayers.slice(0, 11).map((p, i) => (
-                   <text key={p.id} y={15 + i * ROW_HEIGHT} fontSize="10" fill="white" fontWeight="700" className="uppercase">
+                   <text key={p.id} y={i * ROW_HEIGHT} fontSize="13" fill="white" fontWeight="700" className="uppercase">
                      {`#${p.number} ${p.name}${getPlayerEventsSummary('home', p.number, false, p)}`}
                    </text>
                  ))}
-                 <g transform={`translate(0, ${11 * ROW_HEIGHT + 25})`}>
-                   <text x="0" y="-10" fontSize="10" fontWeight="900" fill="white" opacity="0.6" className="uppercase">SUPLENTES / CAMBIOS</text>
+                 
+                 <g transform={`translate(0, ${11 * ROW_HEIGHT + 40})`}>
+                   <text x="0" y="-15" fontSize="12" fontWeight="900" fill="white" opacity="0.5" className="uppercase">SUPLENTES / CAMBIOS</text>
                    {homePlayers.slice(11).map((p, i) => (
-                     <text key={p.id} y={15 + i * ROW_HEIGHT} fontSize="10" fill="white" fontWeight="700" className="uppercase">
+                     <text key={p.id} y={i * ROW_HEIGHT} fontSize="13" fill="white" fontWeight="700" className="uppercase">
                        {`#${p.number} ${p.name}${getPlayerEventsSummary('home', p.number, true, p)}`}
                      </text>
                    ))}
-                   <g transform={`translate(0, ${Math.max(0, homePlayers.length - 11) * ROW_HEIGHT + 25})`}>
-                     <text x="0" y="-10" fontSize="10" fontWeight="900" fill="white" opacity="0.6" className="uppercase">CUERPO TÉCNICO</text>
+                   
+                   <g transform={`translate(0, ${Math.max(1, homePlayers.length - 11) * ROW_HEIGHT + 40})`}>
+                     <text x="0" y="-15" fontSize="12" fontWeight="900" fill="white" opacity="0.5" className="uppercase">CUERPO TÉCNICO</text>
                      {homeStaff.map((s, i) => (
-                       <text key={s.id} y={15 + i * ROW_HEIGHT} fontSize="10" fill="white" fontWeight="700" className="uppercase">
+                       <text key={s.id} y={i * ROW_HEIGHT} fontSize="13" fill="white" fontWeight="700" className="uppercase">
                          {`${s.role}: ${s.name}${getStaffEventsSummary('home', s.name)}`}
                        </text>
                      ))}
@@ -271,26 +285,30 @@ export function ReportView({ matchState }: ReportViewProps) {
                </g>
             </g>
 
-            <g transform="translate(440, 480)">
-               <text x="0" y="0" fontSize="18" fontWeight="900" fill="white" textAnchor="start" className="uppercase">Alineaciones {teamNames.away}</text>
-               <g transform="translate(0, 30)">
-                 <text x="0" y="-10" fontSize="10" fontWeight="900" fill="white" opacity="0.6" className="uppercase">TITULARES</text>
+            {/* ALINEACIONES VISITA */}
+            <g transform="translate(440, 560)">
+               <text x="0" y="0" fontSize="22" fontWeight="900" fill="white" textAnchor="start" className="uppercase">ALINEACIÓN VISITA</text>
+               <rect x="0" y="10" width="320" height="2" fill="white" opacity="0.3" />
+               <g transform="translate(0, 50)">
+                 <text x="0" y="-15" fontSize="12" fontWeight="900" fill="white" opacity="0.5" className="uppercase">TITULARES</text>
                  {awayPlayers.slice(0, 11).map((p, i) => (
-                   <text key={p.id} y={15 + i * ROW_HEIGHT} fontSize="10" fill="white" fontWeight="700" className="uppercase">
+                   <text key={p.id} y={i * ROW_HEIGHT} fontSize="13" fill="white" fontWeight="700" className="uppercase">
                      {`#${p.number} ${p.name}${getPlayerEventsSummary('away', p.number, false, p)}`}
                    </text>
                  ))}
-                 <g transform={`translate(0, ${11 * ROW_HEIGHT + 25})`}>
-                   <text x="0" y="-10" fontSize="10" fontWeight="900" fill="white" opacity="0.6" className="uppercase">SUPLENTES / CAMBIOS</text>
+                 
+                 <g transform={`translate(0, ${11 * ROW_HEIGHT + 40})`}>
+                   <text x="0" y="-15" fontSize="12" fontWeight="900" fill="white" opacity="0.5" className="uppercase">SUPLENTES / CAMBIOS</text>
                    {awayPlayers.slice(11).map((p, i) => (
-                     <text key={p.id} y={15 + i * ROW_HEIGHT} fontSize="10" fill="white" fontWeight="700" className="uppercase">
+                     <text key={p.id} y={i * ROW_HEIGHT} fontSize="13" fill="white" fontWeight="700" className="uppercase">
                        {`#${p.number} ${p.name}${getPlayerEventsSummary('away', p.number, true, p)}`}
                      </text>
                    ))}
-                   <g transform={`translate(0, ${Math.max(0, awayPlayers.length - 11) * ROW_HEIGHT + 25})`}>
-                     <text x="0" y="-10" fontSize="10" fontWeight="900" fill="white" opacity="0.6" className="uppercase">CUERPO TÉCNICO</text>
+                   
+                   <g transform={`translate(0, ${Math.max(1, awayPlayers.length - 11) * ROW_HEIGHT + 40})`}>
+                     <text x="0" y="-15" fontSize="12" fontWeight="900" fill="white" opacity="0.5" className="uppercase">CUERPO TÉCNICO</text>
                      {awayStaff.map((s, i) => (
-                       <text key={s.id} y={15 + i * ROW_HEIGHT} fontSize="10" fill="white" fontWeight="700" className="uppercase">
+                       <text key={s.id} y={i * ROW_HEIGHT} fontSize="13" fill="white" fontWeight="700" className="uppercase">
                          {`${s.role}: ${s.name}${getStaffEventsSummary('away', s.name)}`}
                        </text>
                      ))}
@@ -299,42 +317,47 @@ export function ReportView({ matchState }: ReportViewProps) {
                </g>
             </g>
 
-            <g transform={`translate(0, ${500 + lineupsHeight})`}>
-              <rect width="800" height={sancionesHeight} fill="rgba(0,0,0,0.2)" />
-              <g transform="translate(40, 40)">
-                <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">Amonestados {teamNames.home}</text>
-                <g transform="translate(0, 20)">
+            {/* SANCIONES DINÁMICAS */}
+            <g transform={`translate(0, ${580 + lineupsHeight})`}>
+              <rect width="800" height={sancionesHeight} fill="rgba(0,0,0,0.3)" />
+              
+              {/* SANCIONES LOCAL */}
+              <g transform="translate(40, 50)">
+                <text fontSize="14" fontWeight="900" fill="white" opacity="0.6" className="uppercase">AMONESTADOS LOCAL</text>
+                <g transform="translate(0, 30)">
                   {homeSanciones.yellows.map((e, idx) => (
-                    <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
+                    <text key={e.id} y={idx * 22} x="0" fill="white" fontSize="11" fontWeight="700" className="uppercase">
                        {`#${e.playerNumber} ${e.playerName} 🟨 ${e.message.split(' - ').pop()} ${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`}
                     </text>
                   ))}
                 </g>
-                <g transform={`translate(0, ${homeSanciones.yellows.length * 18 + 40})`}>
-                  <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">Expulsados {teamNames.home}</text>
-                  <g transform="translate(0, 20)">
+                <g transform={`translate(0, ${homeSanciones.yellows.length * 22 + 50})`}>
+                  <text fontSize="14" fontWeight="900" fill="white" opacity="0.6" className="uppercase">EXPULSADOS LOCAL</text>
+                  <g transform="translate(0, 30)">
                     {homeSanciones.reds.map((e, idx) => (
-                      <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
+                      <text key={e.id} y={idx * 22} x="0" fill="white" fontSize="11" fontWeight="700" className="uppercase">
                         {`#${e.playerNumber} ${e.playerName} 🟥 ${e.message.split(' - ').pop()} ${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`}
                       </text>
                     ))}
                   </g>
                 </g>
               </g>
-              <g transform="translate(440, 40)">
-                <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">Amonestados {teamNames.away}</text>
-                <g transform="translate(0, 20)">
+
+              {/* SANCIONES VISITA */}
+              <g transform="translate(440, 50)">
+                <text fontSize="14" fontWeight="900" fill="white" opacity="0.6" className="uppercase">AMONESTADOS VISITA</text>
+                <g transform="translate(0, 30)">
                   {awaySanciones.yellows.map((e, idx) => (
-                    <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
+                    <text key={e.id} y={idx * 22} x="0" fill="white" fontSize="11" fontWeight="700" className="uppercase">
                        {`#${e.playerNumber} ${e.playerName} 🟨 ${e.message.split(' - ').pop()} ${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`}
                     </text>
                   ))}
                 </g>
-                <g transform={`translate(0, ${awaySanciones.yellows.length * 18 + 40})`}>
-                  <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">Expulsados {teamNames.away}</text>
-                  <g transform="translate(0, 20)">
+                <g transform={`translate(0, ${awaySanciones.yellows.length * 22 + 50})`}>
+                  <text fontSize="14" fontWeight="900" fill="white" opacity="0.6" className="uppercase">EXPULSADOS VISITA</text>
+                  <g transform="translate(0, 30)">
                     {awaySanciones.reds.map((e, idx) => (
-                      <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
+                      <text key={e.id} y={idx * 22} x="0" fill="white" fontSize="11" fontWeight="700" className="uppercase">
                         {`#${e.playerNumber} ${e.playerName} 🟥 ${e.message.split(' - ').pop()} ${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`}
                       </text>
                     ))}
@@ -343,32 +366,38 @@ export function ReportView({ matchState }: ReportViewProps) {
               </g>
             </g>
 
-            <g transform={`translate(400, ${550 + lineupsHeight + sancionesHeight})`}>
-               <text textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16" fontWeight="900" className="uppercase">INCIDENTES DEL PARTIDO</text>
-               <foreignObject x="-350" y="20" width="700" height={incidentsHeight}>
-                  <div xmlns="http://www.w3.org/1999/xhtml" style={{ color: 'white', fontSize: '11px', textAlign: 'center', lineHeight: '1.4', opacity: 0.9, textTransform: 'uppercase', whiteSpace: 'pre-wrap' }}>
+            {/* INCIDENTES */}
+            <g transform={`translate(400, ${640 + lineupsHeight + sancionesHeight})`}>
+               <text textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="20" fontWeight="900" className="uppercase" style={{ letterSpacing: '0.1em' }}>INCIDENTES DEL PARTIDO</text>
+               <rect x="-360" y="25" width="720" height="2" fill="white" opacity="0.2" />
+               <foreignObject x="-350" y="50" width="700" height={incidentsHeight}>
+                  <div xmlns="http://www.w3.org/1999/xhtml" style={{ color: 'white', fontSize: '13px', textAlign: 'center', lineHeight: '1.6', opacity: 0.9, textTransform: 'uppercase', whiteSpace: 'pre-wrap', fontWeight: 'bold' }}>
                     {incidents}
                   </div>
                </foreignObject>
             </g>
 
-            <g transform={`translate(0, ${totalHeight - 120})`}>
+            {/* FIRMAS */}
+            <g transform={`translate(0, ${totalHeight - 160})`}>
               <g transform="translate(150, 0)">
-                {signatures.captainHome && <image href={signatures.captainHome} x="-60" y="-70" width="120" height="60" />}
-                <line x1="-80" x2="80" y1="0" y2="0" stroke="white" strokeWidth="1" opacity="0.5" />
-                <text y="15" textAnchor="middle" fill="white" fontSize="9" fontWeight="900" className="uppercase">Capitán Local</text>
+                {signatures.captainHome && <image href={signatures.captainHome} x="-75" y="-90" width="150" height="75" />}
+                <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="2" opacity="0.5" />
+                <text y="25" textAnchor="middle" fill="white" fontSize="11" fontWeight="900" className="uppercase" style={{ letterSpacing: '0.05em' }}>CAPITÁN LOCAL</text>
               </g>
               <g transform="translate(400, 0)">
-                {signatures.referee && <image href={signatures.referee} x="-60" y="-70" width="120" height="60" />}
-                <line x1="-80" x2="80" y1="0" y2="0" stroke="white" strokeWidth="1" opacity="0.5" />
-                <text y="15" textAnchor="middle" fill="white" fontSize="9" fontWeight="900" className="uppercase">Árbitro Central</text>
+                {signatures.referee && <image href={signatures.referee} x="-75" y="-90" width="150" height="75" />}
+                <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="2" opacity="0.5" />
+                <text y="25" textAnchor="middle" fill="white" fontSize="11" fontWeight="900" className="uppercase" style={{ letterSpacing: '0.05em' }}>ÁRBITRO CENTRAL</text>
               </g>
               <g transform="translate(650, 0)">
-                {signatures.captainAway && <image href={signatures.captainAway} x="-60" y="-70" width="120" height="60" />}
-                <line x1="-80" x2="80" y1="0" y2="0" stroke="white" strokeWidth="1" opacity="0.5" />
-                <text y="15" textAnchor="middle" fill="white" fontSize="9" fontWeight="900" className="uppercase">Capitán Visitante</text>
+                {signatures.captainAway && <image href={signatures.captainAway} x="-75" y="-90" width="150" height="75" />}
+                <line x1="-100" x2="100" y1="0" y2="0" stroke="white" strokeWidth="2" opacity="0.5" />
+                <text y="25" textAnchor="middle" fill="white" fontSize="11" fontWeight="900" className="uppercase" style={{ letterSpacing: '0.05em' }}>CAPITÁN VISITANTE</text>
               </g>
             </g>
+
+            {/* MARCA DE AGUA / PIE */}
+            <text x="400" y={totalHeight - 30} textAnchor="middle" fill="white" fontSize="10" fontWeight="900" opacity="0.3" className="uppercase">REFEREE ELITE - SISTEMA PROFESIONAL DE ASESORÍA ARBITRAL</text>
           </svg>
         </div>
       </div>
