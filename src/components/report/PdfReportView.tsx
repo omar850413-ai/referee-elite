@@ -13,6 +13,14 @@ interface PdfReportViewProps {
   matchState: MatchState;
 }
 
+const roleInitials: Record<string, string> = {
+  'DIRECTOR TÉCNICO': 'DT',
+  'AUXILIAR': 'AUX',
+  'PREPARADOR FÍSICO': 'PF',
+  'UTILERO': 'UTI',
+  'MÉDICO': 'MED'
+};
+
 export function PdfReportView({ matchState }: PdfReportViewProps) {
   const { 
     matchInfo, 
@@ -151,11 +159,31 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
   const renderPlayerRow = (p: Player, side: 'home' | 'away') => (
-    <div key={p.id} className="flex uppercase leading-tight items-baseline">
-      <span className="inline-block w-[18px] text-right mr-1 font-bold">{p.number}.-</span>
+    <div key={p.id} className="flex uppercase leading-none items-baseline">
+      <span className="inline-block w-[14px] text-right mr-1 font-bold">{p.number}.-</span>
       <span className="flex-1">{p.name} {getPlayerEventsSummary(side, p.number, p)}</span>
     </div>
   );
+
+  const renderCardEntry = (e: any, side: 'home' | 'away') => {
+    let nameDisplay = e.playerName;
+    let numberDisplay = e.playerNumber ? `#${e.playerNumber}` : '';
+
+    if (!e.playerNumber) {
+      const staffMember = (staff[side] || []).find(s => s.name === e.playerName);
+      if (staffMember) {
+        const initial = roleInitials[staffMember.role] || '';
+        nameDisplay = `${initial} ${e.playerName}`;
+      }
+    }
+
+    return (
+      <p key={e.id} className="leading-none border-b border-gray-50 flex items-baseline py-0.5">
+        <span className="inline-block w-[14px] text-right mr-1 font-bold">{numberDisplay}</span> 
+        <span className="flex-1">{nameDisplay} {e.message.split(' - ').pop()}</span>
+      </p>
+    );
+  };
 
   return (
     <div className="w-full h-full flex flex-col bg-slate-900 overflow-hidden" ref={containerRef}>
@@ -167,7 +195,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
       <div className="flex-1 overflow-auto touch-none bg-slate-900 p-4 flex justify-center items-start" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center top' }}>
           <div ref={reportRef} className="p-6 bg-white text-black font-sans shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
-            {/* Header */}
             <div className="text-center mb-2">
               <h1 className="text-xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
               <p className="text-[9px] font-bold uppercase">{matchInfo.league} | JORNADA {matchInfo.round}</p>
@@ -186,7 +213,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               </div>
             </div>
 
-            {/* Marcadores Compactos */}
             <div className="grid grid-cols-2 border border-black mb-3 text-center divide-x divide-black">
               <div className="p-1 bg-gray-50 flex flex-col justify-center">
                 <p className="text-[6px] font-black text-gray-400">LOCAL</p>
@@ -200,65 +226,65 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               </div>
             </div>
 
-            {/* Alineaciones Pegadas */}
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-0 text-[8px]">
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mb-1">LOCAL - TITULARES</p>
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mb-1">TITULARES</p>
                 {(lineups.home || []).slice(0, 11).map(p => renderPlayerRow(p, 'home'))}
                 
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">LOCAL - SUPLENTES</p>
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">SUPLENTES</p>
                 {(lineups.home || []).slice(11).map(p => renderPlayerRow(p, 'home'))}
                 
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">LOCAL - STAFF</p>
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
                 {(staff.home || []).map(s => <p key={s.id} className="uppercase leading-tight"><strong>{s.role}:</strong> {s.name}</p>)}
               </div>
               <div className="space-y-0 text-[8px]">
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mb-1">VISITA - TITULARES</p>
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mb-1">TITULARES</p>
                 {(lineups.away || []).slice(0, 11).map(p => renderPlayerRow(p, 'away'))}
                 
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">VISITA - SUPLENTES</p>
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">SUPLENTES</p>
                 {(lineups.away || []).slice(11).map(p => renderPlayerRow(p, 'away'))}
                 
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">VISITA - STAFF</p>
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
                 {(staff.away || []).map(s => <p key={s.id} className="uppercase leading-tight"><strong>{s.role}:</strong> {s.name}</p>)}
               </div>
             </div>
 
-            {/* Sanciones */}
             <div className="mt-4 border-t pt-2">
               <div className="grid grid-cols-2 gap-6">
-                {/* Local */}
                 <div className="text-[7px] space-y-1 uppercase relative">
                   <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0">
-                    <span className="text-xl font-black rotate-[-15deg]">AMONESTACIÓN / EXPULSIÓN</span>
+                    <span className="text-xl font-black rotate-[-15deg]">AMONESTACIÓN</span>
                   </div>
                   <p className="font-bold border-b border-gray-100 mb-1">SANCIONES LOCAL</p>
-                  <p className="text-[6px] font-black text-gray-400">AMONESTACIÓN</p>
-                  {getSortedCards('home', 'yellow').map(e => <p key={e.id} className="leading-tight border-b border-gray-50 flex items-baseline"><span className="inline-block w-[12px] text-right mr-1 font-bold">#{e.playerNumber}</span> <span className="flex-1">{e.playerName} {e.message.split(' - ').pop()}</span></p>)}
-                  <p className="text-[6px] font-black text-gray-400 mt-1">EXPULSIÓN</p>
-                  {getSortedCards('home', 'red').map(e => <p key={e.id} className="leading-tight border-b border-gray-50 flex items-baseline"><span className="inline-block w-[12px] text-right mr-1 font-bold">#{e.playerNumber}</span> <span className="flex-1">{e.playerName} {e.message.split(' - ').pop()}</span></p>)}
+                  <p className="text-[6px] font-black text-gray-300">AMONESTACIÓN</p>
+                  {getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home'))}
+                  <p className="text-[6px] font-black text-gray-300 mt-1">EXPULSIÓN</p>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0 mt-8">
+                    <span className="text-xl font-black rotate-[-15deg]">EXPULSIÓN</span>
+                  </div>
+                  {getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home'))}
                 </div>
-                {/* Visita */}
                 <div className="text-[7px] space-y-1 uppercase relative">
                   <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0">
-                    <span className="text-xl font-black rotate-[-15deg]">AMONESTACIÓN / EXPULSIÓN</span>
+                    <span className="text-xl font-black rotate-[-15deg]">AMONESTACIÓN</span>
                   </div>
                   <p className="font-bold border-b border-gray-100 mb-1">SANCIONES VISITA</p>
-                  <p className="text-[6px] font-black text-gray-400">AMONESTACIÓN</p>
-                  {getSortedCards('away', 'yellow').map(e => <p key={e.id} className="leading-tight border-b border-gray-50 flex items-baseline"><span className="inline-block w-[12px] text-right mr-1 font-bold">#{e.playerNumber}</span> <span className="flex-1">{e.playerName} {e.message.split(' - ').pop()}</span></p>)}
-                  <p className="text-[6px] font-black text-gray-400 mt-1">EXPULSIÓN</p>
-                  {getSortedCards('away', 'red').map(e => <p key={e.id} className="leading-tight border-b border-gray-50 flex items-baseline"><span className="inline-block w-[12px] text-right mr-1 font-bold">#{e.playerNumber}</span> <span className="flex-1">{e.playerName} {e.message.split(' - ').pop()}</span></p>)}
+                  <p className="text-[6px] font-black text-gray-300">AMONESTACIÓN</p>
+                  {getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away'))}
+                  <p className="text-[6px] font-black text-gray-300 mt-1">EXPULSIÓN</p>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0 mt-8">
+                    <span className="text-xl font-black rotate-[-15deg]">EXPULSIÓN</span>
+                  </div>
+                  {getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away'))}
                 </div>
               </div>
             </div>
 
-            {/* Incidentes */}
             <div className="mt-4">
               <p className="text-[8px] font-black uppercase text-gray-400 border-b mb-1">INCIDENTES DEL PARTIDO</p>
               <div className="text-[8px] p-2 border border-gray-100 min-h-[50px] whitespace-pre-wrap uppercase font-bold bg-gray-50 leading-tight">{incidentNote}</div>
             </div>
 
-            {/* Firmas */}
             <div className="grid grid-cols-3 gap-6 mt-6 text-center">
               <div className="space-y-1">
                 <div className="h-8 flex items-center justify-center">{signatures.captainHome && <img src={signatures.captainHome} className="max-h-full" />}</div>
@@ -276,7 +302,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 <p className="text-[6px] font-black uppercase">Capitán Visitante</p>
               </div>
             </div>
-            
             <p className="text-center text-[5px] text-gray-300 mt-4 font-bold uppercase tracking-widest">REFEREE ELITE - REPORTE OFICIAL INDEPENDIENTE</p>
           </div>
         </div>
