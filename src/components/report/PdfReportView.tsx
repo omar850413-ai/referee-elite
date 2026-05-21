@@ -27,11 +27,8 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
   const reportRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Transform states
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  
-  // Touch tracking
   const [initialDistance, setInitialDistance] = useState<number | null>(null);
   const [lastTouch, setLastTouch] = useState<{ x: number, y: number } | null>(null);
 
@@ -67,18 +64,11 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (e.touches.length === 1 && lastTouch) {
-      // Panning logic
       const deltaX = e.touches[0].pageX - lastTouch.x;
       const deltaY = e.touches[0].pageY - lastTouch.y;
-      
-      setOffset(prev => ({
-        x: prev.x + deltaX,
-        y: prev.y + deltaY
-      }));
-      
+      setOffset(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
       setLastTouch({ x: e.touches[0].pageX, y: e.touches[0].pageY });
     } else if (e.touches.length === 2 && initialDistance) {
-      // Zooming logic
       const dist = Math.hypot(
         e.touches[0].pageX - e.touches[1].pageX,
         e.touches[0].pageY - e.touches[1].pageY
@@ -163,10 +153,19 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     return summary.join(' ');
   };
 
-  const cardEvents = (events || []).filter(e => e.category === 'cards').sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+  const cardEventsSorted = [...(events || [])]
+    .filter(e => e.category === 'cards')
+    .sort((a, b) => {
+      const numA = parseInt(a.playerNumber || '999');
+      const numB = parseInt(b.playerNumber || '999');
+      if (numA !== numB) return numA - numB;
+      if ((a.playerName || '') < (b.playerName || '')) return -1;
+      if ((a.playerName || '') > (b.playerName || '')) return 1;
+      return parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
+    });
   
   const getGroupedCards = (side: 'home' | 'away') => {
-    const sideCards = cardEvents.filter(e => e.side === side);
+    const sideCards = cardEventsSorted.filter(e => e.side === side);
     const yellows = sideCards.filter(e => e.message.includes('🟨'));
     const reds = sideCards.filter(e => e.message.includes('🟥'));
     return { yellows, reds };
@@ -184,7 +183,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           <div key={p.id} className="flex justify-between items-center text-[9px] border-b border-gray-100 py-0.5">
             <div className="flex items-center gap-1 uppercase flex-1 truncate">
               <span className="font-bold">{p.number}.- {p.name.toUpperCase()}</span>
-              <span className="ml-2 font-medium">{eventsSummary}</span>
+              <span className="ml-1">{eventsSummary}</span>
             </div>
           </div>
         );
@@ -200,7 +199,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           <div key={s.id} className="flex justify-between items-center text-[9px] border-b border-gray-100 py-0.5">
             <div className="flex items-center gap-1 uppercase flex-1 truncate">
               <span className="font-bold">{s.role.toUpperCase()}: {s.name.toUpperCase()}</span>
-              <span className="ml-2 font-medium">{eventsSummary}</span>
+              <span className="ml-1">{eventsSummary}</span>
             </div>
           </div>
         );
@@ -292,13 +291,13 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                     <p className="font-bold underline">AMONESTACIONES:</p>
                     {homeSanciones.yellows.map(e => (
                       <div key={e.id} className="border-b pb-0.5 uppercase">
-                        <strong>{e.playerName?.toUpperCase()} 🟨 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>
+                        <strong>#{e.playerNumber} {e.playerName?.toUpperCase()} 🟨 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>
                       </div>
                     ))}
                     <p className="font-bold underline pt-2">EXPULSIONES:</p>
                     {homeSanciones.reds.map(e => (
                       <div key={e.id} className="border-b pb-0.5 uppercase">
-                        <strong>{e.playerName?.toUpperCase()} 🟥 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>
+                        <strong>#{e.playerNumber} {e.playerName?.toUpperCase()} 🟥 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>
                       </div>
                     ))}
                   </div>
@@ -309,13 +308,13 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                     <p className="font-bold underline">AMONESTACIONES:</p>
                     {awaySanciones.yellows.map(e => (
                       <div key={e.id} className="border-b pb-0.5 uppercase">
-                        <strong>{e.playerName?.toUpperCase()} 🟨 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>
+                        <strong>#{e.playerNumber} {e.playerName?.toUpperCase()} 🟨 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>
                       </div>
                     ))}
                     <p className="font-bold underline pt-2">EXPULSIONES:</p>
                     {awaySanciones.reds.map(e => (
                       <div key={e.id} className="border-b pb-0.5 uppercase">
-                        <strong>{e.playerName?.toUpperCase()} 🟥 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>
+                        <strong>#{e.playerNumber} {e.playerName?.toUpperCase()} 🟥 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</strong>
                       </div>
                     ))}
                   </div>

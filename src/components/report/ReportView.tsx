@@ -5,7 +5,7 @@ import { MatchState, MatchEvent, Player, StaffMember } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { DialogClose } from '@/components/ui/dialog';
-import { numberToSpanishWords } from '@/lib/utils';
+import { numberToSpanishWords, parseTimeToMinutes } from '@/lib/utils';
 
 interface ReportViewProps {
   matchState: MatchState;
@@ -16,11 +16,8 @@ export function ReportView({ matchState }: ReportViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Transform states
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-
-  // Touch tracking
   const [initialDistance, setInitialDistance] = useState<number | null>(null);
   const [lastTouch, setLastTouch] = useState<{ x: number, y: number } | null>(null);
 
@@ -56,18 +53,11 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (e.touches.length === 1 && lastTouch) {
-      // Panning logic
       const deltaX = e.touches[0].pageX - lastTouch.x;
       const deltaY = e.touches[0].pageY - lastTouch.y;
-      
-      setOffset(prev => ({
-        x: prev.x + deltaX,
-        y: prev.y + deltaY
-      }));
-      
+      setOffset(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
       setLastTouch({ x: e.touches[0].pageX, y: e.touches[0].pageY });
     } else if (e.touches.length === 2 && initialDistance) {
-      // Zooming logic
       const dist = Math.hypot(
         e.touches[0].pageX - e.touches[1].pageX,
         e.touches[0].pageY - e.touches[1].pageY
@@ -126,8 +116,19 @@ export function ReportView({ matchState }: ReportViewProps) {
   const homeStaff = staff.home || [];
   const awayStaff = staff.away || [];
 
+  const cardEventsSorted = [...safeEvents]
+    .filter(e => e.category === 'cards')
+    .sort((a, b) => {
+      const numA = parseInt(a.playerNumber || '999');
+      const numB = parseInt(b.playerNumber || '999');
+      if (numA !== numB) return numA - numB;
+      if ((a.playerName || '') < (b.playerName || '')) return -1;
+      if ((a.playerName || '') > (b.playerName || '')) return 1;
+      return parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
+    });
+
   const getSanciones = (side: 'home' | 'away') => {
-    const sideCards = safeEvents.filter(e => e.side === side && e.category === 'cards');
+    const sideCards = cardEventsSorted.filter(e => e.side === side);
     const yellows = sideCards.filter(e => e.message.includes('🟨'));
     const reds = sideCards.filter(e => e.message.includes('🟥'));
     return { yellows, reds };
@@ -305,7 +306,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                 <g transform="translate(0, 20)">
                   {homeSanciones.yellows.map((e, idx) => (
                     <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
-                       {`${e.playerName} 🟨 ${e.message.split(' - ').pop()} ${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`}
+                       {`#${e.playerNumber} ${e.playerName} 🟨 ${e.message.split(' - ').pop()} ${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`}
                     </text>
                   ))}
                 </g>
@@ -314,7 +315,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                   <g transform="translate(0, 20)">
                     {homeSanciones.reds.map((e, idx) => (
                       <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
-                        {`${e.playerName} 🟥 ${e.message.split(' - ').pop()} ${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`}
+                        {`#${e.playerNumber} ${e.playerName} 🟥 ${e.message.split(' - ').pop()} ${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`}
                       </text>
                     ))}
                   </g>
@@ -325,7 +326,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                 <g transform="translate(0, 20)">
                   {awaySanciones.yellows.map((e, idx) => (
                     <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
-                       {`${e.playerName} 🟨 ${e.message.split(' - ').pop()} ${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`}
+                       {`#${e.playerNumber} ${e.playerName} 🟨 ${e.message.split(' - ').pop()} ${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`}
                     </text>
                   ))}
                 </g>
@@ -334,7 +335,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                   <g transform="translate(0, 20)">
                     {awaySanciones.reds.map((e, idx) => (
                       <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
-                        {`${e.playerName} 🟥 ${e.message.split(' - ').pop()} ${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`}
+                        {`#${e.playerNumber} ${e.playerName} 🟥 ${e.message.split(' - ').pop()} ${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`}
                       </text>
                     ))}
                   </g>
