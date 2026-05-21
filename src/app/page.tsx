@@ -21,6 +21,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -40,7 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft, ArrowRightLeft, Users } from 'lucide-react';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft, ArrowRightLeft, Users, Pencil } from 'lucide-react';
 import { causalesAmarilla, causalesRoja, causalesStaff } from '@/lib/causales';
 import Link from 'next/link';
 
@@ -116,7 +117,7 @@ export default function Home() {
 
   const handleResetMatch = () => {
     if (!matchRef || !user) return;
-    const advisorName = user.email?.toUpperCase() || '';
+    const advisorName = user.email?.toLowerCase() || '';
     const resetState: MatchState = {
       title: 'INFORME ARBITRAL',
       scores: { home: 0, away: 0 },
@@ -189,7 +190,7 @@ export default function Home() {
     setModal(null);
   };
 
-  const startListening = (target: 'player' | 'staff') => {
+  const startListening = (target: 'player' | 'staff' | 'edit-player' | 'edit-staff') => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
     try {
@@ -199,7 +200,7 @@ export default function Home() {
       recognition.onend = () => setIsListening(false);
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
-        if (target === 'player') setNewPlayerName(transcript.toUpperCase());
+        if (target === 'player' || target === 'edit-player') setNewPlayerName(transcript.toUpperCase());
         else setNewStaffName(transcript.toUpperCase());
       };
       recognition.start();
@@ -215,12 +216,66 @@ export default function Home() {
     setNewPlayerNumber(''); setNewPlayerName(''); setModal(null);
   };
 
+  const handleUpdatePlayer = () => {
+    if (!selectedPlayer || !newPlayerNumber || !newPlayerName || !matchState) return;
+    const { side, player } = selectedPlayer;
+    const currentLineups = { ...matchState.lineups };
+    currentLineups[side] = currentLineups[side].map(p => p.id === player.id ? { ...p, number: newPlayerNumber, name: newPlayerName.toUpperCase() } : p);
+    updateMatch({ lineups: currentLineups });
+    setNewPlayerNumber(''); setNewPlayerName(''); setModal('player-actions');
+  };
+
+  const handleRemovePlayer = () => {
+    if (!selectedPlayer || !matchState) return;
+    const { side, player } = selectedPlayer;
+    const currentLineups = { ...matchState.lineups };
+    currentLineups[side] = currentLineups[side].filter(p => p.id !== player.id);
+    updateMatch({ lineups: currentLineups });
+    setModal(null);
+  };
+
   const handleAddStaff = (side: 'home' | 'away') => {
     if (!newStaffName || !matchState) return;
     const currentStaff = matchState.staff || { home: [], away: [] };
     const member: StaffMember = { id: Date.now().toString(), name: newStaffName.toUpperCase(), role: newStaffRole.toUpperCase() };
     updateMatch({ staff: { ...currentStaff, [side]: [...currentStaff[side], member] } });
     setNewStaffName(''); setModal(null);
+  };
+
+  const handleUpdateStaff = () => {
+    if (!selectedStaff || !newStaffName || !matchState) return;
+    const { side, staff } = selectedStaff;
+    const currentStaff = { ...matchState.staff };
+    currentStaff[side] = currentStaff[side].map(s => s.id === staff.id ? { ...s, name: newStaffName.toUpperCase(), role: newStaffRole.toUpperCase() } : s);
+    updateMatch({ staff: currentStaff });
+    setNewStaffName(''); setModal('staff-actions');
+  };
+
+  const handleRemoveStaff = () => {
+    if (!selectedStaff || !matchState) return;
+    const { side, staff } = selectedStaff;
+    const currentStaff = { ...matchState.staff };
+    currentStaff[side] = currentStaff[side].filter(s => s.id !== staff.id);
+    updateMatch({ staff: currentStaff });
+    setModal(null);
+  };
+
+  const handleRemoveEvent = (eventId: number) => {
+    if (!matchState) return;
+    const event = matchState.events.find(e => e.id === eventId);
+    if (!event) return;
+
+    let updatedScores = { ...matchState.scores };
+    if (event.category === 'goals') {
+      const isOwnGoal = event.message.includes('AUTOGOL');
+      const scoringSide = isOwnGoal ? (event.side === 'home' ? 'away' : 'home') : event.side;
+      if (scoringSide) {
+        updatedScores[scoringSide] = Math.max(0, updatedScores[scoringSide] - 1);
+      }
+    }
+
+    const updatedEvents = matchState.events.filter(e => e.id !== eventId);
+    updateMatch({ events: updatedEvents, scores: updatedScores });
   };
 
   const handleAddGoal = (side: 'home' | 'away', player: Player) => {
@@ -484,6 +539,22 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={modal === 'edit-player'} onOpenChange={() => setModal('player-actions')}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader><DialogTitle className="text-center font-black uppercase">EDITAR JUGADOR</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <Input type="number" placeholder="00" className="text-2xl h-14 text-center font-black" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} />
+            <div className="relative">
+              <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value.toUpperCase())} />
+              <button onClick={() => startListening('edit-player')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+              </button>
+            </div>
+            <Button onClick={handleUpdatePlayer} className="w-full h-12 font-black bg-primary text-white uppercase">GUARDAR CAMBIOS</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={modal === 'add-staff'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader><DialogTitle className="text-center font-black uppercase">INSCRIBIR CUERPO TÉCNICO</DialogTitle></DialogHeader>
@@ -517,6 +588,39 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={modal === 'edit-staff'} onOpenChange={() => setModal('staff-actions')}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader><DialogTitle className="text-center font-black uppercase">EDITAR CUERPO TÉCNICO</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-black uppercase">CARGO</Label>
+              <Select value={newStaffRole} onValueChange={setNewStaffRole}>
+                <SelectTrigger className="w-full uppercase font-bold">
+                  <SelectValue placeholder="SELECCIONE CARGO" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DIRECTOR TÉCNICO">DIRECTOR TÉCNICO</SelectItem>
+                  <SelectItem value="AUXILIAR">AUXILIAR</SelectItem>
+                  <SelectItem value="PREPARADOR FÍSICO">PREPARADOR FÍSICO</SelectItem>
+                  <SelectItem value="UTILERO">UTILERO</SelectItem>
+                  <SelectItem value="MÉDICO">MÉDICO</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-black uppercase">NOMBRE</Label>
+              <div className="relative">
+                <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newStaffName} onChange={e => setNewStaffName(e.target.value.toUpperCase())} />
+                <button onClick={() => startListening('edit-staff')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                </button>
+              </div>
+            </div>
+            <Button onClick={handleUpdateStaff} className="w-full h-12 font-black bg-primary text-white uppercase">GUARDAR CAMBIOS</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={modal === 'player-actions'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
           <DialogHeader className="sr-only">
@@ -524,8 +628,33 @@ export default function Home() {
           </DialogHeader>
           {selectedPlayer && (
             <div className="flex flex-col">
-              <div className={`p-6 text-white text-center ${selectedPlayer.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}><p className="text-4xl font-black">#{selectedPlayer.player.number}</p><p className="text-xl font-bold uppercase italic">{selectedPlayer.player.name}</p></div>
-              <div className="p-6 space-y-4 bg-white">
+              <div className={`p-6 text-white text-center ${selectedPlayer.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}>
+                <div className="flex justify-between items-start">
+                   <Button variant="ghost" className="text-white hover:bg-black/10" onClick={() => { setNewPlayerNumber(selectedPlayer.player.number); setNewPlayerName(selectedPlayer.player.name); setModal('edit-player'); }}>
+                     <Pencil size={18} />
+                   </Button>
+                   <p className="text-4xl font-black">#{selectedPlayer.player.number}</p>
+                   <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" className="text-white hover:bg-black/10">
+                        <Trash2 size={18} />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>¿ELIMINAR JUGADOR?</AlertDialogTitle>
+                        <AlertDialogDescription>ESTA ACCIÓN QUITARÁ AL JUGADOR DE LA ALINEACIÓN.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>CANCELAR</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRemovePlayer} className="bg-destructive text-white uppercase">ELIMINAR</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+                <p className="text-xl font-bold uppercase italic">{selectedPlayer.player.name}</p>
+              </div>
+              <div className="p-6 space-y-4 bg-white max-h-[60vh] overflow-y-auto">
                 <div className="space-y-2"><Label className="flex items-center gap-2 text-xs font-black uppercase text-slate-400"><Clock size={14} /> MINUTO (OPCIONAL)</Label><Input type="number" placeholder="MIN" className="h-10 text-center font-bold" value={currentMinute} onChange={e => setCurrentMinute(e.target.value)} /></div>
                 
                 {selectedPlayer.isSub && (
@@ -545,6 +674,16 @@ export default function Home() {
 
                 <div className="grid grid-cols-2 gap-3"><Button onClick={() => handleAddGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-emerald-600 text-white uppercase">⚽ GOL</Button><Button onClick={() => handleAddOwnGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-orange-600 text-white uppercase">🥅 AUTOGOL</Button></div>
                 <div className="grid grid-cols-2 gap-3"><Button onClick={() => { setCardType('yellow'); setModal('causales'); }} className="h-14 font-black bg-yellow-400 text-yellow-900 uppercase">🟨 AMONESTACION</Button><Button onClick={() => { setCardType('red'); setModal('causales'); }} className="h-14 font-black bg-red-600 text-white uppercase">🟥 EXPULSION</Button></div>
+                
+                <div className="border-t pt-4">
+                  <Label className="text-xs font-black text-slate-400 uppercase mb-2 block">HISTORIAL EVENTOS</Label>
+                  {events.filter(e => e.side === selectedPlayer.side && e.playerNumber === selectedPlayer.player.number).map(ev => (
+                    <div key={ev.id} className="flex justify-between items-center bg-slate-50 p-2 rounded-lg mb-1 border">
+                      <span className="text-[10px] font-bold uppercase">{ev.message}</span>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveEvent(ev.id)}><Trash2 size={14} /></Button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -558,13 +697,48 @@ export default function Home() {
           </DialogHeader>
           {selectedStaff && (
             <div className="flex flex-col">
-              <div className={`p-6 text-white text-center ${selectedStaff.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}><p className="text-2xl font-black uppercase">{selectedStaff.staff.role}</p><p className="text-xl font-bold uppercase italic">{selectedStaff.staff.name}</p></div>
-              <div className="p-6 space-y-4 bg-white">
+              <div className={`p-6 text-white text-center ${selectedStaff.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}>
+                 <div className="flex justify-between items-start">
+                   <Button variant="ghost" className="text-white hover:bg-black/10" onClick={() => { setNewStaffName(selectedStaff.staff.name); setNewStaffRole(selectedStaff.staff.role); setModal('edit-staff'); }}>
+                     <Pencil size={18} />
+                   </Button>
+                   <p className="text-2xl font-black uppercase">{selectedStaff.staff.role}</p>
+                   <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" className="text-white hover:bg-black/10">
+                        <Trash2 size={18} />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>¿ELIMINAR STAFF?</AlertDialogTitle>
+                        <AlertDialogDescription>ESTA ACCIÓN QUITARÁ AL MIEMBRO DEL CUERPO TÉCNICO.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>CANCELAR</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRemoveStaff} className="bg-destructive text-white uppercase">ELIMINAR</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+                <p className="text-xl font-bold uppercase italic">{selectedStaff.staff.name}</p>
+              </div>
+              <div className="p-6 space-y-4 bg-white max-h-[60vh] overflow-y-auto">
                 <div className="space-y-2"><Label className="flex items-center gap-2 text-xs font-black uppercase text-slate-400"><Clock size={14} /> MINUTO (OPCIONAL)</Label><Input type="number" placeholder="MIN" className="h-10 text-center font-bold" value={currentMinute} onChange={e => setCurrentMinute(e.target.value)} /></div>
                 
                 <div className="grid grid-cols-2 gap-3">
                   <Button onClick={() => { setCardType('yellow'); setModal('causales-staff'); }} className="h-14 font-black bg-yellow-400 text-yellow-900 uppercase">🟨 AMONESTACION</Button>
                   <Button onClick={() => { setCardType('red'); setModal('causales-staff'); }} className="h-14 font-black bg-red-600 text-white uppercase">🟥 EXPULSION</Button>
+                </div>
+
+                <div className="border-t pt-4">
+                  <Label className="text-xs font-black text-slate-400 uppercase mb-2 block">HISTORIAL EVENTOS</Label>
+                  {events.filter(e => e.side === selectedStaff.side && e.playerName === selectedStaff.staff.name).map(ev => (
+                    <div key={ev.id} className="flex justify-between items-center bg-slate-50 p-2 rounded-lg mb-1 border">
+                      <span className="text-[10px] font-bold uppercase">{ev.message}</span>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveEvent(ev.id)}><Trash2 size={14} /></Button>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
