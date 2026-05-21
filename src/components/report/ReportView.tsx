@@ -101,12 +101,16 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const getPlayerEventsSummary = (side: 'home' | 'away', number: string, p?: Player) => {
     const playerEvs = (events || []).filter(e => e.side === side && e.playerNumber === number);
-    return playerEvs.map(e => {
+    let summary = playerEvs.map(e => {
       if (e.category === 'goals') return `${e.message.includes('AUTOGOL') ? '🥅' : '⚽'}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`;
       if (e.category === 'cards') return `${e.message.includes('🟨') ? '🟨' : '🟥'}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`;
-      if (e.category === 'substitution' && p?.replacedNumber) return ` (POR: #${p.replacedNumber}${e.time !== '--' && e.time !== '' ? ` ${e.time}` : ''})`;
       return '';
-    }).join(' ');
+    }).filter(Boolean).join(' ');
+
+    if (p?.replacedNumber) {
+      summary += ` (POR: #${p.replacedNumber})`;
+    }
+    return summary;
   };
 
   const getSortedCards = (side: 'home' | 'away', type?: 'yellow' | 'red') => {
@@ -198,11 +202,11 @@ export function ReportView({ matchState }: ReportViewProps) {
               <div className="text-[9px] space-y-3">
                 <div>
                   <p className="text-[8px] font-black text-gray-500 border-b mb-1 uppercase">TITULARES</p>
-                  {lineups.home.slice(0, 11).map(p => renderPlayerRow(p, 'home'))}
+                  {lineups.home.filter(p => p.type === 'starter').map(p => renderPlayerRow(p, 'home'))}
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-gray-500 border-b mb-1 uppercase">SUPLENTES</p>
-                  {lineups.home.slice(11).map(p => renderPlayerRow(p, 'home'))}
+                  {lineups.home.filter(p => p.type === 'substitute').map(p => renderPlayerRow(p, 'home'))}
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-gray-500 border-b mb-1 uppercase">CUERPO TÉCNICO</p>
@@ -212,11 +216,11 @@ export function ReportView({ matchState }: ReportViewProps) {
               <div className="text-[9px] space-y-3">
                 <div>
                   <p className="text-[8px] font-black text-gray-500 border-b mb-1 uppercase">TITULARES</p>
-                  {lineups.away.slice(0, 11).map(p => renderPlayerRow(p, 'away'))}
+                  {lineups.away.filter(p => p.type === 'starter').map(p => renderPlayerRow(p, 'away'))}
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-gray-500 border-b mb-1 uppercase">SUPLENTES</p>
-                  {lineups.away.slice(11).map(p => renderPlayerRow(p, 'away'))}
+                  {lineups.away.filter(p => p.type === 'substitute').map(p => renderPlayerRow(p, 'away'))}
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-gray-500 border-b mb-1 uppercase">CUERPO TÉCNICO</p>
@@ -228,18 +232,32 @@ export function ReportView({ matchState }: ReportViewProps) {
             <div className="mt-6 border-t pt-4">
               <div className="grid grid-cols-2 gap-8">
                 <div className="text-[8px] space-y-1 uppercase relative">
-                  <p className="font-bold border-b border-gray-100 mb-1 text-gray-500">SANCIONES LOCAL</p>
-                  <p className="text-[6px] font-black text-gray-300 flex items-center gap-0.5">🟨 AMONESTACIÓN</p>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none">
+                    <span className="text-6xl font-black">🟨 AMONESTACIÓN</span>
+                  </div>
+                  <p className="font-bold border-b border-gray-100 mb-1 text-gray-500">🟨 SANCIONES LOCAL</p>
                   {getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home'))}
-                  <p className="text-[6px] font-black text-gray-300 mt-2 flex items-center gap-0.5">🟥 EXPULSIÓN</p>
-                  {getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home'))}
+                  <div className="mt-4 text-[8px] space-y-1 uppercase relative">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none">
+                      <span className="text-6xl font-black text-red-600">🟥 EXPULSIÓN</span>
+                    </div>
+                    <p className="font-bold border-b border-gray-100 mb-1 text-gray-500">🟥 SANCIONES LOCAL</p>
+                    {getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home'))}
+                  </div>
                 </div>
                 <div className="text-[8px] space-y-1 uppercase relative">
-                  <p className="font-bold border-b border-gray-100 mb-1 text-gray-500">SANCIONES VISITA</p>
-                  <p className="text-[6px] font-black text-gray-300 flex items-center gap-0.5">🟨 AMONESTACIÓN</p>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none">
+                    <span className="text-6xl font-black">🟨 AMONESTACIÓN</span>
+                  </div>
+                  <p className="font-bold border-b border-gray-100 mb-1 text-gray-500">🟨 SANCIONES VISITA</p>
                   {getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away'))}
-                  <p className="text-[6px] font-black text-gray-300 mt-2 flex items-center gap-0.5">🟥 EXPULSIÓN</p>
-                  {getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away'))}
+                  <div className="mt-4 text-[8px] space-y-1 uppercase relative">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none">
+                      <span className="text-6xl font-black text-red-600">🟥 EXPULSIÓN</span>
+                    </div>
+                    <p className="font-bold border-b border-gray-100 mb-1 text-gray-500">🟥 SANCIONES VISITA</p>
+                    {getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away'))}
+                  </div>
                 </div>
               </div>
             </div>
