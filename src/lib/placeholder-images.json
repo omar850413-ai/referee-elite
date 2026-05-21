@@ -1,0 +1,16 @@
+{
+  "placeholderImages": [
+    {
+      "id": "local-team-bg",
+      "description": "Background for the local team in the report.",
+      "imageUrl": "https://images.unsplash.com/photo-1657641408106-6c0ae9403a12?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxqYWd1YXIlMjBwYXR0ZXJufGVufDB8fHx8MTc2OTg5NDAxMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "jaguar pattern"
+    },
+    {
+      "id": "away-team-bg",
+      "description": "Background for the away team in the report.",
+      "imageUrl": "https://images.unsplash.com/photo-1652785232897-b0d20b425b7d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxnb3BoZXIlMjBhbmltYWx8ZW58MHx8fHwxNzY5ODk0MDExfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "gopher animal"
+    }
+  ]
+}

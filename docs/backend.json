@@ -1,0 +1,41 @@
+
+{
+  "entities": {
+    "MatchState": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MatchState",
+      "type": "object",
+      "description": "Represents the overall state of a single match per user.",
+      "properties": {
+        "title": { "type": "string" },
+        "scores": { "type": "object", "properties": { "home": { "type": "number" }, "away": { "type": "number" } } },
+        "fouls": { "type": "object", "properties": { "home": { "type": "number" }, "away": { "type": "number" } } },
+        "timer": { "type": "object" },
+        "events": { "type": "array" },
+        "teamNames": { "type": "object", "properties": { "home": { "type": "string" }, "away": { "type": "string" } } },
+        "matchInfo": { "type": "object" },
+        "lineups": { "type": "object" },
+        "signatures": { "type": "object" },
+        "ownerId": { "type": "string" }
+      }
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "isApproved": { "type": "boolean" },
+        "isAdmin": { "type": "boolean" },
+        "sessionId": { "type": "string" },
+        "appId": { "type": "string", "description": "Identificador de la aplicación de origen." }
+      }
+    }
+  },
+  "auth": { "providers": ["email_password"] },
+  "firestore": {
+    "structure": [
+      { "path": "/users/{userId}", "definition": { "schema": { "$ref": "#/entities/UserProfile" }, "description": "User profile with app tracking." } },
+      { "path": "/matches/{matchId}", "definition": { "schema": { "$ref": "#/entities/MatchState" }, "description": "Single match report." } }
+    ]
+  }
+}
