@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
@@ -81,7 +82,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     const svgHeight = parseFloat(svg.getAttribute('height') || '2000');
 
     const canvas = document.createElement('canvas');
-    const exportScale = 2;
+    const exportScale = 3;
     canvas.width = svgWidth * exportScale;
     canvas.height = svgHeight * exportScale;
     const ctx = canvas.getContext('2d');
@@ -156,35 +157,35 @@ export function ReportView({ matchState }: ReportViewProps) {
     return summary;
   };
 
-  // --- CALCULOS DE ALTURA DINAMICA MEJORADOS ---
+  // --- CALCULOS DE ALTURA DINAMICA PROFESIONAL ---
   const ROW_HEIGHT = 16;
   const headerHeight = 280;
 
   // Seccion Alineaciones
   const lineupRowsHome = Math.max(1, lineups.home.length) + (staff.home.length || 1);
   const lineupRowsAway = Math.max(1, lineups.away.length) + (staff.away.length || 1);
-  const maxLineupRows = Math.max(lineupRowsHome, lineupRowsAway) + 12; 
-  const lineupSectionHeight = maxLineupRows * ROW_HEIGHT + 60;
+  const maxLineupRows = Math.max(lineupRowsHome, lineupRowsAway) + 15; 
+  const lineupSectionHeight = maxLineupRows * ROW_HEIGHT + 100;
 
   // Seccion Sanciones
   const sanctionsRowsHome = (homeSanciones.yellows.length + homeSanciones.reds.length);
   const sanctionsRowsAway = (awaySanciones.yellows.length + awaySanciones.reds.length);
   const maxSanctionsRows = Math.max(sanctionsRowsHome, sanctionsRowsAway) + 10;
-  const sanctionsSectionHeight = maxSanctionsRows * ROW_HEIGHT + 60;
+  const sanctionsSectionHeight = maxSanctionsRows * ROW_HEIGHT + 100;
 
-  // Seccion Incidentes con mas espacio
-  const charsPerLine = 75; // Reducido para asegurar que quepan
-  const incidentsLines = Math.max(8, Math.ceil(incidentsText.length / charsPerLine));
-  const incidentsBoxHeight = incidentsLines * 16 + 30;
-  const incidentsSectionHeight = incidentsBoxHeight + 80;
+  // Seccion Incidentes (Cálculo más robusto para que NO se encime)
+  const charsPerLine = 80;
+  const incidentLinesCount = Math.max(10, Math.ceil(incidentsText.length / charsPerLine));
+  const incidentsBoxHeight = incidentLinesCount * 18 + 50;
+  const incidentsSectionHeight = incidentsBoxHeight + 100;
 
-  const signaturesHeight = 180;
-  const footerHeight = 60;
+  const signaturesHeight = 220;
+  const footerHeight = 80;
 
   const lineupY = headerHeight + 20;
-  const sanctionsY = lineupY + lineupSectionHeight + 40;
-  const incidentsY = sanctionsY + sanctionsSectionHeight + 40;
-  const signaturesY = incidentsY + incidentsSectionHeight + 40;
+  const sanctionsY = lineupY + lineupSectionHeight + 50;
+  const incidentsY = sanctionsY + sanctionsSectionHeight + 50;
+  const signaturesY = incidentsY + incidentsSectionHeight + 50;
   const totalHeight = signaturesY + signaturesHeight + footerHeight;
 
   return (
@@ -256,14 +257,14 @@ export function ReportView({ matchState }: ReportViewProps) {
                 <g transform="translate(0, 25)">
                   <text fontSize="8" fontWeight="800" fill="#94A3B8" className="uppercase">TITULARES</text>
                   {lineups.home.slice(0, 11).map((p, i) => (
-                    <text key={p.id} y={(i + 1) * ROW_HEIGHT} fontSize="9.5" fontWeight="700" fill="#000000" className="uppercase">
+                    <text key={p.id} y={(i + 1) * ROW_HEIGHT} fontSize="9" fontWeight="700" fill="#000000" className="uppercase">
                       {`${p.number}.- ${p.name}${getEventsSummary('home', p.number, p)}`}
                     </text>
                   ))}
                   <g transform={`translate(0, ${12 * ROW_HEIGHT + 10})`}>
                     <text fontSize="8" fontWeight="800" fill="#94A3B8" className="uppercase">SUPLENTES / CAMBIOS</text>
                     {lineups.home.slice(11).map((p, i) => (
-                      <text key={p.id} y={(i + 1) * ROW_HEIGHT} fontSize="9.5" fontWeight="700" fill="#000000" className="uppercase">
+                      <text key={p.id} y={(i + 1) * ROW_HEIGHT} fontSize="9" fontWeight="700" fill="#000000" className="uppercase">
                         {`${p.number}.- ${p.name}${getEventsSummary('home', p.number, p)}`}
                       </text>
                     ))}
@@ -271,7 +272,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                   <g transform={`translate(0, ${(12 + Math.max(1, lineups.home.length - 11)) * ROW_HEIGHT + 25})`}>
                     <text fontSize="8" fontWeight="800" fill="#94A3B8" className="uppercase">CUERPO TÉCNICO</text>
                     {staff.home.map((s, i) => (
-                      <text key={s.id} y={(i + 1) * ROW_HEIGHT} fontSize="9.5" fontWeight="700" fill="#000000" className="uppercase">
+                      <text key={s.id} y={(i + 1) * ROW_HEIGHT} fontSize="9" fontWeight="700" fill="#000000" className="uppercase">
                         {`${s.role}: ${s.name}${getStaffEventsSummary('home', s.name)}`}
                       </text>
                     ))}
@@ -284,14 +285,14 @@ export function ReportView({ matchState }: ReportViewProps) {
                 <g transform="translate(0, 25)">
                   <text fontSize="8" fontWeight="800" fill="#94A3B8" className="uppercase">TITULARES</text>
                   {lineups.away.slice(0, 11).map((p, i) => (
-                    <text key={p.id} y={(i + 1) * ROW_HEIGHT} fontSize="9.5" fontWeight="700" fill="#000000" className="uppercase">
+                    <text key={p.id} y={(i + 1) * ROW_HEIGHT} fontSize="9" fontWeight="700" fill="#000000" className="uppercase">
                       {`${p.number}.- ${p.name}${getEventsSummary('away', p.number, p)}`}
                     </text>
                   ))}
                   <g transform={`translate(0, ${12 * ROW_HEIGHT + 10})`}>
                     <text fontSize="8" fontWeight="800" fill="#94A3B8" className="uppercase">SUPLENTES / CAMBIOS</text>
                     {lineups.away.slice(11).map((p, i) => (
-                      <text key={p.id} y={(i + 1) * ROW_HEIGHT} fontSize="9.5" fontWeight="700" fill="#000000" className="uppercase">
+                      <text key={p.id} y={(i + 1) * ROW_HEIGHT} fontSize="9" fontWeight="700" fill="#000000" className="uppercase">
                         {`${p.number}.- ${p.name}${getEventsSummary('away', p.number, p)}`}
                       </text>
                     ))}
@@ -299,7 +300,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                   <g transform={`translate(0, ${(12 + Math.max(1, lineups.away.length - 11)) * ROW_HEIGHT + 25})`}>
                     <text fontSize="8" fontWeight="800" fill="#94A3B8" className="uppercase">CUERPO TÉCNICO</text>
                     {staff.away.map((s, i) => (
-                      <text key={s.id} y={(i + 1) * ROW_HEIGHT} fontSize="9.5" fontWeight="700" fill="#000000" className="uppercase">
+                      <text key={s.id} y={(i + 1) * ROW_HEIGHT} fontSize="9" fontWeight="700" fill="#000000" className="uppercase">
                         {`${s.role}: ${s.name}${getStaffEventsSummary('away', s.name)}`}
                       </text>
                     ))}
@@ -367,9 +368,9 @@ export function ReportView({ matchState }: ReportViewProps) {
                     whiteSpace: 'pre-wrap', 
                     fontWeight: '700', 
                     border: '1px solid #E2E8F0', 
-                    padding: '8px', 
+                    padding: '12px', 
                     backgroundColor: '#F8FAFC',
-                    minHeight: '80px',
+                    minHeight: '100px',
                     boxSizing: 'border-box'
                   }}>
                     {incidentsText}
@@ -378,7 +379,7 @@ export function ReportView({ matchState }: ReportViewProps) {
             </g>
 
             {/* FIRMAS */}
-            <g transform={`translate(0, ${signaturesY + 100})`}>
+            <g transform={`translate(0, ${signaturesY + 120})`}>
               <g transform="translate(150, 0)">
                 {signatures.captainHome && <image href={signatures.captainHome} x="-60" y="-60" width="120" height="60" />}
                 <line x1="-80" x2="80" y1="0" y2="0" stroke="#000" strokeWidth="1" />

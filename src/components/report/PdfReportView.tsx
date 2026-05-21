@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
@@ -84,47 +85,41 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     setInitialDistance(null);
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     const input = reportRef.current;
     if (!input) return;
 
-    // Usamos onclone para resetear transformaciones antes de capturar y evitar el "amontonamiento"
-    html2canvas(input, { 
-      scale: 2, 
+    // Crear una captura de alta calidad ignorando los estilos de zoom interactivos
+    const canvas = await html2canvas(input, { 
+      scale: 3, // Mayor resolución
       useCORS: true,
       logging: false,
+      backgroundColor: '#FFFFFF',
       onclone: (clonedDoc) => {
         const clonedReport = clonedDoc.getElementById('pdf-printable-content');
         if (clonedReport) {
+          // Resetear cualquier transformación que pueda afectar la captura
           clonedReport.style.transform = 'none';
+          clonedReport.style.position = 'relative';
+          clonedReport.style.left = '0';
+          clonedReport.style.top = '0';
           clonedReport.style.margin = '0';
         }
       }
-    }).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight;
-      }
-      
-      const fileName = `${teamNames.home || 'LOCAL'}-VS-${teamNames.away || 'VISITA'}.pdf`.toUpperCase();
-      pdf.save(fileName);
     });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    
+    const imgWidth = pdfWidth;
+    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+    
+    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+    
+    const fileName = `${teamNames.home || 'LOCAL'}-VS-${teamNames.away || 'VISITA'}.pdf`.toUpperCase();
+    pdf.save(fileName);
   };
 
   const getStarters = (team: 'home' | 'away') => (lineups[team] || []).slice(0, 11);
@@ -229,7 +224,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
       </div>
 
       <div 
-        className="flex-1 overflow-hidden touch-none p-4 flex justify-center bg-slate-900 items-start"
+        className="flex-1 overflow-auto touch-none p-4 flex justify-center bg-slate-900 items-start"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
