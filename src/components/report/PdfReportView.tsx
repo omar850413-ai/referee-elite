@@ -197,7 +197,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           <div ref={reportRef} className="p-6 bg-white text-black font-sans shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
             <div className="text-center mb-2">
               <h1 className="text-xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
-              <p className="text-[9px] font-bold uppercase">{matchInfo.league} | JORNADA {matchInfo.round}</p>
               <div className="h-0.5 bg-black w-full mt-1"></div>
             </div>
 
@@ -208,73 +207,63 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 <p><strong>ASISTENTE 2:</strong> <span className="uppercase">{matchInfo.assistant2}</span></p>
               </div>
               <div className="space-y-0.5 text-right">
+                <p><strong>LIGA:</strong> <span className="uppercase">{matchInfo.league}</span></p>
+                <p><strong>JORNADA:</strong> <span className="uppercase">{matchInfo.round}</span></p>
                 <p><strong>LUGAR:</strong> <span className="uppercase">{matchInfo.place}</span></p>
                 <p><strong>FECHA:</strong> <span className="uppercase">{matchInfo.date}</span></p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 border border-black mb-3 text-center divide-x divide-black">
-              <div className="p-1 bg-gray-50 flex flex-col justify-center">
-                <p className="text-[6px] font-black text-gray-400">LOCAL</p>
-                <p className="text-xs font-black">{scores.home} ({numberToSpanishWords(scores.home)})</p>
-                <p className="text-sm font-black uppercase leading-none">{teamNames.home}</p>
-              </div>
-              <div className="p-1 bg-gray-50 flex flex-col justify-center">
-                <p className="text-[6px] font-black text-gray-400">VISITA</p>
-                <p className="text-xs font-black">{scores.away} ({numberToSpanishWords(scores.away)})</p>
-                <p className="text-sm font-black uppercase leading-none">{teamNames.away}</p>
+            <div className="flex justify-center mb-3">
+              <div className="grid grid-cols-2 border border-black text-center divide-x divide-black w-full max-w-md">
+                <div className="p-1 bg-gray-50 flex flex-col justify-center">
+                  <p className="text-sm font-black uppercase leading-none">{teamNames.home}</p>
+                  <p className="text-xs font-black mt-1">{scores.home} ({numberToSpanishWords(scores.home)})</p>
+                </div>
+                <div className="p-1 bg-gray-50 flex flex-col justify-center">
+                  <p className="text-sm font-black uppercase leading-none">{teamNames.away}</p>
+                  <p className="text-xs font-black mt-1">{scores.away} ({numberToSpanishWords(scores.away)})</p>
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-0 text-[8px]">
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mb-1">TITULARES</p>
+                <p className="text-[7px] font-black text-gray-500 border-b uppercase mb-1">TITULARES</p>
                 {(lineups.home || []).slice(0, 11).map(p => renderPlayerRow(p, 'home'))}
                 
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">SUPLENTES</p>
+                <p className="text-[7px] font-black text-gray-500 border-b uppercase mt-2 mb-1">SUPLENTES</p>
                 {(lineups.home || []).slice(11).map(p => renderPlayerRow(p, 'home'))}
                 
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
-                {(staff.home || []).map(s => <p key={s.id} className="uppercase leading-tight"><strong>{s.role}:</strong> {s.name}</p>)}
+                <p className="text-[7px] font-black text-gray-500 border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
+                {(staff.home || []).map(s => <p key={s.id} className="uppercase leading-tight"><strong>{roleInitials[s.role] || 'STAFF'}:</strong> {s.name}</p>)}
               </div>
               <div className="space-y-0 text-[8px]">
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mb-1">TITULARES</p>
+                <p className="text-[7px] font-black text-gray-500 border-b uppercase mb-1">TITULARES</p>
                 {(lineups.away || []).slice(0, 11).map(p => renderPlayerRow(p, 'away'))}
                 
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">SUPLENTES</p>
+                <p className="text-[7px] font-black text-gray-500 border-b uppercase mt-2 mb-1">SUPLENTES</p>
                 {(lineups.away || []).slice(11).map(p => renderPlayerRow(p, 'away'))}
                 
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
-                {(staff.away || []).map(s => <p key={s.id} className="uppercase leading-tight"><strong>{s.role}:</strong> {s.name}</p>)}
+                <p className="text-[7px] font-black text-gray-500 border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
+                {(staff.away || []).map(s => <p key={s.id} className="uppercase leading-tight"><strong>{roleInitials[s.role] || 'STAFF'}:</strong> {s.name}</p>)}
               </div>
             </div>
 
             <div className="mt-4 border-t pt-2">
               <div className="grid grid-cols-2 gap-6">
                 <div className="text-[7px] space-y-1 uppercase relative">
-                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0">
-                    <span className="text-xl font-black rotate-[-15deg]">AMONESTACIÓN</span>
-                  </div>
                   <p className="font-bold border-b border-gray-100 mb-1">SANCIONES LOCAL</p>
-                  <p className="text-[6px] font-black text-gray-300">AMONESTACIÓN</p>
+                  <p className="text-[6px] font-black text-gray-300 flex items-center gap-0.5">🟨 AMONESTACIÓN</p>
                   {getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home'))}
-                  <p className="text-[6px] font-black text-gray-300 mt-1">EXPULSIÓN</p>
-                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0 mt-8">
-                    <span className="text-xl font-black rotate-[-15deg]">EXPULSIÓN</span>
-                  </div>
+                  <p className="text-[6px] font-black text-gray-300 mt-1 flex items-center gap-0.5">🟥 EXPULSIÓN</p>
                   {getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home'))}
                 </div>
                 <div className="text-[7px] space-y-1 uppercase relative">
-                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0">
-                    <span className="text-xl font-black rotate-[-15deg]">AMONESTACIÓN</span>
-                  </div>
                   <p className="font-bold border-b border-gray-100 mb-1">SANCIONES VISITA</p>
-                  <p className="text-[6px] font-black text-gray-300">AMONESTACIÓN</p>
+                  <p className="text-[6px] font-black text-gray-300 flex items-center gap-0.5">🟨 AMONESTACIÓN</p>
                   {getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away'))}
-                  <p className="text-[6px] font-black text-gray-300 mt-1">EXPULSIÓN</p>
-                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0 mt-8">
-                    <span className="text-xl font-black rotate-[-15deg]">EXPULSIÓN</span>
-                  </div>
+                  <p className="text-[6px] font-black text-gray-300 mt-1 flex items-center gap-0.5">🟥 EXPULSIÓN</p>
                   {getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away'))}
                 </div>
               </div>

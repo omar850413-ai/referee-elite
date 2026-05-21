@@ -127,7 +127,7 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const renderPlayerRow = (p: Player, side: 'home' | 'away') => (
     <div key={p.id} className="flex uppercase leading-none items-baseline py-0.5">
-      <span className="inline-block w-[14px] text-right mr-1 font-bold">{p.number}.-</span>
+      <span className="inline-block w-[18px] text-right mr-1 font-bold">{p.number}.-</span>
       <span className="flex-1">{p.name} {getPlayerEventsSummary(side, p.number, p)}</span>
     </div>
   );
@@ -146,7 +146,7 @@ export function ReportView({ matchState }: ReportViewProps) {
 
     return (
       <p key={e.id} className="leading-none border-b border-gray-50 flex items-baseline py-0.5">
-        <span className="inline-block w-[14px] text-right mr-1 font-bold">{numberDisplay}</span> 
+        <span className="inline-block w-[18px] text-right mr-1 font-bold">{numberDisplay}</span> 
         <span className="flex-1">{nameDisplay} {e.message.split(' - ').pop()}</span>
       </p>
     );
@@ -164,7 +164,6 @@ export function ReportView({ matchState }: ReportViewProps) {
           <div ref={reportRef} className="p-8 bg-white text-black font-sans shadow-2xl" style={{ width: '800px', minHeight: '1100px' }}>
             <div className="text-center mb-6">
               <h1 className="text-3xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
-              <p className="text-[12px] font-bold uppercase tracking-widest">{matchInfo.league} | JORNADA {matchInfo.round}</p>
               <div className="h-1 bg-black w-full mt-2"></div>
             </div>
 
@@ -175,51 +174,53 @@ export function ReportView({ matchState }: ReportViewProps) {
                 <p><strong>ASISTENTE 2:</strong> <span className="uppercase">{matchInfo.assistant2}</span></p>
               </div>
               <div className="space-y-1 text-right">
+                <p><strong>LIGA:</strong> <span className="uppercase">{matchInfo.league}</span></p>
+                <p><strong>JORNADA:</strong> <span className="uppercase">{matchInfo.round}</span></p>
                 <p><strong>LUGAR:</strong> <span className="uppercase">{matchInfo.place}</span></p>
                 <p><strong>FECHA:</strong> <span className="uppercase">{matchInfo.date}</span></p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 border-2 border-black mb-6 text-center divide-x-2 divide-black">
-              <div className="p-3 bg-gray-50">
-                <p className="text-[9px] font-bold text-gray-400">LOCAL</p>
-                <p className="text-sm font-black">{scores.home} ({numberToSpanishWords(scores.home)})</p>
-                <p className="text-xl font-black uppercase leading-tight">{teamNames.home}</p>
-              </div>
-              <div className="p-3 bg-gray-50">
-                <p className="text-[9px] font-bold text-gray-400">VISITA</p>
-                <p className="text-sm font-black">{scores.away} ({numberToSpanishWords(scores.away)})</p>
-                <p className="text-xl font-black uppercase leading-tight">{teamNames.away}</p>
+            <div className="flex justify-center mb-6">
+              <div className="grid grid-cols-2 border-2 border-black text-center divide-x-2 divide-black w-full max-w-lg">
+                <div className="p-3 bg-gray-50 flex flex-col justify-center">
+                  <p className="text-xl font-black uppercase leading-tight">{teamNames.home}</p>
+                  <p className="text-sm font-black mt-1">{scores.home} ({numberToSpanishWords(scores.home)})</p>
+                </div>
+                <div className="p-3 bg-gray-50 flex flex-col justify-center">
+                  <p className="text-xl font-black uppercase leading-tight">{teamNames.away}</p>
+                  <p className="text-sm font-black mt-1">{scores.away} ({numberToSpanishWords(scores.away)})</p>
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-8">
               <div className="text-[9px] space-y-3">
                 <div>
-                  <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">TITULARES</p>
+                  <p className="text-[8px] font-black text-gray-500 border-b mb-1 uppercase">TITULARES</p>
                   {lineups.home.slice(0, 11).map(p => renderPlayerRow(p, 'home'))}
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">SUPLENTES</p>
+                  <p className="text-[8px] font-black text-gray-500 border-b mb-1 uppercase">SUPLENTES</p>
                   {lineups.home.slice(11).map(p => renderPlayerRow(p, 'home'))}
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">CUERPO TÉCNICO</p>
-                  {staff.home.map(s => <p key={s.id} className="uppercase leading-none py-0.5"><strong>{s.role}:</strong> {s.name}</p>)}
+                  <p className="text-[8px] font-black text-gray-500 border-b mb-1 uppercase">CUERPO TÉCNICO</p>
+                  {staff.home.map(s => <p key={s.id} className="uppercase leading-none py-0.5"><strong>{roleInitials[s.role] || 'STAFF'}:</strong> {s.name}</p>)}
                 </div>
               </div>
               <div className="text-[9px] space-y-3">
                 <div>
-                  <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">TITULARES</p>
+                  <p className="text-[8px] font-black text-gray-500 border-b mb-1 uppercase">TITULARES</p>
                   {lineups.away.slice(0, 11).map(p => renderPlayerRow(p, 'away'))}
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">SUPLENTES</p>
+                  <p className="text-[8px] font-black text-gray-500 border-b mb-1 uppercase">SUPLENTES</p>
                   {lineups.away.slice(11).map(p => renderPlayerRow(p, 'away'))}
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">CUERPO TÉCNICO</p>
-                  {staff.away.map(s => <p key={s.id} className="uppercase leading-none py-0.5"><strong>{s.role}:</strong> {s.name}</p>)}
+                  <p className="text-[8px] font-black text-gray-500 border-b mb-1 uppercase">CUERPO TÉCNICO</p>
+                  {staff.away.map(s => <p key={s.id} className="uppercase leading-none py-0.5"><strong>{roleInitials[s.role] || 'STAFF'}:</strong> {s.name}</p>)}
                 </div>
               </div>
             </div>
@@ -227,29 +228,17 @@ export function ReportView({ matchState }: ReportViewProps) {
             <div className="mt-6 border-t pt-4">
               <div className="grid grid-cols-2 gap-8">
                 <div className="text-[8px] space-y-1 uppercase relative">
-                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0">
-                    <span className="text-2xl font-black rotate-[-15deg]">AMONESTACIÓN</span>
-                  </div>
                   <p className="font-bold border-b border-gray-100 mb-1 text-gray-500">SANCIONES LOCAL</p>
-                  <p className="text-[6px] font-black text-gray-300">AMONESTACIÓN</p>
+                  <p className="text-[6px] font-black text-gray-300 flex items-center gap-0.5">🟨 AMONESTACIÓN</p>
                   {getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home'))}
-                  <p className="text-[6px] font-black text-gray-300 mt-2">EXPULSIÓN</p>
-                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0 mt-8">
-                    <span className="text-2xl font-black rotate-[-15deg]">EXPULSIÓN</span>
-                  </div>
+                  <p className="text-[6px] font-black text-gray-300 mt-2 flex items-center gap-0.5">🟥 EXPULSIÓN</p>
                   {getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home'))}
                 </div>
                 <div className="text-[8px] space-y-1 uppercase relative">
-                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0">
-                    <span className="text-2xl font-black rotate-[-15deg]">AMONESTACIÓN</span>
-                  </div>
                   <p className="font-bold border-b border-gray-100 mb-1 text-gray-500">SANCIONES VISITA</p>
-                  <p className="text-[6px] font-black text-gray-300">AMONESTACIÓN</p>
+                  <p className="text-[6px] font-black text-gray-300 flex items-center gap-0.5">🟨 AMONESTACIÓN</p>
                   {getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away'))}
-                  <p className="text-[6px] font-black text-gray-300 mt-2">EXPULSIÓN</p>
-                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0 mt-8">
-                    <span className="text-2xl font-black rotate-[-15deg]">EXPULSIÓN</span>
-                  </div>
+                  <p className="text-[6px] font-black text-gray-300 mt-2 flex items-center gap-0.5">🟥 EXPULSIÓN</p>
                   {getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away'))}
                 </div>
               </div>
