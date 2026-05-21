@@ -83,10 +83,10 @@ export function ReportView({ matchState }: ReportViewProps) {
     let summary = '';
     goals.forEach(e => { 
       const icon = e.message.includes('AUTOGOL') ? '🥅' : '⚽';
-      summary += ` ${icon}${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; 
+      summary += ` ${icon}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`; 
     });
-    yellows.forEach(e => { summary += ` 🟨${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; });
-    reds.forEach(e => { summary += ` 🟥${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; });
+    yellows.forEach(e => { summary += ` 🟨${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`; });
+    reds.forEach(e => { summary += ` 🟥${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`; });
     
     if (isSub && p?.replacedNumber) {
       summary += ` (POR: #${p.replacedNumber}${subEv?.time !== '--' && subEv?.time !== '' ? ` ${subEv?.time}` : ''})`;
@@ -101,13 +101,12 @@ export function ReportView({ matchState }: ReportViewProps) {
     const reds = staffEvs.filter(e => e.category === 'cards' && e.message.includes('🟥'));
     
     let summary = '';
-    yellows.forEach(e => { summary += ` 🟨${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; });
-    reds.forEach(e => { summary += ` 🟥${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; });
+    yellows.forEach(e => { summary += ` 🟨${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`; });
+    reds.forEach(e => { summary += ` 🟥${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`; });
     
     return summary;
   };
 
-  // CÁLCULO DE ALTURA DINÁMICA
   const ROW_HEIGHT = 18;
   const SECTION_SPACING = 40;
   
@@ -119,10 +118,10 @@ export function ReportView({ matchState }: ReportViewProps) {
   const awaySancionesRows = awaySanciones.yellows.length + awaySanciones.reds.length;
   const sancionesHeight = Math.max(homeSancionesRows, awaySancionesRows) * 22 + (SECTION_SPACING * 2);
   
-  const incidentRows = Math.ceil(incidents.length / 80); // Aproximación de filas de texto
-  const incidentsHeight = incidentRows * 16 + 100;
+  const incidentRows = Math.ceil(incidents.length / 80); 
+  const incidentsHeight = Math.max(100, incidentRows * 16 + 50);
   
-  const totalHeight = 500 + lineupsHeight + sancionesHeight + incidentsHeight + 250;
+  const totalHeight = 500 + lineupsHeight + sancionesHeight + incidentsHeight + 200;
 
   const homeColor = '#064E3B'; 
   const awayColor = '#1E3A8A'; 
@@ -150,7 +149,6 @@ export function ReportView({ matchState }: ReportViewProps) {
           <rect x="0" y="0" width="400" height={totalHeight} fill={homeColor} />
           <rect x="400" y="0" width="400" height={totalHeight} fill={awayColor} />
 
-          {/* CABECERA */}
           <rect x="0" y="0" width="800" height="200" fill="rgba(0,0,0,0.3)" />
           <g transform="translate(400, 50)">
             <text textAnchor="middle" fill="white" fontSize="32" fontWeight="900" style={{ letterSpacing: '0.1em' }} className="uppercase">INFORME ARBITRAL</text>
@@ -158,7 +156,6 @@ export function ReportView({ matchState }: ReportViewProps) {
             <text y="60" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="14" fontWeight="700" className="uppercase">{`JORNADA ${matchInfo.round || 'S/N'} | ${matchInfo.date || ''}`}</text>
           </g>
 
-          {/* MARCADOR */}
           <g transform="translate(200, 300)">
              <text textAnchor="middle" fill="white" fontSize="36" fontWeight="900" className="uppercase">{teamNames.home}</text>
              <text y="100" textAnchor="middle" fill="white" fontSize="130" fontWeight="900">{scores.home}</text>
@@ -170,7 +167,6 @@ export function ReportView({ matchState }: ReportViewProps) {
              <text y="140" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="20" fontWeight="800">{`(${numberToSpanishWords(scores.away)})`}</text>
           </g>
 
-          {/* ALINEACIONES */}
           <g transform="translate(40, 480)">
              <text x="0" y="0" fontSize="18" fontWeight="900" fill="white" textAnchor="start" className="uppercase">Alineaciones {teamNames.home}</text>
              <g transform="translate(0, 30)">
@@ -227,11 +223,10 @@ export function ReportView({ matchState }: ReportViewProps) {
              </g>
           </g>
 
-          {/* SANCIONES */}
           <g transform={`translate(0, ${500 + lineupsHeight})`}>
             <rect width="800" height={sancionesHeight} fill="rgba(0,0,0,0.2)" />
             <g transform="translate(40, 40)">
-              <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">AMONESTADOS {teamNames.home}</text>
+              <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">Amonestados {teamNames.home}</text>
               <g transform="translate(0, 20)">
                 {homeSanciones.yellows.map((e, idx) => (
                   <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
@@ -240,7 +235,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                 ))}
               </g>
               <g transform={`translate(0, ${homeSanciones.yellows.length * 18 + 40})`}>
-                <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">EXPULSADOS {teamNames.home}</text>
+                <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">Expulsados {teamNames.home}</text>
                 <g transform="translate(0, 20)">
                   {homeSanciones.reds.map((e, idx) => (
                     <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
@@ -251,7 +246,7 @@ export function ReportView({ matchState }: ReportViewProps) {
               </g>
             </g>
             <g transform="translate(440, 40)">
-              <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">AMONESTADOS {teamNames.away}</text>
+              <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">Amonestados {teamNames.away}</text>
               <g transform="translate(0, 20)">
                 {awaySanciones.yellows.map((e, idx) => (
                   <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
@@ -260,7 +255,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                 ))}
               </g>
               <g transform={`translate(0, ${awaySanciones.yellows.length * 18 + 40})`}>
-                <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">EXPULSADOS {teamNames.away}</text>
+                <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">Expulsados {teamNames.away}</text>
                 <g transform="translate(0, 20)">
                   {awaySanciones.reds.map((e, idx) => (
                     <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
@@ -272,7 +267,6 @@ export function ReportView({ matchState }: ReportViewProps) {
             </g>
           </g>
 
-          {/* INCIDENTES */}
           <g transform={`translate(400, ${550 + lineupsHeight + sancionesHeight})`}>
              <text textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="16" fontWeight="900" className="uppercase">INCIDENTES DEL PARTIDO</text>
              <foreignObject x="-350" y="20" width="700" height={incidentsHeight}>
@@ -282,22 +276,21 @@ export function ReportView({ matchState }: ReportViewProps) {
              </foreignObject>
           </g>
 
-          {/* FIRMAS */}
-          <g transform={`translate(0, ${totalHeight - 140})`}>
+          <g transform={`translate(0, ${totalHeight - 120})`}>
             <g transform="translate(150, 0)">
               {signatures.captainHome && <image href={signatures.captainHome} x="-60" y="-70" width="120" height="60" />}
               <line x1="-80" x2="80" y1="0" y2="0" stroke="white" strokeWidth="1" opacity="0.5" />
-              <text y="15" textAnchor="middle" fill="white" fontSize="9" fontWeight="900" className="uppercase">CAPITÁN LOCAL</text>
+              <text y="15" textAnchor="middle" fill="white" fontSize="9" fontWeight="900" className="uppercase">Capitán Local</text>
             </g>
             <g transform="translate(400, 0)">
               {signatures.referee && <image href={signatures.referee} x="-60" y="-70" width="120" height="60" />}
               <line x1="-80" x2="80" y1="0" y2="0" stroke="white" strokeWidth="1" opacity="0.5" />
-              <text y="15" textAnchor="middle" fill="white" fontSize="9" fontWeight="900" className="uppercase">ÁRBITRO CENTRAL</text>
+              <text y="15" textAnchor="middle" fill="white" fontSize="9" fontWeight="900" className="uppercase">Árbitro Central</text>
             </g>
             <g transform="translate(650, 0)">
               {signatures.captainAway && <image href={signatures.captainAway} x="-60" y="-70" width="120" height="60" />}
               <line x1="-80" x2="80" y1="0" y2="0" stroke="white" strokeWidth="1" opacity="0.5" />
-              <text y="15" textAnchor="middle" fill="white" fontSize="9" fontWeight="900" className="uppercase">CAPITÁN VISITANTE</text>
+              <text y="15" textAnchor="middle" fill="white" fontSize="9" fontWeight="900" className="uppercase">Capitán Visitante</text>
             </g>
           </g>
         </svg>
@@ -305,7 +298,7 @@ export function ReportView({ matchState }: ReportViewProps) {
 
       <div className="flex justify-center gap-3 mt-8 pb-8">
         <Button onClick={handleDownload} className="bg-emerald-600 hover:bg-emerald-700 font-black px-10 h-14 uppercase shadow-xl">
-          <Download className="mr-2 h-6 w-6" /> DESCARGAR IMAGEN JPG
+          <Download className="mr-2 h-6 w-6" /> Descargar Imagen JPG
         </Button>
       </div>
     </div>
