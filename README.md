@@ -1,46 +1,23 @@
-# Referee Elite - Guía de Copia Manual
+# Referee Elite ⚽
 
-Si no puedes descargar el ZIP, sigue estos pasos para crear tu app en GitHub manualmente:
+¡Bienvenido a la versión oficial e independiente de **Referee Elite**! Esta aplicación es la herramienta definitiva para asesores de arbitraje, diseñada para capturar informes detallados, gestionar alineaciones y generar cédulas profesionales en tiempo real.
 
-### 1. Crea el repositorio en GitHub
-Llamalo `referee-elite`.
+## 🚀 Estado de la Implementación
+- **Proyecto Firebase:** `soy-docente-58544610-7d370` (Independiente)
+- **Base de Datos:** Cloud Firestore (Modo Nativo)
+- **Autenticación:** Correo y Contraseña
+- **Hosting:** Firebase App Hosting (vía GitHub)
 
-### 2. Crea los archivos esenciales
-Crea estos archivos en tu repositorio de GitHub usando el botón "Add file" -> "Create new file":
+## 📁 Estructura del Proyecto
+- `src/app`: Páginas y rutas de la aplicación Next.js.
+- `src/components`: Componentes de UI (Reportes, Logos, etc.).
+- `src/firebase`: Configuración y lógica de conexión a la base de datos.
+- `src/lib`: Tipos de datos, utilidades y constantes del reglamento.
 
-#### A. Archivo: `package.json`
-```json
-{
-  "name": "referee-elite",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
-  },
-  "dependencies": {
-    "react": "^18",
-    "react-dom": "^18",
-    "next": "15.0.7",
-    "lucide-react": "0.477.0",
-    "firebase": "10.12.4",
-    "class-variance-authority": "0.7.0",
-    "clsx": "2.1.0",
-    "tailwind-merge": "3.0.1",
-    "tailwindcss-animate": "1.0.7",
-    "@radix-ui/react-slot": "1.2.3",
-    "@radix-ui/react-toast": "1.2.6",
-    "date-fns": "3.6.0"
-  }
-}
-```
+## 🛠️ Próximos Pasos (Después de publicar)
+1. **Acceso Admin:** Inicia sesión con el correo `omar850413@gmail.com` para acceder al Panel de Control.
+2. **Aprobación de Usuarios:** Desde el Panel de Control podrás aprobar a otros asesores que se registren.
+3. **Sincronización:** Cualquier cambio que hagas en el código y subas a este repositorio de GitHub se publicará automáticamente en tu enlace oficial.
 
-#### B. Archivo: `src/firebase/config.ts`
-(Copia el contenido que te pasé anteriormente con tus llaves API).
-
-#### C. Archivo: `src/app/page.tsx`
-(Copia el código de la página principal que ves en tu editor).
-
-### 3. Conecta a App Hosting
-Una vez creados, vuelve a la consola de Firebase y selecciona este repositorio.
+---
+*Desarrollado con pasión para la élite del arbitraje.*
