@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -816,11 +817,51 @@ export default function Home() {
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-black uppercase">DATOS GENERALES</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4"><div><Label className="uppercase">LOCAL</Label><Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} /></div><div><Label className="uppercase">VISITA</Label><Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} /></div></div>
-            <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value.toUpperCase()}})} placeholder="LIGA" />
-            <div className="grid grid-cols-2 gap-4"><Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value.toUpperCase()}})} placeholder="JORNADA" /><Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value.toUpperCase()}})} placeholder="CAMPO" /></div>
-            <Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} />
-            <div className="border-t pt-4 space-y-2"><Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value.toUpperCase()}})} placeholder="ÁRBITRO CENTRAL" /><Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value.toUpperCase()}})} placeholder="ASISTENTE 1" /><Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value.toUpperCase()}})} placeholder="ASISTENTE 2" /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="uppercase text-[10px] font-black text-slate-400">EQUIPO LOCAL</Label>
+                <Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} />
+              </div>
+              <div className="space-y-1">
+                <Label className="uppercase text-[10px] font-black text-slate-400">EQUIPO VISITA</Label>
+                <Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="uppercase text-[10px] font-black text-slate-400">LIGA / COMPETENCIA</Label>
+              <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value.toUpperCase()}})} placeholder="NOMBRE DE LA LIGA" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="uppercase text-[10px] font-black text-slate-400">JORNADA</Label>
+                <Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value.toUpperCase()}})} placeholder="EJ. JORNADA 5" />
+              </div>
+              <div className="space-y-1">
+                <Label className="uppercase text-[10px] font-black text-slate-400">LUGAR DEL PARTIDO</Label>
+                <Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value.toUpperCase()}})} placeholder="CIUDAD / ESTADO / CAMPO" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="uppercase text-[10px] font-black text-slate-400">FECHA DEL PARTIDO</Label>
+              <Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} />
+            </div>
+            <div className="border-t pt-4 space-y-3">
+              <p className="text-xs font-black text-primary uppercase">CUERPO ARBITRAL</p>
+              <div className="space-y-1">
+                <Label className="uppercase text-[10px] font-black text-slate-400">ÁRBITRO CENTRAL</Label>
+                <Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value.toUpperCase()}})} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="uppercase text-[10px] font-black text-slate-400">ASISTENTE 1</Label>
+                  <Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value.toUpperCase()}})} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="uppercase text-[10px] font-black text-slate-400">ASISTENTE 2</Label>
+                  <Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value.toUpperCase()}})} />
+                </div>
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
