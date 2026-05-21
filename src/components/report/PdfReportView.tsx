@@ -87,7 +87,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     const input = reportRef.current;
     if (!input) return;
 
-    // Clonar para captura limpia sin transformaciones
     const clone = input.cloneNode(true) as HTMLDivElement;
     clone.style.transform = 'none';
     clone.style.position = 'fixed';
@@ -160,15 +159,15 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
       <div className="flex-1 overflow-auto touch-none bg-slate-900 p-4 flex justify-center items-start" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center top' }}>
-          <div ref={reportRef} className="p-8 bg-white text-black font-sans shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
+          <div ref={reportRef} className="p-6 bg-white text-black font-sans shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
             {/* Header */}
-            <div className="text-center mb-4">
+            <div className="text-center mb-2">
               <h1 className="text-xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
               <p className="text-[9px] font-bold uppercase">{matchInfo.league} | JORNADA {matchInfo.round}</p>
               <div className="h-0.5 bg-black w-full mt-1"></div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-[9px] mb-4">
+            <div className="grid grid-cols-2 gap-2 text-[8px] mb-2">
               <div className="space-y-0.5">
                 <p><strong>ÁRBITRO CENTRAL:</strong> <span className="uppercase">{matchInfo.referee}</span></p>
                 <p><strong>ASISTENTE 1:</strong> <span className="uppercase">{matchInfo.assistant1}</span></p>
@@ -181,93 +180,91 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
             </div>
 
             {/* Marcadores Compactos */}
-            <div className="grid grid-cols-2 border border-black mb-4 text-center divide-x divide-black">
-              <div className="p-1 bg-gray-50">
-                <p className="text-[7px] font-black text-gray-400">LOCAL</p>
-                <p className="text-sm font-black">{scores.home} ({numberToSpanishWords(scores.home)})</p>
-                <p className="text-lg font-black uppercase leading-none">{teamNames.home}</p>
+            <div className="grid grid-cols-2 border border-black mb-3 text-center divide-x divide-black">
+              <div className="p-1 bg-gray-50 flex flex-col justify-center">
+                <p className="text-[6px] font-black text-gray-400">LOCAL</p>
+                <p className="text-xs font-black">{scores.home} ({numberToSpanishWords(scores.home)})</p>
+                <p className="text-sm font-black uppercase leading-none">{teamNames.home}</p>
               </div>
-              <div className="p-1 bg-gray-50">
-                <p className="text-[7px] font-black text-gray-400">VISITA</p>
-                <p className="text-sm font-black">{scores.away} ({numberToSpanishWords(scores.away)})</p>
-                <p className="text-lg font-black uppercase leading-none">{teamNames.away}</p>
+              <div className="p-1 bg-gray-50 flex flex-col justify-center">
+                <p className="text-[6px] font-black text-gray-400">VISITA</p>
+                <p className="text-xs font-black">{scores.away} ({numberToSpanishWords(scores.away)})</p>
+                <p className="text-sm font-black uppercase leading-none">{teamNames.away}</p>
               </div>
             </div>
 
             {/* Alineaciones Pegadas */}
-            <div className="text-center font-black text-[10px] border-b border-black mb-2 pb-0.5 uppercase">Alineaciones y Cuerpo Técnico</div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <div className="text-[8px]">
-                  <p className="text-[7px] font-black text-gray-400 mb-0.5 border-b uppercase">Titulares</p>
-                  {(lineups.home || []).slice(0, 11).map(p => <p key={p.id} className="uppercase py-0 border-b border-gray-50 leading-tight"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}
-                  <p className="text-[7px] font-black text-gray-400 mt-1 mb-0.5 border-b uppercase">Suplentes</p>
-                  {(lineups.home || []).slice(11).map(p => <p key={p.id} className="uppercase py-0 border-b border-gray-50 leading-tight"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}
-                  <p className="text-[7px] font-black text-gray-400 mt-1 mb-0.5 border-b uppercase">Staff</p>
-                  {(staff.home || []).map(s => <p key={s.id} className="uppercase py-0 border-b border-gray-50 leading-tight"><strong>{s.role}:</strong> {s.name}</p>)}
-                </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-0 text-[8px]">
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mb-1">LOCAL - TITULARES</p>
+                {(lineups.home || []).slice(0, 11).map(p => <p key={p.id} className="uppercase leading-tight"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}
+                
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">LOCAL - SUPLENTES</p>
+                {(lineups.home || []).slice(11).map(p => <p key={p.id} className="uppercase leading-tight"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}
+                
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">LOCAL - STAFF</p>
+                {(staff.home || []).map(s => <p key={s.id} className="uppercase leading-tight"><strong>{s.role}:</strong> {s.name}</p>)}
               </div>
-              <div className="space-y-1">
-                <div className="text-[8px]">
-                  <p className="text-[7px] font-black text-gray-400 mb-0.5 border-b uppercase">Titulares</p>
-                  {(lineups.away || []).slice(0, 11).map(p => <p key={p.id} className="uppercase py-0 border-b border-gray-50 leading-tight"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}
-                  <p className="text-[7px] font-black text-gray-400 mt-1 mb-0.5 border-b uppercase">Suplentes</p>
-                  {(lineups.away || []).slice(11).map(p => <p key={p.id} className="uppercase py-0 border-b border-gray-50 leading-tight"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}
-                  <p className="text-[7px] font-black text-gray-400 mt-1 mb-0.5 border-b uppercase">Staff</p>
-                  {(staff.away || []).map(s => <p key={s.id} className="uppercase py-0 border-b border-gray-50 leading-tight"><strong>{s.role}:</strong> {s.name}</p>)}
-                </div>
+              <div className="space-y-0 text-[8px]">
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mb-1">VISITA - TITULARES</p>
+                {(lineups.away || []).slice(0, 11).map(p => <p key={p.id} className="uppercase leading-tight"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}
+                
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">VISITA - SUPLENTES</p>
+                {(lineups.away || []).slice(11).map(p => <p key={p.id} className="uppercase leading-tight"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}
+                
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">VISITA - STAFF</p>
+                {(staff.away || []).map(s => <p key={s.id} className="uppercase leading-tight"><strong>{s.role}:</strong> {s.name}</p>)}
               </div>
             </div>
 
-            {/* Sanciones con Marcas de Agua Gris */}
-            <div className="mt-4">
-              <div className="text-center font-black text-[10px] border-b border-black mb-2 pb-0.5 uppercase">Detalle de Sanciones</div>
-              <div className="grid grid-cols-2 gap-4">
+            {/* Sanciones */}
+            <div className="mt-4 border-t pt-2">
+              <div className="grid grid-cols-2 gap-6">
                 {/* Local */}
-                <div className="text-[7.5px] space-y-1 uppercase">
-                  <p className="font-bold border-b border-gray-200">LOCAL: {teamNames.home}</p>
-                  <p className="text-[6px] font-black text-gray-300">AMONESTACIÓN</p>
-                  {getSortedCards('home', 'yellow').map(e => <p key={e.id} className="border-b border-gray-50 leading-tight">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
-                  <p className="text-[6px] font-black text-gray-300 mt-1">EXPULSIÓN</p>
-                  {getSortedCards('home', 'red').map(e => <p key={e.id} className="border-b border-gray-50 leading-tight">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
+                <div className="text-[7px] space-y-1 uppercase">
+                  <p className="font-bold border-b border-gray-100 mb-1">SANCIONES LOCAL</p>
+                  <p className="text-[6px] font-black text-gray-200">AMONESTACIÓN</p>
+                  {getSortedCards('home', 'yellow').map(e => <p key={e.id} className="leading-tight border-b border-gray-50">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
+                  <p className="text-[6px] font-black text-gray-200 mt-1">EXPULSIÓN</p>
+                  {getSortedCards('home', 'red').map(e => <p key={e.id} className="leading-tight border-b border-gray-50">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
                 </div>
                 {/* Visita */}
-                <div className="text-[7.5px] space-y-1 uppercase">
-                  <p className="font-bold border-b border-gray-200">VISITA: {teamNames.away}</p>
-                  <p className="text-[6px] font-black text-gray-300">AMONESTACIÓN</p>
-                  {getSortedCards('away', 'yellow').map(e => <p key={e.id} className="border-b border-gray-50 leading-tight">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
-                  <p className="text-[6px] font-black text-gray-300 mt-1">EXPULSIÓN</p>
-                  {getSortedCards('away', 'red').map(e => <p key={e.id} className="border-b border-gray-50 leading-tight">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
+                <div className="text-[7px] space-y-1 uppercase">
+                  <p className="font-bold border-b border-gray-100 mb-1">SANCIONES VISITA</p>
+                  <p className="text-[6px] font-black text-gray-200">AMONESTACIÓN</p>
+                  {getSortedCards('away', 'yellow').map(e => <p key={e.id} className="leading-tight border-b border-gray-50">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
+                  <p className="text-[6px] font-black text-gray-200 mt-1">EXPULSIÓN</p>
+                  {getSortedCards('away', 'red').map(e => <p key={e.id} className="leading-tight border-b border-gray-50">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
                 </div>
               </div>
             </div>
 
             {/* Incidentes */}
             <div className="mt-4">
-              <div className="text-center font-black text-[10px] border-b border-black mb-1 pb-0.5 uppercase">Incidentes del Partido</div>
-              <div className="text-[8.5px] p-2 border border-gray-200 min-h-[60px] whitespace-pre-wrap uppercase font-bold bg-gray-50 leading-tight">{incidentNote}</div>
+              <p className="text-[8px] font-black uppercase text-gray-400 border-b mb-1">INCIDENTES DEL PARTIDO</p>
+              <div className="text-[8px] p-2 border border-gray-100 min-h-[50px] whitespace-pre-wrap uppercase font-bold bg-gray-50 leading-tight">{incidentNote}</div>
             </div>
 
-            {/* Firmas Compactas */}
+            {/* Firmas */}
             <div className="grid grid-cols-3 gap-6 mt-6 text-center">
               <div className="space-y-1">
-                <div className="h-10 flex items-center justify-center">{signatures.captainHome && <img src={signatures.captainHome} className="max-h-full" />}</div>
+                <div className="h-8 flex items-center justify-center">{signatures.captainHome && <img src={signatures.captainHome} className="max-h-full" />}</div>
                 <div className="h-px bg-black w-full"></div>
                 <p className="text-[6px] font-black uppercase">Capitán Local</p>
               </div>
               <div className="space-y-1">
-                <div className="h-10 flex items-center justify-center">{signatures.referee && <img src={signatures.referee} className="max-h-full" />}</div>
+                <div className="h-8 flex items-center justify-center">{signatures.referee && <img src={signatures.referee} className="max-h-full" />}</div>
                 <div className="h-px bg-black w-full"></div>
                 <p className="text-[6px] font-black uppercase">Árbitro Central</p>
               </div>
               <div className="space-y-1">
-                <div className="h-10 flex items-center justify-center">{signatures.captainAway && <img src={signatures.captainAway} className="max-h-full" />}</div>
+                <div className="h-8 flex items-center justify-center">{signatures.captainAway && <img src={signatures.captainAway} className="max-h-full" />}</div>
                 <div className="h-px bg-black w-full"></div>
                 <p className="text-[6px] font-black uppercase">Capitán Visitante</p>
               </div>
             </div>
             
-            <p className="text-center text-[5px] text-gray-400 mt-4 font-bold uppercase tracking-widest">REFEREE ELITE - REPORTE OFICIAL INDEPENDIENTE</p>
+            <p className="text-center text-[5px] text-gray-300 mt-4 font-bold uppercase tracking-widest">REFEREE ELITE - REPORTE OFICIAL INDEPENDIENTE</p>
           </div>
         </div>
       </div>
