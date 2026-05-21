@@ -15,8 +15,14 @@ export function ReportView({ matchState }: ReportViewProps) {
   const { scores, teamNames, matchInfo, events, lineups = { home: [], away: [] }, staff = { home: [], away: [] }, signatures = {} } = matchState;
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Transform states
   const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  // Touch tracking
   const [initialDistance, setInitialDistance] = useState<number | null>(null);
+  const [lastTouch, setLastTouch] = useState<{ x: number, y: number } | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -25,6 +31,7 @@ export function ReportView({ matchState }: ReportViewProps) {
         const targetWidth = 800;
         const newScale = Math.min(1, (containerWidth - 32) / targetWidth);
         setScale(newScale);
+        setOffset({ x: 0, y: 0 });
       }
     };
 
@@ -34,30 +41,50 @@ export function ReportView({ matchState }: ReportViewProps) {
   }, []);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
+    if (e.touches.length === 1) {
+      setLastTouch({ x: e.touches[0].pageX, y: e.touches[0].pageY });
+      setInitialDistance(null);
+    } else if (e.touches.length === 2) {
       const dist = Math.hypot(
         e.touches[0].pageX - e.touches[1].pageX,
         e.touches[0].pageY - e.touches[1].pageY
       );
       setInitialDistance(dist);
+      setLastTouch(null);
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 2 && initialDistance) {
+    if (e.touches.length === 1 && lastTouch) {
+      // Panning logic
+      const deltaX = e.touches[0].pageX - lastTouch.x;
+      const deltaY = e.touches[0].pageY - lastTouch.y;
+      
+      setOffset(prev => ({
+        x: prev.x + deltaX,
+        y: prev.y + deltaY
+      }));
+      
+      setLastTouch({ x: e.touches[0].pageX, y: e.touches[0].pageY });
+    } else if (e.touches.length === 2 && initialDistance) {
+      // Zooming logic
       const dist = Math.hypot(
         e.touches[0].pageX - e.touches[1].pageX,
         e.touches[0].pageY - e.touches[1].pageY
       );
       const factor = dist / initialDistance;
-      setScale(prev => Math.max(0.2, Math.min(3, prev * factor)));
+      setScale(prev => Math.max(0.2, Math.min(4, prev * factor)));
       setInitialDistance(dist);
     }
   };
 
+  const handleTouchEnd = () => {
+    setLastTouch(null);
+    setInitialDistance(null);
+  };
+
   const handleDownload = () => {
     if (!svgRef.current) return;
-
     const svg = svgRef.current;
     const style = document.createElement('style');
     style.innerHTML = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -74,12 +101,10 @@ export function ReportView({ matchState }: ReportViewProps) {
     canvas.width = svgWidth * exportScale;
     canvas.height = svgHeight * exportScale;
     const ctx = canvas.getContext('2d');
-
     if (!ctx) return;
 
     const img = new Image();
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
-
     img.onload = () => {
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -110,7 +135,6 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const homeSanciones = getSanciones('home');
   const awaySanciones = getSanciones('away');
-
   const incidents = safeEvents.find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
   const getPlayerEventsSummary = (side: 'home' | 'away', number: string, isSub: boolean, p?: Player) => {
@@ -131,7 +155,6 @@ export function ReportView({ matchState }: ReportViewProps) {
     if (isSub && p?.replacedNumber) {
       summary += ` (POR: #${p.replacedNumber}${subEv?.time !== '--' && subEv?.time !== '' ? ` ${subEv?.time}` : ''})`;
     }
-    
     return summary;
   };
 
@@ -143,7 +166,6 @@ export function ReportView({ matchState }: ReportViewProps) {
     let summary = '';
     yellows.forEach(e => { summary += ` 🟨${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`; });
     reds.forEach(e => { summary += ` 🟥${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`; });
-    
     return summary;
   };
 
@@ -160,7 +182,6 @@ export function ReportView({ matchState }: ReportViewProps) {
   
   const incidentRows = Math.ceil(incidents.length / 80); 
   const incidentsHeight = Math.max(100, incidentRows * 16 + 50);
-  
   const totalHeight = 500 + lineupsHeight + sancionesHeight + incidentsHeight + 200;
 
   const homeColor = '#064E3B'; 
@@ -168,10 +189,10 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   return (
     <div className="w-full h-full flex flex-col bg-slate-900 overflow-hidden" ref={containerRef}>
-      <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 shrink-0">
+      <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 shrink-0 z-10">
         <div>
           <h2 className="text-white font-black italic uppercase text-sm md:text-base">Cédula Digital Profesional</h2>
-          <p className="text-slate-400 text-[10px] uppercase font-bold">Usa dos dedos para ampliar o reducir.</p>
+          <p className="text-slate-400 text-[10px] uppercase font-bold">Desliza con un dedo para mover, pellizca para zoom.</p>
         </div>
         <DialogClose className="text-white hover:bg-white/10 p-2 rounded-full">
           <X size={24} />
@@ -179,15 +200,16 @@ export function ReportView({ matchState }: ReportViewProps) {
       </div>
       
       <div 
-        className="flex-1 overflow-auto touch-none p-4 flex justify-center bg-slate-900"
+        className="flex-1 overflow-hidden touch-none p-4 flex justify-center bg-slate-900 items-start"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <div 
           style={{ 
-            transform: `scale(${scale})`, 
-            transformOrigin: 'top center',
-            transition: initialDistance ? 'none' : 'transform 0.1s ease-out'
+            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, 
+            transformOrigin: 'center top',
+            transition: initialDistance || lastTouch ? 'none' : 'transform 0.1s ease-out'
           }}
           className="relative border-4 border-white/10 shadow-2xl bg-white shrink-0"
         >
@@ -350,7 +372,7 @@ export function ReportView({ matchState }: ReportViewProps) {
         </div>
       </div>
 
-      <div className="p-4 bg-slate-800 border-t border-white/10 shrink-0 flex justify-center">
+      <div className="p-4 bg-slate-800 border-t border-white/10 shrink-0 flex justify-center z-10">
         <Button onClick={handleDownload} className="bg-emerald-600 hover:bg-emerald-700 font-black px-10 h-12 uppercase shadow-xl w-full max-w-md">
           <Download className="mr-2 h-5 w-5" /> Descargar Imagen JPG
         </Button>

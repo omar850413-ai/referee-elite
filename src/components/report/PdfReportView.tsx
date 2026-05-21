@@ -26,16 +26,23 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
   
   const reportRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Transform states
   const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  
+  // Touch tracking
   const [initialDistance, setInitialDistance] = useState<number | null>(null);
+  const [lastTouch, setLastTouch] = useState<{ x: number, y: number } | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
-        const targetWidth = 794; // 210mm approx in pixels at 96dpi
+        const targetWidth = 794; 
         const newScale = Math.min(1, (containerWidth - 32) / targetWidth);
         setScale(newScale);
+        setOffset({ x: 0, y: 0 });
       }
     };
 
@@ -45,25 +52,46 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
   }, []);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
+    if (e.touches.length === 1) {
+      setLastTouch({ x: e.touches[0].pageX, y: e.touches[0].pageY });
+      setInitialDistance(null);
+    } else if (e.touches.length === 2) {
       const dist = Math.hypot(
         e.touches[0].pageX - e.touches[1].pageX,
         e.touches[0].pageY - e.touches[1].pageY
       );
       setInitialDistance(dist);
+      setLastTouch(null);
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 2 && initialDistance) {
+    if (e.touches.length === 1 && lastTouch) {
+      // Panning logic
+      const deltaX = e.touches[0].pageX - lastTouch.x;
+      const deltaY = e.touches[0].pageY - lastTouch.y;
+      
+      setOffset(prev => ({
+        x: prev.x + deltaX,
+        y: prev.y + deltaY
+      }));
+      
+      setLastTouch({ x: e.touches[0].pageX, y: e.touches[0].pageY });
+    } else if (e.touches.length === 2 && initialDistance) {
+      // Zooming logic
       const dist = Math.hypot(
         e.touches[0].pageX - e.touches[1].pageX,
         e.touches[0].pageY - e.touches[1].pageY
       );
       const factor = dist / initialDistance;
-      setScale(prev => Math.max(0.2, Math.min(3, prev * factor)));
+      setScale(prev => Math.max(0.2, Math.min(4, prev * factor)));
       setInitialDistance(dist);
     }
+  };
+
+  const handleTouchEnd = () => {
+    setLastTouch(null);
+    setInitialDistance(null);
   };
 
   const handleDownloadPdf = () => {
@@ -98,13 +126,8 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     });
   };
 
-  const getStarters = (team: 'home' | 'away') => {
-    return (lineups[team] || []).slice(0, 11);
-  };
-
-  const getSubs = (team: 'home' | 'away') => {
-    return (lineups[team] || []).slice(11);
-  };
+  const getStarters = (team: 'home' | 'away') => (lineups[team] || []).slice(0, 11);
+  const getSubs = (team: 'home' | 'away') => (lineups[team] || []).slice(11);
 
   const getPlayerEventsSummary = (side: 'home' | 'away', number: string, isSub: boolean, p?: Player) => {
     const playerEvs = (events || []).filter(e => e.side === side && e.playerNumber === number);
@@ -151,14 +174,12 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
   const homeSanciones = getGroupedCards('home');
   const awaySanciones = getGroupedCards('away');
-
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
   const renderPlayerList = (players: Player[], side: 'home' | 'away', isSub: boolean) => (
     <div className="space-y-1">
       {players.map(p => {
         const eventsSummary = getPlayerEventsSummary(side, p.number, isSub, p);
-
         return (
           <div key={p.id} className="flex justify-between items-center text-[9px] border-b border-gray-100 py-0.5">
             <div className="flex items-center gap-1 uppercase flex-1 truncate">
@@ -175,7 +196,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     <div className="space-y-1">
       {staffMembers.map(s => {
         const eventsSummary = getStaffEventsSummary(side, s.name);
-
         return (
           <div key={s.id} className="flex justify-between items-center text-[9px] border-b border-gray-100 py-0.5">
             <div className="flex items-center gap-1 uppercase flex-1 truncate">
@@ -190,10 +210,10 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
   return (
     <div className="w-full h-full flex flex-col bg-slate-900 overflow-hidden" ref={containerRef}>
-      <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 shrink-0">
+      <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 shrink-0 z-10">
         <div>
           <h2 className="text-white font-black italic uppercase text-sm md:text-base">Vista Previa PDF</h2>
-          <p className="text-slate-400 text-[10px] uppercase font-bold">Usa dos dedos para ampliar o reducir.</p>
+          <p className="text-slate-400 text-[10px] uppercase font-bold">Desliza con un dedo para mover, pellizca para zoom.</p>
         </div>
         <DialogClose className="text-white hover:bg-white/10 p-2 rounded-full">
           <X size={24} />
@@ -201,15 +221,16 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
       </div>
 
       <div 
-        className="flex-1 overflow-auto touch-none p-4 flex justify-center bg-slate-900"
+        className="flex-1 overflow-hidden touch-none p-4 flex justify-center bg-slate-900 items-start"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <div 
           style={{ 
-            transform: `scale(${scale})`, 
-            transformOrigin: 'top center',
-            transition: initialDistance ? 'none' : 'transform 0.1s ease-out'
+            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, 
+            transformOrigin: 'center top',
+            transition: initialDistance || lastTouch ? 'none' : 'transform 0.1s ease-out'
           }}
           className="shrink-0"
         >
@@ -264,7 +285,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
             <div className="mt-8 border-t-2 border-black pt-4">
               <h2 className="text-[11px] font-black mb-2 uppercase">DETALLE DE SANCIONES:</h2>
-              
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <h3 className="text-[10px] font-black border-b uppercase">{teamNames.home.toUpperCase()}</h3>
@@ -316,7 +336,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 <div className="border-t border-black w-full mb-1"></div>
                 <p className="text-[7px] font-bold uppercase">CAPITÁN LOCAL</p>
               </div>
-              
               <div className="flex flex-col items-center">
                 <div className="h-14 w-full flex items-center justify-center mb-1">
                   {signatures.referee && <img src={signatures.referee} alt="Firma Arb" className="max-h-full" />}
@@ -324,7 +343,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 <div className="border-t border-black w-full mb-1"></div>
                 <p className="text-[7px] font-bold uppercase">ÁRBITRO CENTRAL</p>
               </div>
-
               <div className="flex flex-col items-center">
                 <div className="h-14 w-full flex items-center justify-center mb-1">
                   {signatures.captainAway && <img src={signatures.captainAway} alt="Firma Cap Visitante" className="max-h-full" />}
@@ -337,7 +355,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
         </div>
       </div>
 
-      <div className="p-4 bg-slate-800 border-t border-white/10 shrink-0 flex justify-center">
+      <div className="p-4 bg-slate-800 border-t border-white/10 shrink-0 flex justify-center z-10">
         <Button onClick={handleDownloadPdf} className="bg-emerald-600 hover:bg-emerald-700 font-black px-10 h-12 uppercase shadow-xl w-full max-w-md">
           <Download className="mr-2 h-5 w-5" /> Descargar PDF
         </Button>
