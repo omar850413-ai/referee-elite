@@ -55,6 +55,7 @@ export default function Home() {
 
   const [modal, setModal] = useState<string | null>(null);
   const [currentSide, setCurrentSide] = useState<'home' | 'away'>('home');
+  const [currentPlayerType, setCurrentPlayerType] = useState<'starter' | 'substitute'>('starter');
   const [isPdfReportOpen, setIsPdfReportOpen] = useState(false);
   const [isImageReportOpen, setIsImageReportOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<{player: Player, side: 'home' | 'away', isSub: boolean} | null>(null);
@@ -223,11 +224,21 @@ export default function Home() {
     } catch (e) { setIsListening(false); }
   };
 
-  const handleAddPlayer = (side: 'home' | 'away') => {
+  const handleAddPlayer = (side: 'home' | 'away', type: 'starter' | 'substitute') => {
     if (!newPlayerNumber || !newPlayerName || !matchState) return;
     const currentLineups = matchState.lineups || { home: [], away: [] };
-    const isSubstitute = currentLineups[side].length >= 11;
-    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: isSubstitute ? 'substitute' : 'starter' };
+    
+    const isDuplicate = currentLineups[side].some(p => p.number === newPlayerNumber);
+    if (isDuplicate) {
+      toast({
+        variant: "destructive",
+        title: "NÚMERO DUPLICADO",
+        description: `EL JUGADOR CON EL NÚMERO ${newPlayerNumber} YA EXISTE EN ESTE EQUIPO.`,
+      });
+      return;
+    }
+
+    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type };
     updateMatch({ lineups: { ...currentLineups, [side]: [...currentLineups[side], player] } });
     setNewPlayerNumber(''); setNewPlayerName(''); setModal(null);
   };
@@ -236,6 +247,17 @@ export default function Home() {
     if (!selectedPlayer || !newPlayerNumber || !newPlayerName || !matchState) return;
     const { side, player } = selectedPlayer;
     const currentLineups = { ...matchState.lineups };
+    
+    const isDuplicate = currentLineups[side].some(p => p.number === newPlayerNumber && p.id !== player.id);
+    if (isDuplicate) {
+      toast({
+        variant: "destructive",
+        title: "NÚMERO DUPLICADO",
+        description: `OTRO JUGADOR YA TIENE EL NÚMERO ${newPlayerNumber} EN ESTE EQUIPO.`,
+      });
+      return;
+    }
+
     currentLineups[side] = currentLineups[side].map(p => p.id === player.id ? { ...p, number: newPlayerNumber, name: newPlayerName.toUpperCase() } : p);
     updateMatch({ lineups: currentLineups });
     setNewPlayerNumber(''); setNewPlayerName(''); setModal('player-actions');
@@ -486,9 +508,10 @@ export default function Home() {
               <CardHeader className={`${side === 'home' ? 'bg-amber-500' : 'bg-blue-600'} text-white p-4`}>
                 <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
                   <CardTitle className="text-lg font-black uppercase italic">{teamNames[side]}</CardTitle>
-                  <div className="flex gap-2">
-                    <Button onClick={() => { setCurrentSide(side); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[10px] uppercase"><UserPlus className="h-3 w-3 mr-1" /> JUGADOR</Button>
-                    <Button onClick={() => { setCurrentSide(side); setModal('add-staff'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[10px] uppercase"><Users className="h-3 w-3 mr-1" /> STAFF</Button>
+                  <div className="flex gap-1 flex-wrap">
+                    <Button onClick={() => { setCurrentSide(side); setCurrentPlayerType('starter'); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[9px] px-2 h-7 uppercase"><UserPlus className="h-3 w-3 mr-1" /> TITULAR</Button>
+                    <Button onClick={() => { setCurrentSide(side); setCurrentPlayerType('substitute'); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[9px] px-2 h-7 uppercase"><UserPlus className="h-3 w-3 mr-1" /> SUPLENTE</Button>
+                    <Button onClick={() => { setCurrentSide(side); setModal('add-staff'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[9px] px-2 h-7 uppercase"><Users className="h-3 w-3 mr-1" /> STAFF</Button>
                   </div>
                 </div>
                 <div className="text-center bg-black/20 rounded-lg p-2">
@@ -496,8 +519,8 @@ export default function Home() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                {renderPlayerTable(side, lineups[side].slice(0, 11), "TITULARES", false)}
-                {renderPlayerTable(side, lineups[side].slice(11), "SUPLENTES", true)}
+                {renderPlayerTable(side, lineups[side].filter(p => p.type === 'starter'), "TITULARES", false)}
+                {renderPlayerTable(side, lineups[side].filter(p => p.type === 'substitute'), "SUPLENTES", true)}
                 {renderStaffTable(side, staff[side])}
               </CardContent>
             </Card>
@@ -544,7 +567,11 @@ export default function Home() {
 
       <Dialog open={modal === 'add-player'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-sm rounded-2xl">
-          <DialogHeader><DialogTitle className="text-center font-black uppercase">INSCRIBIR JUGADOR</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="text-center font-black uppercase">
+              INSCRIBIR {currentPlayerType === 'starter' ? 'TITULAR' : 'SUPLENTE'}
+            </DialogTitle>
+          </DialogHeader>
           <div className="space-y-4 py-4">
             <Input type="number" placeholder="00" className="text-2xl h-14 text-center font-black" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} />
             <div className="relative">
@@ -553,7 +580,7 @@ export default function Home() {
                 {isListening ? <MicOff size={20} /> : <Mic size={20} />}
               </button>
             </div>
-            <Button onClick={() => handleAddPlayer(currentSide)} className="w-full h-12 font-black bg-primary text-white uppercase">AGREGAR</Button>
+            <Button onClick={() => handleAddPlayer(currentSide, currentPlayerType)} className="w-full h-12 font-black bg-primary text-white uppercase">AGREGAR</Button>
           </div>
         </DialogContent>
       </Dialog>
