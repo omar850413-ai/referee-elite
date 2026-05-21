@@ -85,15 +85,15 @@ export function ReportView({ matchState }: ReportViewProps) {
     const subEv = playerEvs.find(e => e.category === 'substitution');
     
     let summary = '';
-    yellows.forEach(e => { summary += ` 🟨${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; });
-    reds.forEach(e => { summary += ` 🟥${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; });
     goals.forEach(e => { 
       const icon = e.message.includes('AUTOGOL') ? '🥅' : '⚽';
       summary += ` ${icon}${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; 
     });
+    yellows.forEach(e => { summary += ` 🟨${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; });
+    reds.forEach(e => { summary += ` 🟥${e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}`; });
     
     if (isSub && replacedNumber) {
-      summary += ` (SALIÓ: #${replacedNumber}${subEv?.time !== '--' && subEv?.time !== '' ? ` ${subEv?.time}` : ''})`;
+      summary += ` (POR: #${replacedNumber}${subEv?.time !== '--' && subEv?.time !== '' ? ` ${subEv?.time}` : ''})`;
     }
     
     return summary;
@@ -136,9 +136,9 @@ export function ReportView({ matchState }: ReportViewProps) {
   const maxPlayersCount = Math.max(homePlayers.length + homeStaff.length, awayPlayers.length + awayStaff.length);
   const playersSecHeight = (maxPlayersCount * 18) + 150;
   
-  const homeCardsCount = homeSanciones.yellows.length + homeSanciones.reds.length + 2; 
-  const awayCardsCount = awaySanciones.yellows.length + awaySanciones.reds.length + 2;
-  const cardsSecHeight = (Math.max(homeCardsCount, awayCardsCount) * 22) + 120;
+  const homeCardsCount = homeSanciones.yellows.length + homeSanciones.reds.length + 4; 
+  const awayCardsCount = awaySanciones.yellows.length + awaySanciones.reds.length + 4;
+  const cardsSecHeight = (Math.max(homeCardsCount, awayCardsCount) * 22) + 150;
   
   const svgHeight = 480 + playersSecHeight + cardsSecHeight + 400;
 
@@ -206,37 +206,43 @@ export function ReportView({ matchState }: ReportViewProps) {
           <g transform={`translate(0, ${520 + playersSecHeight})`}>
             <rect width="800" height={cardsSecHeight} fill="rgba(0,0,0,0.2)" />
             <g transform="translate(40, 40)">
-              <text fontSize="14" fontWeight="900" fill="white" textAnchor="start" className="uppercase">SANCIONES {teamNames.home.toUpperCase()}</text>
-              <g transform="translate(0, 30)">
+              <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">AMONESTADOS {teamNames.home.toUpperCase()}</text>
+              <g transform="translate(0, 20)">
                 {homeSanciones.yellows.map((e, idx) => (
-                  <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
-                     🟨 {e.playerNumber ? `#${e.playerNumber}` : ''} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
+                  <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
+                     {e.playerName?.toUpperCase()} 🟨 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}
                   </text>
                 ))}
               </g>
-              <g transform={`translate(0, ${50 + homeSanciones.yellows.length * 20})`}>
-                {homeSanciones.reds.map((e, idx) => (
-                  <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
-                    🟥 {e.playerNumber ? `#${e.playerNumber}` : ''} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
-                  </text>
-                ))}
+              <g transform={`translate(0, ${homeSanciones.yellows.length * 18 + 40})`}>
+                <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">EXPULSADOS {teamNames.home.toUpperCase()}</text>
+                <g transform="translate(0, 20)">
+                  {homeSanciones.reds.map((e, idx) => (
+                    <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
+                      {e.playerName?.toUpperCase()} 🟥 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}
+                    </text>
+                  ))}
+                </g>
               </g>
             </g>
             <g transform="translate(440, 40)">
-              <text fontSize="14" fontWeight="900" fill="white" textAnchor="start" className="uppercase">SANCIONES {teamNames.away.toUpperCase()}</text>
-              <g transform="translate(0, 30)">
+              <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">AMONESTADOS {teamNames.away.toUpperCase()}</text>
+              <g transform="translate(0, 20)">
                 {awaySanciones.yellows.map((e, idx) => (
-                  <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
-                     🟨 {e.playerNumber ? `#${e.playerNumber}` : ''} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
+                  <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
+                     {e.playerName?.toUpperCase()} 🟨 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}
                   </text>
                 ))}
               </g>
-              <g transform={`translate(0, ${50 + awaySanciones.yellows.length * 20})`}>
-                {awaySanciones.reds.map((e, idx) => (
-                  <text key={e.id} y={idx * 20} x="0" fill="white" fontSize="10" opacity="0.9" className="uppercase">
-                    🟥 {e.playerNumber ? `#${e.playerNumber}` : ''} {e.playerName?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''} - {e.message.split(' - ').pop()?.toUpperCase()}
-                  </text>
-                ))}
+              <g transform={`translate(0, ${awaySanciones.yellows.length * 18 + 40})`}>
+                <text fontSize="12" fontWeight="900" fill="white" opacity="0.6" className="uppercase">EXPULSADOS {teamNames.away.toUpperCase()}</text>
+                <g transform="translate(0, 20)">
+                  {awaySanciones.reds.map((e, idx) => (
+                    <text key={e.id} y={idx * 18} x="0" fill="white" fontSize="9" fontWeight="700" className="uppercase">
+                      {e.playerName?.toUpperCase()} 🟥 {e.message.split(' - ').pop()?.toUpperCase()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}
+                    </text>
+                  ))}
+                </g>
               </g>
             </g>
           </g>

@@ -315,24 +315,22 @@ export default function Home() {
         <tbody className="text-sm">
           {players.map((p) => {
             const playerEvs = events.filter(e => e.side === side && e.playerNumber === p.number);
-            const goals = playerEvs.filter(e => e.category === 'goals' && !e.message.includes('AUTOGOL')).length;
-            const ownGoals = playerEvs.filter(e => e.category === 'goals' && e.message.includes('AUTOGOL')).length;
-            const yellow = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟨'));
-            const red = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟥'));
             return (
               <tr key={p.id} className="border-b hover:bg-slate-50 cursor-pointer" onClick={() => { setSelectedPlayer({ player: p, side, isSub: isSubList }); setModal('player-actions'); }}>
                 <td className="p-2 text-center font-bold text-slate-400 w-10">#{p.number}</td>
                 <td className="p-2">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-bold uppercase text-slate-700 text-xs">{p.name}</p>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <p className="font-bold uppercase text-slate-700 text-xs">{p.name}</p>
+                        {playerEvs.map(e => (
+                          <span key={e.id} className="text-[10px]">
+                            {e.category === 'goals' ? (e.message.includes('AUTOGOL') ? '🥅' : '⚽') : (e.message.includes('🟨') ? '🟨' : e.message.includes('🟥') ? '🟥' : '')}
+                            {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}
+                          </span>
+                        ))}
+                      </div>
                       {p.replacedNumber && <p className="text-[9px] font-black text-slate-400">ENTRÓ POR: #{p.replacedNumber}</p>}
-                    </div>
-                    <div className="flex gap-4 items-center">
-                      {goals > 0 && <span className="text-[11px] font-black text-emerald-600">⚽{goals}</span>}
-                      {ownGoals > 0 && <span className="text-[11px] font-black text-orange-600">🥅{ownGoals}</span>}
-                      {yellow && <span className="text-[11px]">🟨</span>}
-                      {red && <span className="text-[11px]">🟥</span>}
                     </div>
                   </div>
                 </td>
@@ -351,19 +349,21 @@ export default function Home() {
         <tbody className="text-sm">
           {staffMembers.map((s) => {
             const staffEvs = events.filter(e => e.side === side && e.playerName === s.name);
-            const yellow = staffEvs.some(e => e.category === 'cards' && e.message.includes('🟨'));
-            const red = staffEvs.some(e => e.category === 'cards' && e.message.includes('🟥'));
             return (
               <tr key={s.id} className="border-b hover:bg-slate-50 cursor-pointer" onClick={() => { setSelectedStaff({ staff: s, side }); setModal('staff-actions'); }}>
                 <td className="p-2">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-bold uppercase text-slate-700 text-xs">{s.name}</p>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <p className="font-bold uppercase text-slate-700 text-xs">{s.name}</p>
+                        {staffEvs.map(e => (
+                          <span key={e.id} className="text-[10px]">
+                            {e.message.includes('🟨') ? '🟨' : e.message.includes('🟥') ? '🟥' : ''}
+                            {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}
+                          </span>
+                        ))}
+                      </div>
                       <p className="text-[9px] font-black text-slate-400">{s.role}</p>
-                    </div>
-                    <div className="flex gap-4 items-center">
-                      {yellow && <span className="text-[11px]">🟨</span>}
-                      {red && <span className="text-[11px]">🟥</span>}
                     </div>
                   </div>
                 </td>
