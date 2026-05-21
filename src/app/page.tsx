@@ -90,11 +90,26 @@ export default function Home() {
       return;
     }
     
+    if (userProfile && userProfile.sessionId) {
+      const localSessionId = localStorage.getItem('sessionId');
+      if (localSessionId && localSessionId !== userProfile.sessionId) {
+        toast({
+          variant: "destructive",
+          title: "SESIÓN CERRADA",
+          description: "SE HA INICIADO SESIÓN EN OTRO DISPOSITIVO.",
+        });
+        localStorage.removeItem('sessionId');
+        signOut(auth);
+        router.push('/login');
+        return;
+      }
+    }
+
     const isSuperAdmin = user.email === 'omar850413@gmail.com';
     if (userProfile && !userProfile.isApproved && !isSuperAdmin) {
       router.push('/pending-approval');
     }
-  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+  }, [user, userProfile, isUserLoading, isProfileLoading, router, auth, toast]);
 
   useEffect(() => {
     if (modal?.startsWith('sign-')) {

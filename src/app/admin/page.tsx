@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -11,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { UserProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +30,7 @@ export default function AdminPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const userProfileRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -44,7 +45,6 @@ export default function AdminPage() {
       const isSuperAdmin = user.email === 'omar850413@gmail.com';
       if (!isSuperAdmin && !userProfile?.isAdmin) return null;
 
-      // FILTRO CRÍTICO: Solo mostrar usuarios de esta aplicación
       return query(collection(firestore, 'users'), where('appId', '==', 'referee-elite'));
     },
     [firestore, isUserLoading, isProfileLoading, user, userProfile]
@@ -60,13 +60,28 @@ export default function AdminPage() {
       return;
     }
     
+    if (userProfile && userProfile.sessionId) {
+      const localSessionId = localStorage.getItem('sessionId');
+      if (localSessionId && localSessionId !== userProfile.sessionId) {
+        toast({
+          variant: "destructive",
+          title: "SESIÓN CERRADA",
+          description: "SE HA INICIADO SESIÓN EN OTRO DISPOSITIVO.",
+        });
+        localStorage.removeItem('sessionId');
+        signOut(auth);
+        router.push('/login');
+        return;
+      }
+    }
+
     const isSuperAdmin = user.email === 'omar850413@gmail.com';
     const hasAdminRights = userProfile?.isAdmin || isSuperAdmin;
 
     if (!hasAdminRights) {
       router.push('/');
     }
-  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+  }, [user, userProfile, isUserLoading, isProfileLoading, router, auth, toast]);
 
   const handleApproveUser = (userId: string) => {
     const userDocRef = doc(firestore, 'users', userId);

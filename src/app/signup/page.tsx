@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -64,7 +63,7 @@ export default function SignUpPage() {
         isAdmin: isSigningUpAsAdmin,
         isApproved: isSigningUpAsAdmin,
         sessionId: sessionId,
-        appId: 'referee-elite', // Marcamos al usuario para esta app
+        appId: 'referee-elite',
       };
 
       await setDoc(userDocRef, profileData).catch((err) => {
@@ -85,7 +84,7 @@ export default function SignUpPage() {
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {
         setError(
-          'Este correo ya está registrado en este proyecto. Por favor, inicia sesión.'
+          'Este correo ya está registrado. Por favor, inicia sesión.'
         );
       } else if (err.code === 'permission-denied') {
         setError('Error de permisos. No se pudo crear el perfil de usuario.');

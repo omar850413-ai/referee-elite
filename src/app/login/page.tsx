@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -63,7 +62,6 @@ export default function LoginPage() {
         const data = userDoc.data();
         const isSuperAdmin = user.email === adminEmail;
         
-        // Bloqueo de seguridad: Si el usuario existe pero es de otra app (Asesor Pro)
         if (data.appId && data.appId !== 'referee-elite' && !isSuperAdmin) {
           await signOut(auth);
           setError('ESTA CUENTA PERTENECE A OTRA APLICACIÓN. POR FAVOR, REGÍSTRATE CON UN CORREO DIFERENTE PARA REFEREE ELITE.');
@@ -84,7 +82,6 @@ export default function LoginPage() {
             throw err;
         });
       } else {
-        // Si no tiene perfil, lo mandamos a registro
         await signOut(auth);
         setError('NO SE ENCONTRÓ UN PERFIL PARA ESTA CUENTA. POR FAVOR, REGÍSTRATE.');
         setIsLoading(false);
