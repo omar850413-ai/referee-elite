@@ -6,7 +6,7 @@ import jsPDF from 'jspdf';
 import { MatchEvent, MatchState, Player, StaffMember } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { DialogClose } from '@/components/ui/dialog';
-import { Download, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 import { parseTimeToMinutes, numberToSpanishWords } from '@/lib/utils';
 
 interface PdfReportViewProps {
@@ -23,9 +23,11 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     staff = { home: [], away: [] },
     signatures = {}
   } = matchState;
+  
   const reportRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+  const [initialDistance, setInitialDistance] = useState<number | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -41,6 +43,28 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].pageX - e.touches[1].pageX,
+        e.touches[0].pageY - e.touches[1].pageY
+      );
+      setInitialDistance(dist);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && initialDistance) {
+      const dist = Math.hypot(
+        e.touches[0].pageX - e.touches[1].pageX,
+        e.touches[0].pageY - e.touches[1].pageY
+      );
+      const factor = dist / initialDistance;
+      setScale(prev => Math.max(0.2, Math.min(3, prev * factor)));
+      setInitialDistance(dist);
+    }
+  };
 
   const handleDownloadPdf = () => {
     const input = reportRef.current;
@@ -169,27 +193,23 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
       <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 shrink-0">
         <div>
           <h2 className="text-white font-black italic uppercase text-sm md:text-base">Vista Previa PDF</h2>
-          <p className="text-slate-400 text-xs">Ajuste automático para revisión completa.</p>
+          <p className="text-slate-400 text-[10px] uppercase font-bold">Usa dos dedos para ampliar o reducir.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="text-white" onClick={() => setScale(prev => Math.min(2, prev + 0.1))}>
-            <ZoomIn size={20} />
-          </Button>
-          <Button variant="ghost" size="icon" className="text-white" onClick={() => setScale(prev => Math.max(0.1, prev - 0.1))}>
-            <ZoomOut size={20} />
-          </Button>
-          <DialogClose className="text-white hover:bg-white/10 p-2 rounded-full">
-            <X size={24} />
-          </DialogClose>
-        </div>
+        <DialogClose className="text-white hover:bg-white/10 p-2 rounded-full">
+          <X size={24} />
+        </DialogClose>
       </div>
 
-      <div className="flex-1 overflow-auto touch-pan-x touch-pan-y p-4 flex justify-center bg-slate-900">
+      <div 
+        className="flex-1 overflow-auto touch-none p-4 flex justify-center bg-slate-900"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+      >
         <div 
           style={{ 
             transform: `scale(${scale})`, 
             transformOrigin: 'top center',
-            transition: 'transform 0.1s ease-out'
+            transition: initialDistance ? 'none' : 'transform 0.1s ease-out'
           }}
           className="shrink-0"
         >
