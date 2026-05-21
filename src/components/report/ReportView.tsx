@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
@@ -124,7 +123,7 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const homeSanciones = getSanciones('home');
   const awaySanciones = getSanciones('away');
-  const incidents = safeEvents.find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
+  const incidentsText = safeEvents.find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
   const getEventsSummary = (side: 'home' | 'away', number: string, p?: Player) => {
     const playerEvs = safeEvents.filter(e => e.side === side && e.playerNumber === number);
@@ -157,20 +156,40 @@ export function ReportView({ matchState }: ReportViewProps) {
     return summary;
   };
 
+  // --- DINAMIC HEIGHT CALCULATIONS ---
   const ROW_HEIGHT = 16;
+  
+  // Header height
+  const headerHeight = 280;
+
+  // Lineup Section Height
   const lineupRowsHome = Math.max(1, lineups.home.length) + (staff.home.length || 1);
   const lineupRowsAway = Math.max(1, lineups.away.length) + (staff.away.length || 1);
-  const lineupRows = Math.max(lineupRowsHome, lineupRowsAway) + 15; // Buffer para suplentes y headers
+  const maxLineupRows = Math.max(lineupRowsHome, lineupRowsAway) + 12; // starters + subs + staff + headers
+  const lineupSectionHeight = maxLineupRows * ROW_HEIGHT + 40;
 
-  const sanctionsRows = Math.max(
-    (homeSanciones.yellows.length + homeSanciones.reds.length),
-    (awaySanciones.yellows.length + awaySanciones.reds.length)
-  ) + 8;
+  // Sanctions Section Height
+  const sanctionsRowsHome = (homeSanciones.yellows.length + homeSanciones.reds.length);
+  const sanctionsRowsAway = (awaySanciones.yellows.length + awaySanciones.reds.length);
+  const maxSanctionsRows = Math.max(sanctionsRowsHome, sanctionsRowsAway) + 8;
+  const sanctionsSectionHeight = maxSanctionsRows * ROW_HEIGHT + 40;
 
-  const incidentsLines = Math.ceil(incidents.length / 90);
-  const incidentsHeight = incidentsLines * 16 + 80;
-  
-  const totalHeight = 420 + (lineupRows * ROW_HEIGHT) + (sanctionsRows * ROW_HEIGHT) + incidentsHeight + 200;
+  // Incidents Section Height
+  const charsPerLine = 85;
+  const incidentsLines = Math.max(6, Math.ceil(incidentsText.length / charsPerLine));
+  const incidentsBoxHeight = incidentsLines * 16 + 20;
+  const incidentsSectionHeight = incidentsBoxHeight + 60;
+
+  // Signatures Section Height
+  const signaturesHeight = 160;
+  const footerHeight = 40;
+
+  // Final positions
+  const lineupY = headerHeight + 20;
+  const sanctionsY = lineupY + lineupSectionHeight + 40;
+  const incidentsY = sanctionsY + sanctionsSectionHeight + 40;
+  const signaturesY = incidentsY + incidentsSectionHeight + 40;
+  const totalHeight = signaturesY + signaturesHeight + footerHeight;
 
   return (
     <div className="w-full h-full flex flex-col bg-slate-900 overflow-hidden" ref={containerRef}>
@@ -208,6 +227,7 @@ export function ReportView({ matchState }: ReportViewProps) {
           >
             <rect x="0" y="0" width="800" height={totalHeight} fill="#FFFFFF" />
 
+            {/* HEADER */}
             <g transform="translate(400, 60)">
               <text textAnchor="middle" fill="#000000" fontSize="28" fontWeight="900" className="uppercase" style={{ letterSpacing: '0.1em' }}>INFORME ARBITRAL</text>
               <text y="35" textAnchor="middle" fill="#000000" fontSize="12" fontWeight="800" className="uppercase">{matchInfo.league || 'LIGA'} | JORNADA {matchInfo.round || 'S/N'}</text>
@@ -233,7 +253,8 @@ export function ReportView({ matchState }: ReportViewProps) {
               <text y="18" textAnchor="middle" fill="#000000" fontSize="12" fontWeight="800">{scores.away} ({numberToSpanishWords(scores.away)})</text>
             </g>
 
-            <g transform="translate(40, 310)">
+            {/* ALINEACIONES */}
+            <g transform={`translate(40, ${lineupY})`}>
               <g>
                 <text fontSize="12" fontWeight="900" fill="#000000" className="uppercase" textDecoration="underline">ALINEACIÓN LOCAL</text>
                 <g transform="translate(0, 25)">
@@ -291,7 +312,8 @@ export function ReportView({ matchState }: ReportViewProps) {
               </g>
             </g>
 
-            <g transform={`translate(40, ${380 + (lineupRows * ROW_HEIGHT)})`}>
+            {/* SANCIONES */}
+            <g transform={`translate(40, ${sanctionsY})`}>
               <text fontSize="12" fontWeight="900" fill="#000000" className="uppercase" textDecoration="underline">DETALLE DE SANCIONES</text>
               
               <g transform="translate(0, 30)">
@@ -337,16 +359,30 @@ export function ReportView({ matchState }: ReportViewProps) {
               </g>
             </g>
 
-            <g transform={`translate(40, ${totalHeight - 200})`}>
+            {/* INCIDENTES */}
+            <g transform={`translate(40, ${incidentsY})`}>
                <text fontSize="12" fontWeight="900" fill="#000000" className="uppercase" textDecoration="underline">INCIDENTES DEL PARTIDO</text>
-               <foreignObject x="0" y="15" width="720" height={incidentsHeight}>
-                  <div xmlns="http://www.w3.org/1999/xhtml" style={{ color: '#000', fontSize: '10px', lineHeight: '1.4', textTransform: 'uppercase', whiteSpace: 'pre-wrap', fontWeight: '700', border: '1px solid #E2E8F0', padding: '8px', backgroundColor: '#F8FAFC' }}>
-                    {incidents}
+               <foreignObject x="0" y="20" width="720" height={incidentsBoxHeight}>
+                  <div xmlns="http://www.w3.org/1999/xhtml" style={{ 
+                    color: '#000', 
+                    fontSize: '10px', 
+                    lineHeight: '1.4', 
+                    textTransform: 'uppercase', 
+                    whiteSpace: 'pre-wrap', 
+                    fontWeight: '700', 
+                    border: '1px solid #E2E8F0', 
+                    padding: '8px', 
+                    backgroundColor: '#F8FAFC',
+                    minHeight: '80px',
+                    boxSizing: 'border-box'
+                  }}>
+                    {incidentsText}
                   </div>
                </foreignObject>
             </g>
 
-            <g transform={`translate(0, ${totalHeight - 110})`}>
+            {/* FIRMAS */}
+            <g transform={`translate(0, ${signaturesY + 80})`}>
               <g transform="translate(150, 0)">
                 {signatures.captainHome && <image href={signatures.captainHome} x="-60" y="-60" width="120" height="60" />}
                 <line x1="-80" x2="80" y1="0" y2="0" stroke="#000" strokeWidth="1" />
@@ -364,7 +400,7 @@ export function ReportView({ matchState }: ReportViewProps) {
               </g>
             </g>
 
-            <text x="400" y={totalHeight - 20} textAnchor="middle" fill="#94A3B8" fontSize="8" fontWeight="800" className="uppercase">REFEREE ELITE - REPORTE OFICIAL INDEPENDIENTE</text>
+            <text x="400" y={totalHeight - 15} textAnchor="middle" fill="#94A3B8" fontSize="8" fontWeight="800" className="uppercase">REFEREE ELITE - REPORTE OFICIAL INDEPENDIENTE</text>
           </svg>
         </div>
       </div>
@@ -377,4 +413,3 @@ export function ReportView({ matchState }: ReportViewProps) {
     </div>
   );
 }
-
