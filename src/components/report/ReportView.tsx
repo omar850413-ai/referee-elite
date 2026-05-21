@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
-import { MatchState, Player, StaffMember } from '@/lib/types';
+import { MatchState, Player } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { DialogClose } from '@/components/ui/dialog';
@@ -61,17 +61,33 @@ export function ReportView({ matchState }: ReportViewProps) {
   };
 
   const handleDownload = async () => {
-    if (!reportRef.current) return;
-    const canvas = await html2canvas(reportRef.current, {
-      scale: 3,
-      useCORS: true,
-      backgroundColor: '#FFFFFF',
-    });
-    const jpegUrl = canvas.toDataURL('image/jpeg', 0.95);
-    const link = document.createElement('a');
-    link.href = jpegUrl;
-    link.download = `${teamNames.home}-VS-${teamNames.away}.jpg`.toUpperCase();
-    link.click();
+    const input = reportRef.current;
+    if (!input) return;
+
+    const originalStyle = input.style.cssText;
+    input.style.transform = 'none';
+    input.style.position = 'fixed';
+    input.style.top = '0';
+    input.style.left = '0';
+    input.style.zIndex = '-1000';
+
+    try {
+      const canvas = await html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#FFFFFF',
+        logging: false,
+        windowWidth: input.scrollWidth,
+        windowHeight: input.scrollHeight
+      });
+      const jpegUrl = canvas.toDataURL('image/jpeg', 0.95);
+      const link = document.createElement('a');
+      link.href = jpegUrl;
+      link.download = `${teamNames.home}-VS-${teamNames.away}.jpg`.toUpperCase();
+      link.click();
+    } finally {
+      input.style.cssText = originalStyle;
+    }
   };
 
   const getPlayerEventsSummary = (side: 'home' | 'away', number: string, p?: Player) => {
@@ -101,16 +117,6 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
-  const renderSection = (title: string, home: React.ReactNode, away: React.ReactNode) => (
-    <div className="mt-8">
-      <div className="text-center font-black text-[14px] border-b-2 border-black mb-4 pb-1 uppercase">{title}</div>
-      <div className="grid grid-cols-2 gap-10">
-        <div>{home}</div>
-        <div>{away}</div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="w-full h-full flex flex-col bg-slate-900 overflow-hidden" ref={containerRef}>
       <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 z-10">
@@ -118,9 +124,9 @@ export function ReportView({ matchState }: ReportViewProps) {
         <DialogClose className="text-white p-2 hover:bg-white/10 rounded-full"><X size={24} /></DialogClose>
       </div>
       
-      <div className="flex-1 overflow-auto touch-none bg-slate-900 p-4 flex justify-center items-start" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+      <div className="flex-1 overflow-auto touch-none bg-slate-900 p-4 flex justify-center items-start" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove}>
         <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center top' }}>
-          <div ref={reportRef} className="p-12 bg-white text-black font-sans shadow-2xl" style={{ width: '800px', minHeight: '1200px' }}>
+          <div ref={reportRef} className="p-12 bg-white text-black font-sans shadow-2xl" style={{ width: '800px', minHeight: '1100px' }}>
             <div className="text-center mb-8">
               <h1 className="text-3xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
               <p className="text-[12px] font-bold uppercase tracking-widest">{matchInfo.league} | JORNADA {matchInfo.round}</p>
@@ -152,29 +158,33 @@ export function ReportView({ matchState }: ReportViewProps) {
               </div>
             </div>
 
-            {renderSection("Alineaciones",
-              <div className="text-[11px] space-y-4">
-                <div><p className="text-[9px] font-black text-gray-400 border-b mb-1">TITULARES</p>{lineups.home.slice(0, 11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}</div>
-                <div><p className="text-[9px] font-black text-gray-400 border-b mb-1">SUPLENTES</p>{lineups.home.slice(11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}</div>
-                <div><p className="text-[9px] font-black text-gray-400 border-b mb-1">CUERPO TÉCNICO</p>{staff.home.map(s => <p key={s.id} className="uppercase py-1 border-b border-gray-50"><strong>{s.role}:</strong> {s.name} {getStaffEventsSummary('home', s.name)}</p>)}</div>
-              </div>,
-              <div className="text-[11px] space-y-4">
-                <div><p className="text-[9px] font-black text-gray-400 border-b mb-1">TITULARES</p>{lineups.away.slice(0, 11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}</div>
-                <div><p className="text-[9px] font-black text-gray-400 border-b mb-1">SUPLENTES</p>{lineups.away.slice(11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}</div>
-                <div><p className="text-[9px] font-black text-gray-400 border-b mb-1">CUERPO TÉCNICO</p>{staff.away.map(s => <p key={s.id} className="uppercase py-1 border-b border-gray-50"><strong>{s.role}:</strong> {s.name} {getStaffEventsSummary('away', s.name)}</p>)}</div>
+            <div className="text-center font-black text-[14px] border-b-2 border-black mb-4 pb-1 uppercase">Alineaciones</div>
+            <div className="grid grid-cols-2 gap-10">
+              <div className="text-[10px] space-y-4">
+                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1">TITULARES</p>{lineups.home.slice(0, 11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}</div>
+                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1">SUPLENTES</p>{lineups.home.slice(11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}</div>
+                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1">CUERPO TÉCNICO</p>{staff.home.map(s => <p key={s.id} className="uppercase py-1 border-b border-gray-50"><strong>{s.role}:</strong> {s.name} {getStaffEventsSummary('home', s.name)}</p>)}</div>
               </div>
-            )}
+              <div className="text-[10px] space-y-4">
+                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1">TITULARES</p>{lineups.away.slice(0, 11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}</div>
+                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1">SUPLENTES</p>{lineups.away.slice(11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}</div>
+                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1">CUERPO TÉCNICO</p>{staff.away.map(s => <p key={s.id} className="uppercase py-1 border-b border-gray-50"><strong>{s.role}:</strong> {s.name} {getStaffEventsSummary('away', s.name)}</p>)}</div>
+              </div>
+            </div>
 
-            {renderSection("Sanciones",
-              <div className="text-[10px] space-y-2 uppercase">
-                <p className="font-bold border-b text-primary">LOCAL: {teamNames.home}</p>
-                {getSortedCards('home').map(e => <p key={e.id} className="border-b border-gray-50 pb-1">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' ? `(${e.time})` : ''}</p>)}
-              </div>,
-              <div className="text-[10px] space-y-2 uppercase">
-                <p className="font-bold border-b text-primary">VISITA: {teamNames.away}</p>
-                {getSortedCards('away').map(e => <p key={e.id} className="border-b border-gray-50 pb-1">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' ? `(${e.time})` : ''}</p>)}
+            <div className="mt-10">
+              <div className="text-center font-black text-[14px] border-b-2 border-black mb-4 pb-1 uppercase">Sanciones</div>
+              <div className="grid grid-cols-2 gap-10">
+                <div className="text-[9px] space-y-2 uppercase">
+                  <p className="font-bold border-b text-primary">LOCAL: {teamNames.home}</p>
+                  {getSortedCards('home').map(e => <p key={e.id} className="border-b border-gray-50 pb-1">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' ? `(${e.time})` : ''}</p>)}
+                </div>
+                <div className="text-[9px] space-y-2 uppercase">
+                  <p className="font-bold border-b text-primary">VISITA: {teamNames.away}</p>
+                  {getSortedCards('away').map(e => <p key={e.id} className="border-b border-gray-50 pb-1">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' ? `(${e.time})` : ''}</p>)}
+                </div>
               </div>
-            )}
+            </div>
 
             <div className="mt-10">
               <div className="text-center font-black text-[14px] border-b-2 border-black mb-4 pb-1 uppercase">Incidentes del Partido</div>

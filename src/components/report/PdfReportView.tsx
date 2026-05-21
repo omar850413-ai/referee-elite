@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { MatchState, Player, StaffMember } from '@/lib/types';
+import { MatchState, Player } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { DialogClose } from '@/components/ui/dialog';
 import { Download, X } from 'lucide-react';
@@ -87,20 +87,35 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     const input = reportRef.current;
     if (!input) return;
 
-    const canvas = await html2canvas(input, { 
-      scale: 3, 
-      useCORS: true,
-      backgroundColor: '#FFFFFF',
-    });
+    // Temporalmente resetear transformaciones para captura limpia
+    const originalStyle = input.style.cssText;
+    input.style.transform = 'none';
+    input.style.position = 'fixed';
+    input.style.top = '0';
+    input.style.left = '0';
+    input.style.zIndex = '-1000';
 
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const imgWidth = pdfWidth;
-    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-    
-    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-    pdf.save(`${teamNames.home}-VS-${teamNames.away}.pdf`.toUpperCase());
+    try {
+      const canvas = await html2canvas(input, { 
+        scale: 2, 
+        useCORS: true,
+        backgroundColor: '#FFFFFF',
+        logging: false,
+        windowWidth: input.scrollWidth,
+        windowHeight: input.scrollHeight
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`${teamNames.home}-VS-${teamNames.away}.pdf`.toUpperCase());
+    } finally {
+      input.style.cssText = originalStyle;
+    }
   };
 
   const getPlayerEventsSummary = (side: 'home' | 'away', number: string, p?: Player) => {
@@ -135,16 +150,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
         return parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
       });
   };
-
-  const renderSection = (title: string, homeContent: React.ReactNode, awayContent: React.ReactNode) => (
-    <div className="mt-6">
-      <div className="text-center font-black text-[12px] border-b-2 border-black mb-3 pb-1 uppercase">{title}</div>
-      <div className="grid grid-cols-2 gap-8">
-        <div>{homeContent}</div>
-        <div>{awayContent}</div>
-      </div>
-    </div>
-  );
 
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
@@ -189,7 +194,8 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               </div>
             </div>
 
-            {renderSection("Alineaciones y Cuerpo Técnico", 
+            <div className="text-center font-black text-[12px] border-b-2 border-black mb-3 pb-1 uppercase">Alineaciones y Cuerpo Técnico</div>
+            <div className="grid grid-cols-2 gap-8">
               <div className="space-y-4">
                 <div className="text-[10px]">
                   <p className="text-[8px] font-black text-gray-400 mb-1 border-b">TITULARES</p>
@@ -199,7 +205,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                   <p className="text-[8px] font-black text-gray-400 mt-3 mb-1 border-b">STAFF</p>
                   {(staff.home || []).map(s => <p key={s.id} className="uppercase py-0.5 border-b border-gray-50"><strong>{s.role}:</strong> {s.name} {getStaffEventsSummary('home', s.name)}</p>)}
                 </div>
-              </div>,
+              </div>
               <div className="space-y-4">
                 <div className="text-[10px]">
                   <p className="text-[8px] font-black text-gray-400 mb-1 border-b">TITULARES</p>
@@ -210,18 +216,21 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                   {(staff.away || []).map(s => <p key={s.id} className="uppercase py-0.5 border-b border-gray-50"><strong>{s.role}:</strong> {s.name} {getStaffEventsSummary('away', s.name)}</p>)}
                 </div>
               </div>
-            )}
+            </div>
 
-            {renderSection("Detalle de Sanciones",
-              <div className="text-[9px] space-y-2 uppercase">
-                <p className="font-bold border-b">LOCAL: {teamNames.home}</p>
-                {getSortedCards('home').map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' ? `(${e.time})` : ''}</p>)}
-              </div>,
-              <div className="text-[9px] space-y-2 uppercase">
-                <p className="font-bold border-b">VISITA: {teamNames.away}</p>
-                {getSortedCards('away').map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' ? `(${e.time})` : ''}</p>)}
+            <div className="mt-8">
+              <div className="text-center font-black text-[12px] border-b-2 border-black mb-3 pb-1 uppercase">Detalle de Sanciones</div>
+              <div className="grid grid-cols-2 gap-8">
+                <div className="text-[9px] space-y-2 uppercase">
+                  <p className="font-bold border-b">LOCAL: {teamNames.home}</p>
+                  {getSortedCards('home').map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' ? `(${e.time})` : ''}</p>)}
+                </div>
+                <div className="text-[9px] space-y-2 uppercase">
+                  <p className="font-bold border-b">VISITA: {teamNames.away}</p>
+                  {getSortedCards('away').map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' ? `(${e.time})` : ''}</p>)}
+                </div>
               </div>
-            )}
+            </div>
 
             <div className="mt-8">
               <div className="text-center font-black text-[12px] border-b-2 border-black mb-3 pb-1 uppercase">Incidentes del Partido</div>
