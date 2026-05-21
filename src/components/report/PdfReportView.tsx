@@ -88,26 +88,37 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     const input = reportRef.current;
     if (!input) return;
 
-    html2canvas(input, { scale: 2, useCORS: true }).then((canvas) => {
+    // Usamos onclone para resetear transformaciones antes de capturar y evitar el "amontonamiento"
+    html2canvas(input, { 
+      scale: 2, 
+      useCORS: true,
+      logging: false,
+      onclone: (clonedDoc) => {
+        const clonedReport = clonedDoc.getElementById('pdf-printable-content');
+        if (clonedReport) {
+          clonedReport.style.transform = 'none';
+          clonedReport.style.margin = '0';
+        }
+      }
+    }).then((canvas) => {
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
-      const ratio = canvasWidth / canvasHeight;
-      const imgHeight = pdfWidth / ratio;
+      
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
       
       let heightLeft = imgHeight;
       let position = 0;
 
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pdfHeight;
 
       while (heightLeft > 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
       }
       
@@ -159,8 +170,6 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
       const numA = parseInt(a.playerNumber || '999');
       const numB = parseInt(b.playerNumber || '999');
       if (numA !== numB) return numA - numB;
-      if ((a.playerName || '') < (b.playerName || '')) return -1;
-      if ((a.playerName || '') > (b.playerName || '')) return 1;
       return parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
     });
   
@@ -212,7 +221,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
       <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 shrink-0 z-10">
         <div>
           <h2 className="text-white font-black italic uppercase text-sm md:text-base">Vista Previa PDF</h2>
-          <p className="text-slate-400 text-[10px] uppercase font-bold">Desliza con un dedo para mover, pellizca para zoom.</p>
+          <p className="text-slate-400 text-[10px] uppercase font-bold">Pellizca para zoom, desliza para mover.</p>
         </div>
         <DialogClose className="text-white hover:bg-white/10 p-2 rounded-full">
           <X size={24} />
@@ -233,7 +242,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
           }}
           className="shrink-0"
         >
-          <div ref={reportRef} className="p-10 bg-white text-black font-sans shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
+          <div id="pdf-printable-content" ref={reportRef} className="p-10 bg-white text-black font-sans shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
             <div className="text-center space-y-1 mb-6">
               <h1 className="text-2xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
               <h2 className="text-xs font-bold uppercase tracking-widest">{matchInfo.league?.toUpperCase() || 'LIGA'} | JORNADA {matchInfo.round?.toUpperCase() || 'S/N'}</h2>

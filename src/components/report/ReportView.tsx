@@ -156,35 +156,31 @@ export function ReportView({ matchState }: ReportViewProps) {
     return summary;
   };
 
-  // --- DINAMIC HEIGHT CALCULATIONS ---
+  // --- CALCULOS DE ALTURA DINAMICA MEJORADOS ---
   const ROW_HEIGHT = 16;
-  
-  // Header height
   const headerHeight = 280;
 
-  // Lineup Section Height
+  // Seccion Alineaciones
   const lineupRowsHome = Math.max(1, lineups.home.length) + (staff.home.length || 1);
   const lineupRowsAway = Math.max(1, lineups.away.length) + (staff.away.length || 1);
-  const maxLineupRows = Math.max(lineupRowsHome, lineupRowsAway) + 12; // starters + subs + staff + headers
-  const lineupSectionHeight = maxLineupRows * ROW_HEIGHT + 40;
+  const maxLineupRows = Math.max(lineupRowsHome, lineupRowsAway) + 12; 
+  const lineupSectionHeight = maxLineupRows * ROW_HEIGHT + 60;
 
-  // Sanctions Section Height
+  // Seccion Sanciones
   const sanctionsRowsHome = (homeSanciones.yellows.length + homeSanciones.reds.length);
   const sanctionsRowsAway = (awaySanciones.yellows.length + awaySanciones.reds.length);
-  const maxSanctionsRows = Math.max(sanctionsRowsHome, sanctionsRowsAway) + 8;
-  const sanctionsSectionHeight = maxSanctionsRows * ROW_HEIGHT + 40;
+  const maxSanctionsRows = Math.max(sanctionsRowsHome, sanctionsRowsAway) + 10;
+  const sanctionsSectionHeight = maxSanctionsRows * ROW_HEIGHT + 60;
 
-  // Incidents Section Height
-  const charsPerLine = 85;
-  const incidentsLines = Math.max(6, Math.ceil(incidentsText.length / charsPerLine));
-  const incidentsBoxHeight = incidentsLines * 16 + 20;
-  const incidentsSectionHeight = incidentsBoxHeight + 60;
+  // Seccion Incidentes con mas espacio
+  const charsPerLine = 75; // Reducido para asegurar que quepan
+  const incidentsLines = Math.max(8, Math.ceil(incidentsText.length / charsPerLine));
+  const incidentsBoxHeight = incidentsLines * 16 + 30;
+  const incidentsSectionHeight = incidentsBoxHeight + 80;
 
-  // Signatures Section Height
-  const signaturesHeight = 160;
-  const footerHeight = 40;
+  const signaturesHeight = 180;
+  const footerHeight = 60;
 
-  // Final positions
   const lineupY = headerHeight + 20;
   const sanctionsY = lineupY + lineupSectionHeight + 40;
   const incidentsY = sanctionsY + sanctionsSectionHeight + 40;
@@ -382,7 +378,7 @@ export function ReportView({ matchState }: ReportViewProps) {
             </g>
 
             {/* FIRMAS */}
-            <g transform={`translate(0, ${signaturesY + 80})`}>
+            <g transform={`translate(0, ${signaturesY + 100})`}>
               <g transform="translate(150, 0)">
                 {signatures.captainHome && <image href={signatures.captainHome} x="-60" y="-60" width="120" height="60" />}
                 <line x1="-80" x2="80" y1="0" y2="0" stroke="#000" strokeWidth="1" />
@@ -400,7 +396,7 @@ export function ReportView({ matchState }: ReportViewProps) {
               </g>
             </g>
 
-            <text x="400" y={totalHeight - 15} textAnchor="middle" fill="#94A3B8" fontSize="8" fontWeight="800" className="uppercase">REFEREE ELITE - REPORTE OFICIAL INDEPENDIENTE</text>
+            <text x="400" y={totalHeight - 20} textAnchor="middle" fill="#94A3B8" fontSize="8" fontWeight="800" className="uppercase">REFEREE ELITE - REPORTE OFICIAL INDEPENDIENTE</text>
           </svg>
         </div>
       </div>
