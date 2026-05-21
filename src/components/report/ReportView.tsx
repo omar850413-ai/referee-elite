@@ -113,6 +113,13 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
+  const renderPlayerRow = (p: Player, side: 'home' | 'away') => (
+    <div key={p.id} className="flex uppercase leading-none py-0.5 items-baseline">
+      <span className="inline-block w-[18px] text-right mr-1 font-bold"><strong>{p.number}.-</strong></span>
+      <span className="flex-1">{p.name} {getPlayerEventsSummary(side, p.number, p)}</span>
+    </div>
+  );
+
   return (
     <div className="w-full h-full flex flex-col bg-slate-900 overflow-hidden" ref={containerRef}>
       <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 z-10">
@@ -158,11 +165,11 @@ export function ReportView({ matchState }: ReportViewProps) {
               <div className="text-[9px] space-y-3">
                 <div>
                   <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">LOCAL - TITULARES</p>
-                  {lineups.home.slice(0, 11).map(p => <p key={p.id} className="uppercase leading-none py-0.5"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}
+                  {lineups.home.slice(0, 11).map(p => renderPlayerRow(p, 'home'))}
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">LOCAL - SUPLENTES</p>
-                  {lineups.home.slice(11).map(p => <p key={p.id} className="uppercase leading-none py-0.5"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}
+                  {lineups.home.slice(11).map(p => renderPlayerRow(p, 'home'))}
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">LOCAL - STAFF</p>
@@ -172,11 +179,11 @@ export function ReportView({ matchState }: ReportViewProps) {
               <div className="text-[9px] space-y-3">
                 <div>
                   <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">VISITA - TITULARES</p>
-                  {lineups.away.slice(0, 11).map(p => <p key={p.id} className="uppercase leading-none py-0.5"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}
+                  {lineups.away.slice(0, 11).map(p => renderPlayerRow(p, 'away'))}
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">VISITA - SUPLENTES</p>
-                  {lineups.away.slice(11).map(p => <p key={p.id} className="uppercase leading-none py-0.5"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}
+                  {lineups.away.slice(11).map(p => renderPlayerRow(p, 'away'))}
                 </div>
                 <div>
                   <p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">VISITA - STAFF</p>
@@ -192,18 +199,20 @@ export function ReportView({ matchState }: ReportViewProps) {
                     <span className="text-2xl font-black rotate-[-15deg]">AMONESTACIÓN / EXPULSIÓN</span>
                   </div>
                   <p className="font-bold border-b border-gray-100 mb-1 text-gray-500">SANCIONES LOCAL</p>
-                  {getSortedCards('home').filter(e => e.message.includes('🟨')).map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
+                  <p className="text-[6px] font-black text-gray-300">AMONESTACIÓN</p>
+                  {getSortedCards('home').filter(e => e.message.includes('🟨')).map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5 flex items-baseline"><span className="inline-block w-[12px] text-right mr-1 font-bold">#{e.playerNumber}</span> <span className="flex-1">{e.playerName} {e.message.split(' - ').pop()}</span></p>)}
                   <p className="text-[6px] font-black text-gray-300 mt-2">EXPULSIÓN</p>
-                  {getSortedCards('home').filter(e => e.message.includes('🟥')).map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
+                  {getSortedCards('home').filter(e => e.message.includes('🟥')).map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5 flex items-baseline"><span className="inline-block w-[12px] text-right mr-1 font-bold">#{e.playerNumber}</span> <span className="flex-1">{e.playerName} {e.message.split(' - ').pop()}</span></p>)}
                 </div>
                 <div className="text-[8px] space-y-1 uppercase relative">
                   <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-0">
                     <span className="text-2xl font-black rotate-[-15deg]">AMONESTACIÓN / EXPULSIÓN</span>
                   </div>
                   <p className="font-bold border-b border-gray-100 mb-1 text-gray-500">SANCIONES VISITA</p>
-                  {getSortedCards('away').filter(e => e.message.includes('🟨')).map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
+                  <p className="text-[6px] font-black text-gray-300">AMONESTACIÓN</p>
+                  {getSortedCards('away').filter(e => e.message.includes('🟨')).map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5 flex items-baseline"><span className="inline-block w-[12px] text-right mr-1 font-bold">#{e.playerNumber}</span> <span className="flex-1">{e.playerName} {e.message.split(' - ').pop()}</span></p>)}
                   <p className="text-[6px] font-black text-gray-300 mt-2">EXPULSIÓN</p>
-                  {getSortedCards('away').filter(e => e.message.includes('🟥')).map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()}</p>)}
+                  {getSortedCards('away').filter(e => e.message.includes('🟥')).map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5 flex items-baseline"><span className="inline-block w-[12px] text-right mr-1 font-bold">#{e.playerNumber}</span> <span className="flex-1">{e.playerName} {e.message.split(' - ').pop()}</span></p>)}
                 </div>
               </div>
             </div>
