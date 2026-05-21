@@ -87,22 +87,24 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     const input = reportRef.current;
     if (!input) return;
 
-    // Temporalmente resetear transformaciones para captura limpia
-    const originalStyle = input.style.cssText;
-    input.style.transform = 'none';
-    input.style.position = 'fixed';
-    input.style.top = '0';
-    input.style.left = '0';
-    input.style.zIndex = '-1000';
+    // Clonar para evitar problemas de transformaciones en la captura
+    const clone = input.cloneNode(true) as HTMLDivElement;
+    clone.style.transform = 'none';
+    clone.style.position = 'fixed';
+    clone.style.top = '0';
+    clone.style.left = '-9999px';
+    clone.style.width = '210mm';
+    clone.style.height = 'auto';
+    clone.style.backgroundColor = '#FFFFFF';
+    document.body.appendChild(clone);
 
     try {
-      const canvas = await html2canvas(input, { 
+      const canvas = await html2canvas(clone, { 
         scale: 2, 
         useCORS: true,
         backgroundColor: '#FFFFFF',
         logging: false,
-        windowWidth: input.scrollWidth,
-        windowHeight: input.scrollHeight
+        width: 794, // Aprox 210mm en px
       });
 
       const imgData = canvas.toDataURL('image/png');
@@ -114,7 +116,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       pdf.save(`${teamNames.home}-VS-${teamNames.away}.pdf`.toUpperCase());
     } finally {
-      input.style.cssText = originalStyle;
+      document.body.removeChild(clone);
     }
   };
 
@@ -123,13 +125,13 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     let summary = [];
     playerEvs.forEach(e => {
       if (e.category === 'goals') {
-        summary.push(`${e.message.includes('AUTOGOL') ? '🥅' : '⚽'}${e.time !== '--' ? ` (${e.time})` : ''}`);
+        summary.push(`${e.message.includes('AUTOGOL') ? '🥅' : '⚽'}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`);
       }
       if (e.category === 'cards') {
-        summary.push(`${e.message.includes('🟨') ? '🟨' : '🟥'}${e.time !== '--' ? ` (${e.time})` : ''}`);
+        summary.push(`${e.message.includes('🟨') ? '🟨' : '🟥'}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`);
       }
       if (e.category === 'substitution' && p?.replacedNumber) {
-        summary.push(` (POR: #${p.replacedNumber}${e.time !== '--' ? ` ${e.time}` : ''})`);
+        summary.push(` (POR: #${p.replacedNumber}${e.time !== '--' && e.time !== '' ? ` ${e.time}` : ''})`);
       }
     });
     return summary.join(' ');
@@ -137,7 +139,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
   const getStaffEventsSummary = (side: 'home' | 'away', name: string) => {
     const staffEvs = (events || []).filter(e => e.side === side && e.playerName === name);
-    return staffEvs.map(e => `${e.message.includes('🟨') ? '🟨' : '🟥'}${e.time !== '--' ? ` (${e.time})` : ''}`).join(' ');
+    return staffEvs.map(e => `${e.message.includes('🟨') ? '🟨' : '🟥'}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`).join(' ');
   };
 
   const getSortedCards = (side: 'home' | 'away') => {
@@ -156,7 +158,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
   return (
     <div className="w-full h-full flex flex-col bg-slate-900 overflow-hidden" ref={containerRef}>
       <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 shrink-0 z-10">
-        <div className="text-white font-black uppercase text-sm italic">Vista Previa Reporte</div>
+        <div className="text-white font-black uppercase text-sm italic">Vista Previa Reporte PDF</div>
         <DialogClose className="text-white p-2 hover:bg-white/10 rounded-full"><X size={24} /></DialogClose>
       </div>
 
@@ -223,11 +225,11 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               <div className="grid grid-cols-2 gap-8">
                 <div className="text-[9px] space-y-2 uppercase">
                   <p className="font-bold border-b">LOCAL: {teamNames.home}</p>
-                  {getSortedCards('home').map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' ? `(${e.time})` : ''}</p>)}
+                  {getSortedCards('home').map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</p>)}
                 </div>
                 <div className="text-[9px] space-y-2 uppercase">
                   <p className="font-bold border-b">VISITA: {teamNames.away}</p>
-                  {getSortedCards('away').map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' ? `(${e.time})` : ''}</p>)}
+                  {getSortedCards('away').map(e => <p key={e.id} className="border-b border-gray-50 pb-0.5">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</p>)}
                 </div>
               </div>
             </div>

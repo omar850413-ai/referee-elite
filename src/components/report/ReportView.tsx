@@ -64,21 +64,22 @@ export function ReportView({ matchState }: ReportViewProps) {
     const input = reportRef.current;
     if (!input) return;
 
-    const originalStyle = input.style.cssText;
-    input.style.transform = 'none';
-    input.style.position = 'fixed';
-    input.style.top = '0';
-    input.style.left = '0';
-    input.style.zIndex = '-1000';
+    const clone = input.cloneNode(true) as HTMLDivElement;
+    clone.style.transform = 'none';
+    clone.style.position = 'fixed';
+    clone.style.top = '0';
+    clone.style.left = '-9999px';
+    clone.style.width = '800px';
+    clone.style.height = 'auto';
+    clone.style.backgroundColor = '#FFFFFF';
+    document.body.appendChild(clone);
 
     try {
-      const canvas = await html2canvas(input, {
+      const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
         backgroundColor: '#FFFFFF',
         logging: false,
-        windowWidth: input.scrollWidth,
-        windowHeight: input.scrollHeight
       });
       const jpegUrl = canvas.toDataURL('image/jpeg', 0.95);
       const link = document.createElement('a');
@@ -86,23 +87,18 @@ export function ReportView({ matchState }: ReportViewProps) {
       link.download = `${teamNames.home}-VS-${teamNames.away}.jpg`.toUpperCase();
       link.click();
     } finally {
-      input.style.cssText = originalStyle;
+      document.body.removeChild(clone);
     }
   };
 
   const getPlayerEventsSummary = (side: 'home' | 'away', number: string, p?: Player) => {
     const playerEvs = (events || []).filter(e => e.side === side && e.playerNumber === number);
     return playerEvs.map(e => {
-      if (e.category === 'goals') return `${e.message.includes('AUTOGOL') ? '🥅' : '⚽'}${e.time !== '--' ? ` (${e.time})` : ''}`;
-      if (e.category === 'cards') return `${e.message.includes('🟨') ? '🟨' : '🟥'}${e.time !== '--' ? ` (${e.time})` : ''}`;
-      if (e.category === 'substitution' && p?.replacedNumber) return ` (POR: #${p.replacedNumber}${e.time !== '--' ? ` ${e.time}` : ''})`;
+      if (e.category === 'goals') return `${e.message.includes('AUTOGOL') ? '🥅' : '⚽'}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`;
+      if (e.category === 'cards') return `${e.message.includes('🟨') ? '🟨' : '🟥'}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`;
+      if (e.category === 'substitution' && p?.replacedNumber) return ` (POR: #${p.replacedNumber}${e.time !== '--' && e.time !== '' ? ` ${e.time}` : ''})`;
       return '';
     }).join(' ');
-  };
-
-  const getStaffEventsSummary = (side: 'home' | 'away', name: string) => {
-    return (events || []).filter(e => e.side === side && e.playerName === name && e.category === 'cards')
-      .map(e => `${e.message.includes('🟨') ? '🟨' : '🟥'}${e.time !== '--' ? ` (${e.time})` : ''}`).join(' ');
   };
 
   const getSortedCards = (side: 'home' | 'away') => {
@@ -120,7 +116,7 @@ export function ReportView({ matchState }: ReportViewProps) {
   return (
     <div className="w-full h-full flex flex-col bg-slate-900 overflow-hidden" ref={containerRef}>
       <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 z-10">
-        <div className="text-white font-black uppercase text-sm italic">Cédula Digital</div>
+        <div className="text-white font-black uppercase text-sm italic">Cédula Digital (Imagen)</div>
         <DialogClose className="text-white p-2 hover:bg-white/10 rounded-full"><X size={24} /></DialogClose>
       </div>
       
@@ -161,14 +157,14 @@ export function ReportView({ matchState }: ReportViewProps) {
             <div className="text-center font-black text-[14px] border-b-2 border-black mb-4 pb-1 uppercase">Alineaciones</div>
             <div className="grid grid-cols-2 gap-10">
               <div className="text-[10px] space-y-4">
-                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1">TITULARES</p>{lineups.home.slice(0, 11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}</div>
-                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1">SUPLENTES</p>{lineups.home.slice(11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}</div>
-                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1">CUERPO TÉCNICO</p>{staff.home.map(s => <p key={s.id} className="uppercase py-1 border-b border-gray-50"><strong>{s.role}:</strong> {s.name} {getStaffEventsSummary('home', s.name)}</p>)}</div>
+                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">Titulares</p>{lineups.home.slice(0, 11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}</div>
+                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">Suplentes</p>{lineups.home.slice(11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('home', p.number, p)}</p>)}</div>
+                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">Cuerpo Técnico</p>{staff.home.map(s => <p key={s.id} className="uppercase py-1 border-b border-gray-50"><strong>{s.role}:</strong> {s.name}</p>)}</div>
               </div>
               <div className="text-[10px] space-y-4">
-                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1">TITULARES</p>{lineups.away.slice(0, 11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}</div>
-                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1">SUPLENTES</p>{lineups.away.slice(11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}</div>
-                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1">CUERPO TÉCNICO</p>{staff.away.map(s => <p key={s.id} className="uppercase py-1 border-b border-gray-50"><strong>{s.role}:</strong> {s.name} {getStaffEventsSummary('away', s.name)}</p>)}</div>
+                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">Titulares</p>{lineups.away.slice(0, 11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}</div>
+                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">Suplentes</p>{lineups.away.slice(11).map(p => <p key={p.id} className="uppercase py-1 border-b border-gray-50"><strong>{p.number}.-</strong> {p.name} {getPlayerEventsSummary('away', p.number, p)}</p>)}</div>
+                <div><p className="text-[8px] font-black text-gray-400 border-b mb-1 uppercase">Cuerpo Técnico</p>{staff.away.map(s => <p key={s.id} className="uppercase py-1 border-b border-gray-50"><strong>{s.role}:</strong> {s.name}</p>)}</div>
               </div>
             </div>
 
@@ -176,12 +172,16 @@ export function ReportView({ matchState }: ReportViewProps) {
               <div className="text-center font-black text-[14px] border-b-2 border-black mb-4 pb-1 uppercase">Sanciones</div>
               <div className="grid grid-cols-2 gap-10">
                 <div className="text-[9px] space-y-2 uppercase">
-                  <p className="font-bold border-b text-primary">LOCAL: {teamNames.home}</p>
-                  {getSortedCards('home').map(e => <p key={e.id} className="border-b border-gray-50 pb-1">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' ? `(${e.time})` : ''}</p>)}
+                  <p className="font-bold border-b text-gray-400">AMONESTACIÓN LOCAL</p>
+                  {getSortedCards('home').filter(e => e.message.includes('🟨')).map(e => <p key={e.id} className="border-b border-gray-50 pb-1">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</p>)}
+                  <p className="font-bold border-b text-gray-400 mt-2">EXPULSIÓN LOCAL</p>
+                  {getSortedCards('home').filter(e => e.message.includes('🟥')).map(e => <p key={e.id} className="border-b border-gray-50 pb-1">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</p>)}
                 </div>
                 <div className="text-[9px] space-y-2 uppercase">
-                  <p className="font-bold border-b text-primary">VISITA: {teamNames.away}</p>
-                  {getSortedCards('away').map(e => <p key={e.id} className="border-b border-gray-50 pb-1">#{e.playerNumber} {e.playerName} {e.message.includes('🟨') ? '🟨' : '🟥'} {e.message.split(' - ').pop()} {e.time !== '--' ? `(${e.time})` : ''}</p>)}
+                  <p className="font-bold border-b text-gray-400">AMONESTACIÓN VISITA</p>
+                  {getSortedCards('away').filter(e => e.message.includes('🟨')).map(e => <p key={e.id} className="border-b border-gray-50 pb-1">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</p>)}
+                  <p className="font-bold border-b text-gray-400 mt-2">EXPULSIÓN VISITA</p>
+                  {getSortedCards('away').filter(e => e.message.includes('🟥')).map(e => <p key={e.id} className="border-b border-gray-50 pb-1">#{e.playerNumber} {e.playerName} {e.message.split(' - ').pop()} {e.time !== '--' && e.time !== '' ? `(${e.time})` : ''}</p>)}
                 </div>
               </div>
             </div>
