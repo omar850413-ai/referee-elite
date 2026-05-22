@@ -521,7 +521,7 @@ export default function Home() {
                   <div className="flex gap-1 flex-wrap">
                     <Button onClick={() => { setCurrentSide(side); setCurrentPlayerType('starter'); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[9px] px-2 h-7 uppercase"><UserPlus className="h-3 w-3 mr-1" /> TITULAR</Button>
                     <Button onClick={() => { setCurrentSide(side); setCurrentPlayerType('substitute'); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[9px] px-2 h-7 uppercase"><UserPlus className="h-3 w-3 mr-1" /> SUPLENTE</Button>
-                    <Button onClick={() => { setCurrentSide(side); setModal('add-staff'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[9px] px-2 h-7 uppercase"><Users className="h-3 w-3 mr-1" /> STAFF</Button>
+                    <Button onClick={() => { setCurrentSide(side); setModal('add-staff'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[9px] px-2 h-7 uppercase"><Users className="h-3 w-3 mr-1" /> CUERPO TÉCNICO</Button>
                   </div>
                 </div>
                 <div className="text-center bg-black/20 rounded-lg p-2">
