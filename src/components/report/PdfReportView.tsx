@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import { MatchState, Player } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { DialogClose } from '@/components/ui/dialog';
@@ -159,8 +159,8 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
   const renderPlayerRow = (p: Player, side: 'home' | 'away') => (
-    <div key={p.id} className="flex uppercase leading-none items-baseline py-0.5">
-      <span className="inline-block w-[14px] text-right mr-1 font-bold">{p.number}.-</span>
+    <div key={p.id} className="flex uppercase leading-none items-baseline py-0">
+      <span className="inline-block w-[18px] text-right mr-1 font-bold">{p.number}.-</span>
       <span className="flex-1">{p.name} {getPlayerEventsSummary(side, p.number, p)}</span>
     </div>
   );
@@ -179,7 +179,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
     return (
       <p key={e.id} className="leading-none border-b border-gray-50 flex items-baseline py-0.5">
-        <span className="inline-block w-[14px] text-right mr-1 font-bold">{numberDisplay}</span> 
+        <span className="inline-block w-[18px] text-right mr-1 font-bold">{numberDisplay}</span> 
         <span className="flex-1">{nameDisplay} {e.message.split(' - ').pop()}</span>
       </p>
     );
@@ -215,68 +215,56 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
             </div>
 
             <div className="flex justify-center mb-3">
-              <div className="grid grid-cols-2 border border-black text-center divide-x divide-black w-full max-w-md">
+              <div className="grid grid-cols-2 border border-black text-center divide-x divide-black w-full max-w-sm">
                 <div className="p-1 bg-gray-50 flex flex-col justify-center">
-                  <p className="text-sm font-black uppercase leading-none">{teamNames.home}</p>
-                  <p className="text-xs font-black mt-1">{scores.home} ({numberToSpanishWords(scores.home)})</p>
+                  <p className="text-[11px] font-black uppercase leading-none">{teamNames.home}</p>
+                  <p className="text-[12px] font-black mt-0.5">{scores.home} ({numberToSpanishWords(scores.home)})</p>
                 </div>
                 <div className="p-1 bg-gray-50 flex flex-col justify-center">
-                  <p className="text-sm font-black uppercase leading-none">{teamNames.away}</p>
-                  <p className="text-xs font-black mt-1">{scores.away} ({numberToSpanishWords(scores.away)})</p>
+                  <p className="text-[11px] font-black uppercase leading-none">{teamNames.away}</p>
+                  <p className="text-[12px] font-black mt-0.5">{scores.away} ({numberToSpanishWords(scores.away)})</p>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-0 text-[8px]">
-                <p className="text-[7px] font-black text-gray-500 border-b uppercase mb-1">TITULARES</p>
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mb-1">TITULARES</p>
                 {(lineups.home || []).filter(p => p.type === 'starter').map(p => renderPlayerRow(p, 'home'))}
                 
-                <p className="text-[7px] font-black text-gray-500 border-b uppercase mt-2 mb-1">SUPLENTES</p>
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">SUPLENTES</p>
                 {(lineups.home || []).filter(p => p.type === 'substitute').map(p => renderPlayerRow(p, 'home'))}
                 
-                <p className="text-[7px] font-black text-gray-500 border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
-                {(staff.home || []).map(s => <p key={s.id} className="uppercase leading-tight"><strong>{roleInitials[s.role] || 'STAFF'}:</strong> {s.name}</p>)}
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
+                {(staff.home || []).map(s => <p key={s.id} className="uppercase leading-tight py-0">{roleInitials[s.role] || 'STAFF'} - {s.name}</p>)}
               </div>
               <div className="space-y-0 text-[8px]">
-                <p className="text-[7px] font-black text-gray-500 border-b uppercase mb-1">TITULARES</p>
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mb-1">TITULARES</p>
                 {(lineups.away || []).filter(p => p.type === 'starter').map(p => renderPlayerRow(p, 'away'))}
                 
-                <p className="text-[7px] font-black text-gray-500 border-b uppercase mt-2 mb-1">SUPLENTES</p>
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">SUPLENTES</p>
                 {(lineups.away || []).filter(p => p.type === 'substitute').map(p => renderPlayerRow(p, 'away'))}
                 
-                <p className="text-[7px] font-black text-gray-500 border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
-                {(staff.away || []).map(s => <p key={s.id} className="uppercase leading-tight"><strong>{roleInitials[s.role] || 'STAFF'}:</strong> {s.name}</p>)}
+                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
+                {(staff.away || []).map(s => <p key={s.id} className="uppercase leading-tight py-0">{roleInitials[s.role] || 'STAFF'} - {s.name}</p>)}
               </div>
             </div>
 
             <div className="mt-4 border-t pt-2">
               <div className="grid grid-cols-2 gap-6">
-                <div className="text-[7px] space-y-1 uppercase relative">
-                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none">
-                    <span className="text-4xl font-black">🟨 AMONESTACIÓN</span>
-                  </div>
-                  <p className="font-bold border-b border-gray-100 mb-1">🟨 SANCIONES LOCAL</p>
+                <div className="text-[7px] space-y-1 uppercase">
+                  <p className="font-bold border-b border-gray-100 mb-1 text-gray-400">🟨 AMONESTACIÓN LOCAL</p>
                   {getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home'))}
-                  <div className="mt-2 text-[7px] space-y-1 uppercase relative">
-                    <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none">
-                      <span className="text-4xl font-black text-red-600">🟥 EXPULSIÓN</span>
-                    </div>
-                    <p className="font-bold border-b border-gray-100 mb-1">🟥 SANCIONES LOCAL</p>
+                  <div className="mt-2 text-[7px] space-y-1 uppercase">
+                    <p className="font-bold border-b border-gray-100 mb-1 text-gray-400">🟥 EXPULSIÓN LOCAL</p>
                     {getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home'))}
                   </div>
                 </div>
-                <div className="text-[7px] space-y-1 uppercase relative">
-                   <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none">
-                    <span className="text-4xl font-black">🟨 AMONESTACIÓN</span>
-                  </div>
-                  <p className="font-bold border-b border-gray-100 mb-1">🟨 SANCIONES VISITA</p>
+                <div className="text-[7px] space-y-1 uppercase">
+                  <p className="font-bold border-b border-gray-100 mb-1 text-gray-400">🟨 AMONESTACIÓN VISITA</p>
                   {getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away'))}
-                  <div className="mt-2 text-[7px] space-y-1 uppercase relative">
-                    <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none">
-                      <span className="text-4xl font-black text-red-600">🟥 EXPULSIÓN</span>
-                    </div>
-                    <p className="font-bold border-b border-gray-100 mb-1">🟥 SANCIONES VISITA</p>
+                  <div className="mt-2 text-[7px] space-y-1 uppercase">
+                    <p className="font-bold border-b border-gray-100 mb-1 text-gray-400">🟥 EXPULSIÓN VISITA</p>
                     {getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away'))}
                   </div>
                 </div>
