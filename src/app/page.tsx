@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -238,7 +239,20 @@ export default function Home() {
     }
 
     const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type };
-    updateMatch({ lineups: { ...currentLineups, [side]: [...currentLineups[side], player] } });
+    const updatedList = [...currentLineups[side], player];
+    updateMatch({ lineups: { ...currentLineups, [side]: updatedList } });
+
+    // Notificación al completar 11 titulares
+    if (type === 'starter') {
+      const startersCount = updatedList.filter(p => p.type === 'starter').length;
+      if (startersCount === 11) {
+        toast({
+          title: "ONCE TITULAR COMPLETO",
+          description: "HAS COMPLETADO LOS 11 TITULARES. AHORA PUEDES REGISTRAR A LOS SUPLENTES SIN LÍMITE.",
+        });
+      }
+    }
+
     setNewPlayerNumber(''); setNewPlayerName(''); setModal(null);
   };
 
