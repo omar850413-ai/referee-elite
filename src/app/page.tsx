@@ -238,11 +238,22 @@ export default function Home() {
       return;
     }
 
+    if (type === 'starter') {
+      const startersCount = currentLineups[side].filter(p => p.type === 'starter').length;
+      if (startersCount >= 11) {
+        toast({
+          variant: "destructive",
+          title: "LÍMITE ALCANZADO",
+          description: "YA NO SE PUEDEN REGISTRAR MÁS DE 11 TITULARES. POR FAVOR, INSCRIBE A LOS DEMÁS COMO SUPLENTES.",
+        });
+        return;
+      }
+    }
+
     const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type };
     const updatedList = [...currentLineups[side], player];
     updateMatch({ lineups: { ...currentLineups, [side]: updatedList } });
 
-    // Notificación al completar 11 titulares
     if (type === 'starter') {
       const startersCount = updatedList.filter(p => p.type === 'starter').length;
       if (startersCount === 11) {
@@ -757,39 +768,6 @@ export default function Home() {
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={modal === 'edit-staff'} onOpenChange={() => setModal('staff-actions')}>
-        <DialogContent className="max-w-sm rounded-2xl">
-          <DialogHeader><DialogTitle className="text-center font-black uppercase">EDITAR CUERPO TÉCNICO</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-xs font-black uppercase">CARGO</Label>
-              <Select value={newStaffRole} onValueChange={setNewStaffRole}>
-                <SelectTrigger className="w-full uppercase font-bold">
-                  <SelectValue placeholder="SELECCIONE CARGO" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="DIRECTOR TÉCNICO">DIRECTOR TÉCNICO</SelectItem>
-                  <SelectItem value="AUXILIAR">AUXILIAR</SelectItem>
-                  <SelectItem value="PREPARADOR FÍSICO">PREPARADOR FÍSICO</SelectItem>
-                  <SelectItem value="UTILERO">UTILERO</SelectItem>
-                  <SelectItem value="MÉDICO">MÉDICO</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-black uppercase">NOMBRE</Label>
-              <div className="relative">
-                <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newStaffName} onChange={e => setNewStaffName(e.target.value.toUpperCase())} />
-                <button onClick={() => startListening('edit-staff')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
-                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-                </button>
-              </div>
-            </div>
-            <Button onClick={handleUpdateStaff} className="w-full h-12 font-black bg-primary text-white uppercase">GUARDAR CAMBIOS</Button>
-          </div>
         </DialogContent>
       </Dialog>
 
