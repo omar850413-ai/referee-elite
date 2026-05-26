@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -445,7 +444,7 @@ export default function Home() {
             const playerEvs = events.filter(e => e.side === side && e.playerNumber === p.number);
             return (
               <tr key={p.id} className="border-b hover:bg-slate-50 cursor-pointer" onClick={() => { setSelectedPlayer({ player: p, side, isSub: isSubList }); setModal('player-actions'); }}>
-                <td className="p-2 text-center font-bold text-slate-400 w-10">#{p.number}</td>
+                <td className="p-2 text-right font-bold text-slate-400 w-12 pr-3">#{p.number}</td>
                 <td className="p-2">
                   <div className="flex justify-between items-center">
                     <div>
@@ -509,30 +508,33 @@ export default function Home() {
   const isSuperAdmin = user?.email === 'omar850413@gmail.com';
 
   return (
-    <div className="p-2 md:p-6 bg-slate-50 min-h-screen font-sans text-slate-900">
-      <div className="max-w-5xl mx-auto space-y-4">
-        
-        <div className="flex justify-between items-center py-6">
-          <div className="flex-1"></div>
+    <div className="bg-slate-50 min-h-screen font-sans text-slate-900">
+      <div className="bg-[#1a1c1e] shadow-xl">
+        <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <Logo />
-          <div className="flex-1 flex justify-end">
+          <div className="flex flex-col items-center md:items-end gap-3">
+             <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] text-center md:text-right max-w-xs">
+              CONFÍA EN LA EXPERIENCIA. LÍDERES EN FORMACIÓN Y CERTIFICACIÓN.
+             </p>
             {isSuperAdmin && (
               <Link href="/admin">
-                <Button variant="outline" size="sm" className="font-black gap-2 uppercase text-primary border-primary shadow-sm">
+                <Button variant="outline" size="sm" className="font-black gap-2 uppercase text-primary border-primary bg-white/5 hover:bg-white/10 transition-colors">
                   <ShieldAlert className="h-4 w-4" /> PANEL DE CONTROL
                 </Button>
               </Link>
             )}
           </div>
         </div>
+      </div>
 
+      <div className="max-w-5xl mx-auto p-4 space-y-4">
         <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border">
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <Button onClick={() => setModal('info')} className="bg-indigo-600 text-white font-black h-12 shadow-md uppercase"><Settings2 className="h-5 w-5 mr-2" /> DATOS PARTIDO</Button>
-              <Button onClick={() => { setTempIncidents(events.find(e => e.category === 'notes')?.message.replace('📝 ', '') || ''); setModal('incidents'); }} className="bg-rose-500 text-white font-black h-12 shadow-md uppercase"><AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES</Button>
-              <Button onClick={() => setIsPdfReportOpen(true)} className="bg-slate-900 text-white font-black h-12 shadow-md uppercase">PDF</Button>
-              <Button onClick={() => setIsImageReportOpen(true)} className="bg-emerald-500 text-white font-black h-12 shadow-md uppercase">IMAGEN</Button>
+              <Button onClick={() => setModal('info')} className="bg-indigo-600 text-white font-black h-12 shadow-md uppercase hover:bg-indigo-700"><Settings2 className="h-5 w-5 mr-2" /> DATOS PARTIDO</Button>
+              <Button onClick={() => { setTempIncidents(events.find(e => e.category === 'notes')?.message.replace('📝 ', '') || ''); setModal('incidents'); }} className="bg-rose-500 text-white font-black h-12 shadow-md uppercase hover:bg-rose-600"><AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES</Button>
+              <Button onClick={() => setIsPdfReportOpen(true)} className="bg-slate-900 text-white font-black h-12 shadow-md uppercase hover:bg-black">PDF</Button>
+              <Button onClick={() => setIsImageReportOpen(true)} className="bg-emerald-500 text-white font-black h-12 shadow-md uppercase hover:bg-emerald-600">IMAGEN</Button>
             </div>
           </div>
         </div>
@@ -565,7 +567,7 @@ export default function Home() {
         <div className="grid grid-cols-3 gap-8 pt-6 pb-4">
           {(['captainHome', 'referee', 'captainAway'] as const).map(type => (
             <div key={type} className="text-center">
-              <button onClick={() => setModal(`sign-${type}`)} className="border-2 border-dashed border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 rounded-xl bg-white overflow-hidden">
+              <button onClick={() => setModal(`sign-${type}`)} className="border-2 border-dashed border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 rounded-xl bg-white overflow-hidden shadow-inner">
                 {signatures[type] ? <img src={signatures[type]} className="max-h-full" /> : <span className="text-slate-300 italic text-[10px] uppercase">FIRMA {type.toUpperCase()}</span>}
               </button>
               <p className="text-[8px] font-black uppercase text-slate-400">{type === 'referee' ? 'ÁRBITRO CENTRAL' : `CAPITÁN ${type.includes('Home') ? 'LOCAL' : 'VISITANTE'}`}</p>
