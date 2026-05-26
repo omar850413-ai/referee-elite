@@ -160,14 +160,14 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
   const renderPlayerRow = (p: Player, side: 'home' | 'away') => (
     <div key={p.id} className="flex uppercase leading-none items-baseline py-0">
-      <span className="inline-block w-[18px] text-right mr-1 font-bold">{p.number}.-</span>
-      <span className="flex-1">{p.name} {getPlayerEventsSummary(side, p.number, p)}</span>
+      <div className="inline-block w-[18px] text-right mr-1 font-bold">{p.number}.-</div>
+      <div className="flex-1 text-left">{p.name} {getPlayerEventsSummary(side, p.number, p)}</div>
     </div>
   );
 
   const renderCardEntry = (e: any, side: 'home' | 'away') => {
     let nameDisplay = e.playerName;
-    let numberDisplay = e.playerNumber ? `#${e.playerNumber}` : '';
+    let numberDisplay = e.playerNumber ? `${e.playerNumber}.-` : '';
 
     if (!e.playerNumber) {
       const staffMember = (staff[side] || []).find(s => s.name === e.playerName);
@@ -178,10 +178,10 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     }
 
     return (
-      <p key={e.id} className="leading-none border-b border-gray-50 flex items-baseline py-0.5">
-        <span className="inline-block w-[18px] text-right mr-1 font-bold">{numberDisplay}</span> 
-        <span className="flex-1">{nameDisplay} {e.message.split(' - ').pop()}</span>
-      </p>
+      <div key={e.id} className="leading-none border-b border-gray-50 flex items-baseline py-0.5">
+        <div className="inline-block w-[18px] text-right mr-1 font-bold">{numberDisplay}</div> 
+        <div className="flex-1 text-left">{nameDisplay} {e.message.split(' - ').pop()}</div>
+      </div>
     );
   };
 
@@ -229,42 +229,43 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-0 text-[8px]">
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mb-1">TITULARES</p>
+                <p className="text-[7px] font-black border-b uppercase mb-1">TITULARES</p>
                 {(lineups.home || []).filter(p => p.type === 'starter').map(p => renderPlayerRow(p, 'home'))}
                 
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">SUPLENTES</p>
+                <p className="text-[7px] font-black border-b uppercase mt-2 mb-1">SUPLENTES</p>
                 {(lineups.home || []).filter(p => p.type === 'substitute').map(p => renderPlayerRow(p, 'home'))}
                 
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
+                <p className="text-[7px] font-black border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
                 {(staff.home || []).map(s => <p key={s.id} className="uppercase leading-tight py-0">{roleInitials[s.role] || 'STAFF'} - {s.name}</p>)}
               </div>
               <div className="space-y-0 text-[8px]">
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mb-1">TITULARES</p>
+                <p className="text-[7px] font-black border-b uppercase mb-1">TITULARES</p>
                 {(lineups.away || []).filter(p => p.type === 'starter').map(p => renderPlayerRow(p, 'away'))}
                 
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">SUPLENTES</p>
+                <p className="text-[7px] font-black border-b uppercase mt-2 mb-1">SUPLENTES</p>
                 {(lineups.away || []).filter(p => p.type === 'substitute').map(p => renderPlayerRow(p, 'away'))}
                 
-                <p className="text-[7px] font-black text-gray-400 border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
+                <p className="text-[7px] font-black border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
                 {(staff.away || []).map(s => <p key={s.id} className="uppercase leading-tight py-0">{roleInitials[s.role] || 'STAFF'} - {s.name}</p>)}
               </div>
             </div>
 
             <div className="mt-4 border-t pt-2">
+              <p className="text-[8px] font-black uppercase text-black border-b mb-1">SANCIONES</p>
               <div className="grid grid-cols-2 gap-6">
                 <div className="text-[7px] space-y-1 uppercase">
-                  <p className="font-bold border-b border-gray-100 mb-1 text-gray-400">🟨 AMONESTACIÓN LOCAL</p>
+                  <p className="font-bold border-b border-gray-100 mb-1 text-gray-400">🟨 AMONESTACIÓN</p>
                   {getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home'))}
                   <div className="mt-2 text-[7px] space-y-1 uppercase">
-                    <p className="font-bold border-b border-gray-100 mb-1 text-gray-400">🟥 EXPULSIÓN LOCAL</p>
+                    <p className="font-bold border-b border-gray-100 mb-1 text-gray-400">🟥 EXPULSIÓN</p>
                     {getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home'))}
                   </div>
                 </div>
                 <div className="text-[7px] space-y-1 uppercase">
-                  <p className="font-bold border-b border-gray-100 mb-1 text-gray-400">🟨 AMONESTACIÓN VISITA</p>
+                  <p className="font-bold border-b border-gray-100 mb-1 text-gray-400">🟨 AMONESTACIÓN</p>
                   {getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away'))}
                   <div className="mt-2 text-[7px] space-y-1 uppercase">
-                    <p className="font-bold border-b border-gray-100 mb-1 text-gray-400">🟥 EXPULSIÓN VISITA</p>
+                    <p className="font-bold border-b border-gray-100 mb-1 text-gray-400">🟥 EXPULSIÓN</p>
                     {getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away'))}
                   </div>
                 </div>
