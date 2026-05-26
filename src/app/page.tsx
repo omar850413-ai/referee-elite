@@ -509,16 +509,16 @@ export default function Home() {
 
   return (
     <div className="bg-slate-50 min-h-screen font-sans text-slate-900">
-      <div className="bg-[#1a1c1e] shadow-xl">
+      <div className="bg-white border-b shadow-sm">
         <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <Logo />
           <div className="flex flex-col items-center md:items-end gap-3">
-             <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] text-center md:text-right max-w-xs">
+             <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] text-center md:text-right max-w-xs">
               CONFÍA EN LA EXPERIENCIA. LÍDERES EN FORMACIÓN Y CERTIFICACIÓN.
              </p>
             {isSuperAdmin && (
               <Link href="/admin">
-                <Button variant="outline" size="sm" className="font-black gap-2 uppercase text-primary border-primary bg-white/5 hover:bg-white/10 transition-colors">
+                <Button variant="outline" size="sm" className="font-black gap-2 uppercase text-primary border-primary">
                   <ShieldAlert className="h-4 w-4" /> PANEL DE CONTROL
                 </Button>
               </Link>
