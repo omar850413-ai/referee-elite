@@ -513,9 +513,6 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <Logo />
           <div className="flex flex-col items-center md:items-end gap-3">
-             <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] text-center md:text-right max-w-xs">
-              CONFÍA EN LA EXPERIENCIA. LÍDERES EN FORMACIÓN Y CERTIFICACIÓN.
-             </p>
             {isSuperAdmin && (
               <Link href="/admin">
                 <Button variant="outline" size="sm" className="font-black gap-2 uppercase text-primary border-primary">
