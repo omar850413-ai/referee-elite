@@ -156,8 +156,37 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
   const handleAddPlayer = (side: 'home' | 'away') => {
     if (!newPlayerNumber || !newPlayerName) return;
     const currentLineups = matchState.lineups || { home: [], away: [] };
-    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: 'starter' };
-    updateMatch({ lineups: { ...currentLineups, [side]: [...currentLineups[side], player] } });
+    
+    // Validar si el número de camiseta ya existe en la alineación del equipo
+    const isDuplicateNumber = (currentLineups[side] || []).some(p => p.number === newPlayerNumber);
+    if (isDuplicateNumber) {
+      toast({
+        variant: "destructive",
+        title: "NÚMERO REPETIDO",
+        description: `EL NÚMERO DE JUGADOR #${newPlayerNumber} YA SE ENCUENTRA REGISTRADO EN LA ALINEACIÓN.`,
+      });
+      return;
+    }
+
+    const startersCount = (currentLineups[side] || []).filter(p => p.type === 'starter').length;
+    const type = startersCount < 11 ? 'starter' : 'substitute';
+
+    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type };
+    const updatedLineup = [...(currentLineups[side] || []), player];
+    
+    updateMatch({ lineups: { ...currentLineups, [side]: updatedLineup } });
+
+    // Notificación al completar 11 titulares
+    if (type === 'starter') {
+      const newStartersCount = updatedLineup.filter(p => p.type === 'starter').length;
+      if (newStartersCount === 11) {
+        toast({
+          title: "ONCE TITULAR COMPLETO",
+          description: "HAS REGISTRADO LOS 11 TITULARES. A PARTIR DE AHORA SE INSCRIBIRÁN COMO SUPLENTES.",
+        });
+      }
+    }
+
     setNewPlayerNumber(''); setNewPlayerName(''); setModal(null);
   };
 
