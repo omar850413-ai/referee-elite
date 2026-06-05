@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -62,6 +63,7 @@ export default function LoginPage() {
         const data = userDoc.data();
         const isSuperAdmin = user.email === adminEmail;
         
+        // Bloqueo de seguridad: Si el usuario existe pero es de otra app (Asesor Pro)
         if (data.appId && data.appId !== 'referee-elite' && !isSuperAdmin) {
           await signOut(auth);
           setError('ESTA CUENTA PERTENECE A OTRA APLICACIÓN. POR FAVOR, REGÍSTRATE CON UN CORREO DIFERENTE PARA REFEREE ELITE.');
@@ -82,6 +84,7 @@ export default function LoginPage() {
             throw err;
         });
       } else {
+        // Si no tiene perfil, lo mandamos a registro
         await signOut(auth);
         setError('NO SE ENCONTRÓ UN PERFIL PARA ESTA CUENTA. POR FAVOR, REGÍSTRATE.');
         setIsLoading(false);
@@ -156,9 +159,9 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="tu@email.com"
+                placeholder="TU@EMAIL.COM"
                 value={email}
-                onChange={(e) => setEmail(e.target.value.toLowerCase())}
+                onChange={(e) => setEmail(e.target.value.toUpperCase())}
                 required
               />
             </div>
@@ -179,9 +182,9 @@ export default function LoginPage() {
                     <div className="space-y-4 py-4">
                        <Input
                          type="email"
-                         placeholder="tu@email.com"
+                         placeholder="TU@EMAIL.COM"
                          value={resetEmail}
-                         onChange={(e) => setResetEmail(e.target.value.toLowerCase())}
+                         onChange={(e) => setResetEmail(e.target.value.toUpperCase())}
                        />
                     </div>
                     <DialogFooter>

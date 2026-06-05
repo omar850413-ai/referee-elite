@@ -21,7 +21,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -41,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft, ArrowRightLeft, Users, Pencil } from 'lucide-react';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft, ArrowRightLeft, Users } from 'lucide-react';
 import { causalesAmarilla, causalesRoja, causalesStaff } from '@/lib/causales';
 import Link from 'next/link';
 
@@ -54,7 +53,6 @@ export default function Home() {
 
   const [modal, setModal] = useState<string | null>(null);
   const [currentSide, setCurrentSide] = useState<'home' | 'away'>('home');
-  const [currentPlayerType, setCurrentPlayerType] = useState<'starter' | 'substitute'>('starter');
   const [isPdfReportOpen, setIsPdfReportOpen] = useState(false);
   const [isImageReportOpen, setIsImageReportOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<{player: Player, side: 'home' | 'away', isSub: boolean} | null>(null);
@@ -91,26 +89,11 @@ export default function Home() {
       return;
     }
     
-    if (userProfile && userProfile.sessionId) {
-      const localSessionId = localStorage.getItem('sessionId');
-      if (localSessionId && localSessionId !== userProfile.sessionId) {
-        toast({
-          variant: "destructive",
-          title: "SESIÓN CERRADA",
-          description: "SE HA INICIADO SESIÓN EN OTRO DISPOSITIVO.",
-        });
-        localStorage.removeItem('sessionId');
-        signOut(auth);
-        router.push('/login');
-        return;
-      }
-    }
-
     const isSuperAdmin = user.email === 'omar850413@gmail.com';
     if (userProfile && !userProfile.isApproved && !isSuperAdmin) {
       router.push('/pending-approval');
     }
-  }, [user, userProfile, isUserLoading, isProfileLoading, router, auth, toast]);
+  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
   useEffect(() => {
     if (modal?.startsWith('sign-')) {
@@ -133,7 +116,7 @@ export default function Home() {
 
   const handleResetMatch = () => {
     if (!matchRef || !user) return;
-    const advisorName = user.email?.toLowerCase() || '';
+    const advisorName = user.email?.toUpperCase() || '';
     const resetState: MatchState = {
       title: 'INFORME ARBITRAL',
       scores: { home: 0, away: 0 },
@@ -206,7 +189,7 @@ export default function Home() {
     setModal(null);
   };
 
-  const startListening = (target: 'player' | 'staff' | 'edit-player' | 'edit-staff') => {
+  const startListening = (target: 'player' | 'staff') => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
     try {
@@ -216,83 +199,20 @@ export default function Home() {
       recognition.onend = () => setIsListening(false);
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
-        if (target === 'player' || target === 'edit-player') setNewPlayerName(transcript.toUpperCase());
+        if (target === 'player') setNewPlayerName(transcript.toUpperCase());
         else setNewStaffName(transcript.toUpperCase());
       };
       recognition.start();
     } catch (e) { setIsListening(false); }
   };
 
-  const handleAddPlayer = (side: 'home' | 'away', type: 'starter' | 'substitute') => {
+  const handleAddPlayer = (side: 'home' | 'away') => {
     if (!newPlayerNumber || !newPlayerName || !matchState) return;
     const currentLineups = matchState.lineups || { home: [], away: [] };
-    
-    const isDuplicate = currentLineups[side].some(p => p.number === newPlayerNumber);
-    if (isDuplicate) {
-      toast({
-        variant: "destructive",
-        title: "NÚMERO DUPLICADO",
-        description: `EL JUGADOR CON EL NÚMERO ${newPlayerNumber} YA EXISTE EN ESTE EQUIPO.`,
-      });
-      return;
-    }
-
-    if (type === 'starter') {
-      const startersCount = currentLineups[side].filter(p => p.type === 'starter').length;
-      if (startersCount >= 11) {
-        toast({
-          variant: "destructive",
-          title: "LÍMITE ALCANZADO",
-          description: "YA NO SE PUEDEN REGISTRAR MÁS DE 11 TITULARES. POR FAVOR, INSCRIBE A LOS DEMÁS COMO SUPLENTES.",
-        });
-        return;
-      }
-    }
-
-    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type };
-    const updatedList = [...currentLineups[side], player];
-    updateMatch({ lineups: { ...currentLineups, [side]: updatedList } });
-
-    if (type === 'starter') {
-      const startersCount = updatedList.filter(p => p.type === 'starter').length;
-      if (startersCount === 11) {
-        toast({
-          title: "ONCE TITULAR COMPLETO",
-          description: "HAS COMPLETADO LOS 11 TITULARES. AHORA PUEDES REGISTRAR A LOS SUPLENTES SIN LÍMITE.",
-        });
-      }
-    }
-
+    const isSubstitute = currentLineups[side].length >= 11;
+    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: isSubstitute ? 'substitute' : 'starter' };
+    updateMatch({ lineups: { ...currentLineups, [side]: [...currentLineups[side], player] } });
     setNewPlayerNumber(''); setNewPlayerName(''); setModal(null);
-  };
-
-  const handleUpdatePlayer = () => {
-    if (!selectedPlayer || !newPlayerNumber || !newPlayerName || !matchState) return;
-    const { side, player } = selectedPlayer;
-    const currentLineups = { ...matchState.lineups };
-    
-    const isDuplicate = currentLineups[side].some(p => p.number === newPlayerNumber && p.id !== player.id);
-    if (isDuplicate) {
-      toast({
-        variant: "destructive",
-        title: "NÚMERO DUPLICADO",
-        description: `OTRO JUGADOR YA TIENE EL NÚMERO ${newPlayerNumber} EN ESTE EQUIPO.`,
-      });
-      return;
-    }
-
-    currentLineups[side] = currentLineups[side].map(p => p.id === player.id ? { ...p, number: newPlayerNumber, name: newPlayerName.toUpperCase() } : p);
-    updateMatch({ lineups: currentLineups });
-    setNewPlayerNumber(''); setNewPlayerName(''); setModal('player-actions');
-  };
-
-  const handleRemovePlayer = () => {
-    if (!selectedPlayer || !matchState) return;
-    const { side, player } = selectedPlayer;
-    const currentLineups = { ...matchState.lineups };
-    currentLineups[side] = currentLineups[side].filter(p => p.id !== player.id);
-    updateMatch({ lineups: currentLineups });
-    setModal(null);
   };
 
   const handleAddStaff = (side: 'home' | 'away') => {
@@ -301,42 +221,6 @@ export default function Home() {
     const member: StaffMember = { id: Date.now().toString(), name: newStaffName.toUpperCase(), role: newStaffRole.toUpperCase() };
     updateMatch({ staff: { ...currentStaff, [side]: [...currentStaff[side], member] } });
     setNewStaffName(''); setModal(null);
-  };
-
-  const handleUpdateStaff = () => {
-    if (!selectedStaff || !newStaffName || !matchState) return;
-    const { side, staff } = selectedStaff;
-    const currentStaff = { ...matchState.staff };
-    currentStaff[side] = currentStaff[side].map(s => s.id === staff.id ? { ...s, name: newStaffName.toUpperCase(), role: newStaffRole.toUpperCase() } : s);
-    updateMatch({ staff: currentStaff });
-    setNewStaffName(''); setModal('staff-actions');
-  };
-
-  const handleRemoveStaff = () => {
-    if (!selectedStaff || !matchState) return;
-    const { side, staff } = selectedStaff;
-    const currentStaff = { ...matchState.staff };
-    currentStaff[side] = currentStaff[side].filter(s => s.id !== staff.id);
-    updateMatch({ staff: currentStaff });
-    setModal(null);
-  };
-
-  const handleRemoveEvent = (eventId: number) => {
-    if (!matchState) return;
-    const event = matchState.events.find(e => e.id === eventId);
-    if (!event) return;
-
-    let updatedScores = { ...matchState.scores };
-    if (event.category === 'goals') {
-      const isOwnGoal = event.message.includes('AUTOGOL');
-      const scoringSide = isOwnGoal ? (event.side === 'home' ? 'away' : 'home') : event.side;
-      if (scoringSide) {
-        updatedScores[scoringSide] = Math.max(0, updatedScores[scoringSide] - 1);
-      }
-    }
-
-    const updatedEvents = matchState.events.filter(e => e.id !== eventId);
-    updateMatch({ events: updatedEvents, scores: updatedScores });
   };
 
   const handleAddGoal = (side: 'home' | 'away', player: Player) => {
@@ -379,17 +263,6 @@ export default function Home() {
   const handleRegisterSubstitution = () => {
     if (!selectedPlayer || !matchState || !subReplacedNumber) return;
     const { side, player } = selectedPlayer;
-    
-    const replacedPlayerExists = matchState.lineups[side].some(p => p.number === subReplacedNumber);
-    if (!replacedPlayerExists) {
-      toast({
-        variant: "destructive",
-        title: "JUGADOR NO ENCONTRADO",
-        description: `EL JUGADOR CON EL NÚMERO ${subReplacedNumber} NO EXISTE EN LA LISTA DE ESTE EQUIPO.`,
-      });
-      return;
-    }
-
     const updatedLineups = { ...matchState.lineups };
     updatedLineups[side] = updatedLineups[side].map(p => p.id === player.id ? { ...p, replacedNumber: subReplacedNumber } : p);
     
@@ -442,25 +315,24 @@ export default function Home() {
         <tbody className="text-sm">
           {players.map((p) => {
             const playerEvs = events.filter(e => e.side === side && e.playerNumber === p.number);
+            const goals = playerEvs.filter(e => e.category === 'goals' && !e.message.includes('AUTOGOL')).length;
+            const ownGoals = playerEvs.filter(e => e.category === 'goals' && e.message.includes('AUTOGOL')).length;
+            const yellow = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟨'));
+            const red = playerEvs.some(e => e.category === 'cards' && e.message.includes('🟥'));
             return (
               <tr key={p.id} className="border-b hover:bg-slate-50 cursor-pointer" onClick={() => { setSelectedPlayer({ player: p, side, isSub: isSubList }); setModal('player-actions'); }}>
-                <td className="p-2 text-right font-bold text-slate-400 w-12 pr-3">#{p.number}</td>
+                <td className="p-2 text-center font-bold text-slate-400 w-10">#{p.number}</td>
                 <td className="p-2">
                   <div className="flex justify-between items-center">
                     <div>
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <p className="font-bold uppercase text-slate-700 text-xs">{p.name}</p>
-                        {playerEvs.map(ev => {
-                           if (ev.category === 'goals') {
-                             return <span key={ev.id} className="text-[10px]">{ev.message.includes('AUTOGOL') ? '🥅' : '⚽'}{ev.time !== '--' && ev.time !== '' ? ` (${ev.time})` : ''}</span>
-                           }
-                           if (ev.category === 'cards') {
-                             return <span key={ev.id} className="text-[10px]">{ev.message.includes('🟨') ? '🟨' : '🟥'}{ev.time !== '--' && ev.time !== '' ? ` (${ev.time})` : ''}</span>
-                           }
-                           return null;
-                        })}
-                      </div>
+                      <p className="font-bold uppercase text-slate-700 text-xs">{p.name}</p>
                       {p.replacedNumber && <p className="text-[9px] font-black text-slate-400">ENTRÓ POR: #{p.replacedNumber}</p>}
+                    </div>
+                    <div className="flex gap-4 items-center">
+                      {goals > 0 && <span className="text-[11px] font-black text-emerald-600">⚽{goals}</span>}
+                      {ownGoals > 0 && <span className="text-[11px] font-black text-orange-600">🥅{ownGoals}</span>}
+                      {yellow && <span className="text-[11px]">🟨</span>}
+                      {red && <span className="text-[11px]">🟥</span>}
                     </div>
                   </div>
                 </td>
@@ -479,21 +351,19 @@ export default function Home() {
         <tbody className="text-sm">
           {staffMembers.map((s) => {
             const staffEvs = events.filter(e => e.side === side && e.playerName === s.name);
+            const yellow = staffEvs.some(e => e.category === 'cards' && e.message.includes('🟨'));
+            const red = staffEvs.some(e => e.category === 'cards' && e.message.includes('🟥'));
             return (
               <tr key={s.id} className="border-b hover:bg-slate-50 cursor-pointer" onClick={() => { setSelectedStaff({ staff: s, side }); setModal('staff-actions'); }}>
                 <td className="p-2">
                   <div className="flex justify-between items-center">
                     <div>
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <p className="font-bold uppercase text-slate-700 text-xs">{s.name}</p>
-                        {staffEvs.map(ev => {
-                           if (ev.category === 'cards') {
-                             return <span key={ev.id} className="text-[10px]">{ev.message.includes('🟨') ? '🟨' : '🟥'}{ev.time !== '--' && ev.time !== '' ? ` (${ev.time})` : ''}</span>
-                           }
-                           return null;
-                        })}
-                      </div>
+                      <p className="font-bold uppercase text-slate-700 text-xs">{s.name}</p>
                       <p className="text-[9px] font-black text-slate-400">{s.role}</p>
+                    </div>
+                    <div className="flex gap-4 items-center">
+                      {yellow && <span className="text-[11px]">🟨</span>}
+                      {red && <span className="text-[11px]">🟥</span>}
                     </div>
                   </div>
                 </td>
@@ -508,30 +378,30 @@ export default function Home() {
   const isSuperAdmin = user?.email === 'omar850413@gmail.com';
 
   return (
-    <div className="bg-slate-50 min-h-screen font-sans text-slate-900">
-      <div className="bg-white border-b shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
+    <div className="p-2 md:p-6 bg-slate-50 min-h-screen font-sans text-slate-900">
+      <div className="max-w-5xl mx-auto space-y-4">
+        
+        <div className="flex justify-between items-center py-6">
+          <div className="flex-1"></div>
           <Logo />
-          <div className="flex flex-col items-center md:items-end gap-3">
+          <div className="flex-1 flex justify-end">
             {isSuperAdmin && (
               <Link href="/admin">
-                <Button variant="outline" size="sm" className="font-black gap-2 uppercase text-primary border-primary">
+                <Button variant="outline" size="sm" className="font-black gap-2 uppercase text-primary border-primary shadow-sm">
                   <ShieldAlert className="h-4 w-4" /> PANEL DE CONTROL
                 </Button>
               </Link>
             )}
           </div>
         </div>
-      </div>
 
-      <div className="max-w-5xl mx-auto p-4 space-y-4">
         <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border">
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <Button onClick={() => setModal('info')} className="bg-indigo-600 text-white font-black h-12 shadow-md uppercase hover:bg-indigo-700"><Settings2 className="h-5 w-5 mr-2" /> DATOS PARTIDO</Button>
-              <Button onClick={() => { setTempIncidents(events.find(e => e.category === 'notes')?.message.replace('📝 ', '') || ''); setModal('incidents'); }} className="bg-rose-500 text-white font-black h-12 shadow-md uppercase hover:bg-rose-600"><AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES</Button>
-              <Button onClick={() => setIsPdfReportOpen(true)} className="bg-slate-900 text-white font-black h-12 shadow-md uppercase hover:bg-black">PDF</Button>
-              <Button onClick={() => setIsImageReportOpen(true)} className="bg-emerald-500 text-white font-black h-12 shadow-md uppercase hover:bg-emerald-600">IMAGEN</Button>
+              <Button onClick={() => setModal('info')} className="bg-indigo-600 text-white font-black h-12 shadow-md uppercase"><Settings2 className="h-5 w-5 mr-2" /> DATOS PARTIDO</Button>
+              <Button onClick={() => { setTempIncidents(events.find(e => e.category === 'notes')?.message.replace('📝 ', '') || ''); setModal('incidents'); }} className="bg-rose-500 text-white font-black h-12 shadow-md uppercase"><AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES</Button>
+              <Button onClick={() => setIsPdfReportOpen(true)} className="bg-slate-900 text-white font-black h-12 shadow-md uppercase">PDF</Button>
+              <Button onClick={() => setIsImageReportOpen(true)} className="bg-emerald-500 text-white font-black h-12 shadow-md uppercase">IMAGEN</Button>
             </div>
           </div>
         </div>
@@ -542,10 +412,9 @@ export default function Home() {
               <CardHeader className={`${side === 'home' ? 'bg-amber-500' : 'bg-blue-600'} text-white p-4`}>
                 <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
                   <CardTitle className="text-lg font-black uppercase italic">{teamNames[side]}</CardTitle>
-                  <div className="flex gap-1 flex-wrap">
-                    <Button onClick={() => { setCurrentSide(side); setCurrentPlayerType('starter'); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[9px] px-2 h-7 uppercase"><UserPlus className="h-3 w-3 mr-1" /> TITULAR</Button>
-                    <Button onClick={() => { setCurrentSide(side); setCurrentPlayerType('substitute'); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[9px] px-2 h-7 uppercase"><UserPlus className="h-3 w-3 mr-1" /> SUPLENTE</Button>
-                    <Button onClick={() => { setCurrentSide(side); setModal('add-staff'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[9px] px-2 h-7 uppercase"><Users className="h-3 w-3 mr-1" /> CUERPO TÉCNICO</Button>
+                  <div className="flex gap-2">
+                    <Button onClick={() => { setCurrentSide(side); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[10px] uppercase"><UserPlus className="h-3 w-3 mr-1" /> JUGADOR</Button>
+                    <Button onClick={() => { setCurrentSide(side); setModal('add-staff'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[10px] uppercase"><Users className="h-3 w-3 mr-1" /> STAFF</Button>
                   </div>
                 </div>
                 <div className="text-center bg-black/20 rounded-lg p-2">
@@ -553,8 +422,8 @@ export default function Home() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                {renderPlayerTable(side, lineups[side].filter(p => p.type === 'starter'), "TITULARES", false)}
-                {renderPlayerTable(side, lineups[side].filter(p => p.type === 'substitute'), "SUPLENTES", true)}
+                {renderPlayerTable(side, lineups[side].slice(0, 11), "TITULARES", false)}
+                {renderPlayerTable(side, lineups[side].slice(11), "SUPLENTES", true)}
                 {renderStaffTable(side, staff[side])}
               </CardContent>
             </Card>
@@ -564,7 +433,7 @@ export default function Home() {
         <div className="grid grid-cols-3 gap-8 pt-6 pb-4">
           {(['captainHome', 'referee', 'captainAway'] as const).map(type => (
             <div key={type} className="text-center">
-              <button onClick={() => setModal(`sign-${type}`)} className="border-2 border-dashed border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 rounded-xl bg-white overflow-hidden shadow-inner">
+              <button onClick={() => setModal(`sign-${type}`)} className="border-2 border-dashed border-slate-300 w-full h-24 mb-2 flex items-center justify-center hover:bg-slate-100 rounded-xl bg-white overflow-hidden">
                 {signatures[type] ? <img src={signatures[type]} className="max-h-full" /> : <span className="text-slate-300 italic text-[10px] uppercase">FIRMA {type.toUpperCase()}</span>}
               </button>
               <p className="text-[8px] font-black uppercase text-slate-400">{type === 'referee' ? 'ÁRBITRO CENTRAL' : `CAPITÁN ${type.includes('Home') ? 'LOCAL' : 'VISITANTE'}`}</p>
@@ -601,11 +470,7 @@ export default function Home() {
 
       <Dialog open={modal === 'add-player'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-sm rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-center font-black uppercase">
-              INSCRIBIR {currentPlayerType === 'starter' ? 'TITULAR' : 'SUPLENTE'}
-            </DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle className="text-center font-black uppercase">INSCRIBIR JUGADOR</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <Input type="number" placeholder="00" className="text-2xl h-14 text-center font-black" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} />
             <div className="relative">
@@ -614,23 +479,7 @@ export default function Home() {
                 {isListening ? <MicOff size={20} /> : <Mic size={20} />}
               </button>
             </div>
-            <Button onClick={() => handleAddPlayer(currentSide, currentPlayerType)} className="w-full h-12 font-black bg-primary text-white uppercase">AGREGAR</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={modal === 'edit-player'} onOpenChange={() => setModal('player-actions')}>
-        <DialogContent className="max-w-sm rounded-2xl">
-          <DialogHeader><DialogTitle className="text-center font-black uppercase">EDITAR JUGADOR</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4">
-            <Input type="number" placeholder="00" className="text-2xl h-14 text-center font-black" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} />
-            <div className="relative">
-              <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value.toUpperCase())} />
-              <button onClick={() => startListening('edit-player')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
-                {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-              </button>
-            </div>
-            <Button onClick={handleUpdatePlayer} className="w-full h-12 font-black bg-primary text-white uppercase">GUARDAR CAMBIOS</Button>
+            <Button onClick={() => handleAddPlayer(currentSide)} className="w-full h-12 font-black bg-primary text-white uppercase">AGREGAR</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -668,39 +517,6 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={modal === 'edit-staff'} onOpenChange={() => setModal('staff-actions')}>
-        <DialogContent className="max-w-sm rounded-2xl">
-          <DialogHeader><DialogTitle className="text-center font-black uppercase">EDITAR CUERPO TÉCNICO</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-xs font-black uppercase">CARGO</Label>
-              <Select value={newStaffRole} onValueChange={setNewStaffRole}>
-                <SelectTrigger className="w-full uppercase font-bold">
-                  <SelectValue placeholder="SELECCIONE CARGO" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="DIRECTOR TÉCNICO">DIRECTOR TÉCNICO</SelectItem>
-                  <SelectItem value="AUXILIAR">AUXILIAR</SelectItem>
-                  <SelectItem value="PREPARADOR FÍSICO">PREPARADOR FÍSICO</SelectItem>
-                  <SelectItem value="UTILERO">UTILERO</SelectItem>
-                  <SelectItem value="MÉDICO">MÉDICO</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-black uppercase">NOMBRE</Label>
-              <div className="relative">
-                <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newStaffName} onChange={e => setNewStaffName(e.target.value.toUpperCase())} />
-                <button onClick={() => startListening('edit-staff')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
-                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-                </button>
-              </div>
-            </div>
-            <Button onClick={handleUpdateStaff} className="w-full h-12 font-black bg-primary text-white uppercase">GUARDAR CAMBIOS</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={modal === 'player-actions'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
           <DialogHeader className="sr-only">
@@ -708,33 +524,8 @@ export default function Home() {
           </DialogHeader>
           {selectedPlayer && (
             <div className="flex flex-col">
-              <div className={`p-6 text-white text-center ${selectedPlayer.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}>
-                <div className="flex justify-between items-start">
-                   <Button variant="ghost" className="text-white hover:bg-black/10" onClick={() => { setNewPlayerNumber(selectedPlayer.player.number); setNewPlayerName(selectedPlayer.player.name); setModal('edit-player'); }}>
-                     <Pencil size={18} />
-                   </Button>
-                   <p className="text-4xl font-black">#{selectedPlayer.player.number}</p>
-                   <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" className="text-white hover:bg-black/10">
-                        <Trash2 size={18} />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>¿ELIMINAR JUGADOR?</AlertDialogTitle>
-                        <AlertDialogDescription>ESTA ACCIÓN QUITARÁ AL JUGADOR DE LA ALINEACIÓN.</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>CANCELAR</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleRemovePlayer} className="bg-destructive text-white uppercase">ELIMINAR</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-                <p className="text-xl font-bold uppercase italic">{selectedPlayer.player.name}</p>
-              </div>
-              <div className="p-6 space-y-4 bg-white max-h-[60vh] overflow-y-auto">
+              <div className={`p-6 text-white text-center ${selectedPlayer.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}><p className="text-4xl font-black">#{selectedPlayer.player.number}</p><p className="text-xl font-bold uppercase italic">{selectedPlayer.player.name}</p></div>
+              <div className="p-6 space-y-4 bg-white">
                 <div className="space-y-2"><Label className="flex items-center gap-2 text-xs font-black uppercase text-slate-400"><Clock size={14} /> MINUTO (OPCIONAL)</Label><Input type="number" placeholder="MIN" className="h-10 text-center font-bold" value={currentMinute} onChange={e => setCurrentMinute(e.target.value)} /></div>
                 
                 {selectedPlayer.isSub && (
@@ -754,16 +545,6 @@ export default function Home() {
 
                 <div className="grid grid-cols-2 gap-3"><Button onClick={() => handleAddGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-emerald-600 text-white uppercase">⚽ GOL</Button><Button onClick={() => handleAddOwnGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-orange-600 text-white uppercase">🥅 AUTOGOL</Button></div>
                 <div className="grid grid-cols-2 gap-3"><Button onClick={() => { setCardType('yellow'); setModal('causales'); }} className="h-14 font-black bg-yellow-400 text-yellow-900 uppercase">🟨 AMONESTACION</Button><Button onClick={() => { setCardType('red'); setModal('causales'); }} className="h-14 font-black bg-red-600 text-white uppercase">🟥 EXPULSION</Button></div>
-                
-                <div className="border-t pt-4">
-                  <Label className="text-xs font-black text-slate-400 uppercase mb-2 block">HISTORIAL EVENTOS</Label>
-                  {events.filter(e => e.side === selectedPlayer.side && e.playerNumber === selectedPlayer.player.number).map(ev => (
-                    <div key={ev.id} className="flex justify-between items-center bg-slate-50 p-2 rounded-lg mb-1 border">
-                      <span className="text-[10px] font-bold uppercase">{ev.message}</span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveEvent(ev.id)}><Trash2 size={14} /></Button>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           )}
@@ -777,48 +558,13 @@ export default function Home() {
           </DialogHeader>
           {selectedStaff && (
             <div className="flex flex-col">
-              <div className={`p-6 text-white text-center ${selectedStaff.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}>
-                 <div className="flex justify-between items-start">
-                   <Button variant="ghost" className="text-white hover:bg-black/10" onClick={() => { setNewStaffName(selectedStaff.staff.name); setNewStaffRole(selectedStaff.staff.role); setModal('edit-staff'); }}>
-                     <Pencil size={18} />
-                   </Button>
-                   <p className="text-2xl font-black uppercase">{selectedStaff.staff.role}</p>
-                   <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" className="text-white hover:bg-black/10">
-                        <Trash2 size={18} />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>¿ELIMINAR STAFF?</AlertDialogTitle>
-                        <AlertDialogDescription>ESTA ACCIÓN QUITARÁ AL MIEMBRO DEL CUERPO TÉCNICO.</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>CANCELAR</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleRemoveStaff} className="bg-destructive text-white uppercase">ELIMINAR</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-                <p className="text-xl font-bold uppercase italic">{selectedStaff.staff.name}</p>
-              </div>
-              <div className="p-6 space-y-4 bg-white max-h-[60vh] overflow-y-auto">
+              <div className={`p-6 text-white text-center ${selectedStaff.side === 'home' ? 'bg-amber-500' : 'bg-blue-600'}`}><p className="text-2xl font-black uppercase">{selectedStaff.staff.role}</p><p className="text-xl font-bold uppercase italic">{selectedStaff.staff.name}</p></div>
+              <div className="p-6 space-y-4 bg-white">
                 <div className="space-y-2"><Label className="flex items-center gap-2 text-xs font-black uppercase text-slate-400"><Clock size={14} /> MINUTO (OPCIONAL)</Label><Input type="number" placeholder="MIN" className="h-10 text-center font-bold" value={currentMinute} onChange={e => setCurrentMinute(e.target.value)} /></div>
                 
                 <div className="grid grid-cols-2 gap-3">
                   <Button onClick={() => { setCardType('yellow'); setModal('causales-staff'); }} className="h-14 font-black bg-yellow-400 text-yellow-900 uppercase">🟨 AMONESTACION</Button>
                   <Button onClick={() => { setCardType('red'); setModal('causales-staff'); }} className="h-14 font-black bg-red-600 text-white uppercase">🟥 EXPULSION</Button>
-                </div>
-
-                <div className="border-t pt-4">
-                  <Label className="text-xs font-black text-slate-400 uppercase mb-2 block">HISTORIAL EVENTOS</Label>
-                  {events.filter(e => e.side === selectedStaff.side && e.playerName === selectedStaff.staff.name).map(ev => (
-                    <div key={ev.id} className="flex justify-between items-center bg-slate-50 p-2 rounded-lg mb-1 border">
-                      <span className="text-[10px] font-bold uppercase">{ev.message}</span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveEvent(ev.id)}><Trash2 size={14} /></Button>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
@@ -878,57 +624,17 @@ export default function Home() {
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-black uppercase">DATOS GENERALES</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="uppercase text-[10px] font-black text-slate-400">EQUIPO LOCAL</Label>
-                <Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} />
-              </div>
-              <div className="space-y-1">
-                <Label className="uppercase text-[10px] font-black text-slate-400">EQUIPO VISITA</Label>
-                <Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <Label className="uppercase text-[10px] font-black text-slate-400">LIGA / COMPETENCIA</Label>
-              <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value.toUpperCase()}})} placeholder="NOMBRE DE LA LIGA" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="uppercase text-[10px] font-black text-slate-400">JORNADA</Label>
-                <Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value.toUpperCase()}})} placeholder="EJ. JORNADA 5" />
-              </div>
-              <div className="space-y-1">
-                <Label className="uppercase text-[10px] font-black text-slate-400">LUGAR DEL PARTIDO</Label>
-                <Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value.toUpperCase()}})} placeholder="CIUDAD / ESTADO / CAMPO" />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <Label className="uppercase text-[10px] font-black text-slate-400">FECHA DEL PARTIDO</Label>
-              <Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} />
-            </div>
-            <div className="border-t pt-4 space-y-3">
-              <p className="text-xs font-black text-primary uppercase">CUERPO ARBITRAL</p>
-              <div className="space-y-1">
-                <Label className="uppercase text-[10px] font-black text-slate-400">ÁRBITRO CENTRAL</Label>
-                <Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value.toUpperCase()}})} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label className="uppercase text-[10px] font-black text-slate-400">ASISTENTE 1</Label>
-                  <Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value.toUpperCase()}})} />
-                </div>
-                <div className="space-y-1">
-                  <Label className="uppercase text-[10px] font-black text-slate-400">ASISTENTE 2</Label>
-                  <Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value.toUpperCase()}})} />
-                </div>
-              </div>
-            </div>
+            <div className="grid grid-cols-2 gap-4"><div><Label className="uppercase">LOCAL</Label><Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} /></div><div><Label className="uppercase">VISITA</Label><Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} /></div></div>
+            <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value.toUpperCase()}})} placeholder="LIGA" />
+            <div className="grid grid-cols-2 gap-4"><Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value.toUpperCase()}})} placeholder="JORNADA" /><Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value.toUpperCase()}})} placeholder="CAMPO" /></div>
+            <Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} />
+            <div className="border-t pt-4 space-y-2"><Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value.toUpperCase()}})} placeholder="ÁRBITRO CENTRAL" /><Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value.toUpperCase()}})} placeholder="ASISTENTE 1" /><Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value.toUpperCase()}})} placeholder="ASISTENTE 2" /></div>
           </div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isPdfReportOpen} onOpenChange={setIsPdfReportOpen}>
-        <DialogContent className="max-w-[95vw] w-[95vw] md:max-w-5xl h-[95vh] p-0 overflow-hidden bg-transparent border-none">
+        <DialogContent className="max-w-5xl h-[95vh] p-0 overflow-auto bg-transparent border-none">
           <DialogHeader className="sr-only">
             <DialogTitle>Vista Previa de Cédula PDF</DialogTitle>
           </DialogHeader>
@@ -936,7 +642,7 @@ export default function Home() {
         </DialogContent>
       </Dialog>
       <Dialog open={isImageReportOpen} onOpenChange={setIsImageReportOpen}>
-        <DialogContent className="max-w-[95vw] w-[95vw] md:max-w-5xl h-[95vh] p-0 bg-transparent border-none overflow-hidden">
+        <DialogContent className="max-w-5xl p-0 bg-transparent border-none">
           <DialogHeader className="sr-only">
             <DialogTitle>Vista Previa de Cédula Imagen</DialogTitle>
           </DialogHeader>

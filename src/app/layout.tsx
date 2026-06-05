@@ -10,9 +10,9 @@ export const metadata: Metadata = {
   title: 'Referee Elite',
   description:
     'La herramienta definitiva para asesores de arbitraje de fútbol.',
-  icons: {
-    icon: '/icon.svg',
-    apple: '/icon.svg',
+    icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
   },
 };
 

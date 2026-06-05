@@ -1,3 +1,4 @@
+
 export interface Scores {
   home: number;
   away: number;
