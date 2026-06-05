@@ -421,14 +421,62 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
                 <div className="space-y-2"><Label className="flex items-center gap-2 text-xs font-black uppercase text-slate-400"><Clock size={14} /> Minuto (Opcional)</Label><Input type="number" placeholder="Min" className="h-10 text-center font-bold" value={currentMinute} onChange={e => setCurrentMinute(e.target.value)} /></div>
                 <div className="grid grid-cols-2 gap-3"><Button onClick={() => handleAddGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-emerald-600 text-white">⚽ GOL</Button><Button onClick={() => handleAddOwnGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-orange-600 text-white">🥅 AUTOGOL</Button></div>
                 <div className="grid grid-cols-2 gap-3"><Button onClick={() => { setCardType('yellow'); setModal('causales'); }} className="h-14 font-black bg-yellow-400 text-yellow-900">🟨 AMARILLA</Button><Button onClick={() => { setCardType('red'); setModal('causales'); }} className="h-14 font-black bg-red-600 text-white">🟥 ROJA</Button></div>
+                
                 <div className="border-t pt-4"><p className="text-[10px] font-black text-slate-400 uppercase mb-2">Eventos</p>
                   {getPlayerEvents(selectedPlayer.side, selectedPlayer.player.number).map(ev => (
                     <div key={ev.id} className="flex justify-between items-center p-2 bg-slate-50 border rounded-lg mb-1"><span className="text-[11px] font-bold">{ev.message}</span><Button variant="ghost" size="icon" className="h-6 w-6 text-red-400" onClick={() => handleRemoveEvent(ev.id)}><Trash2 size={12} /></Button></div>
                   ))}
                 </div>
+
+                <div className="border-t pt-4 grid grid-cols-2 gap-3">
+                  <Button 
+                    onClick={() => { 
+                      setEditPlayerNumber(selectedPlayer.player.number); 
+                      setEditPlayerName(selectedPlayer.player.name); 
+                      setModal('edit-player'); 
+                    }} 
+                    variant="outline" 
+                    className="h-10 font-bold border-indigo-200 text-indigo-700 hover:bg-indigo-50 text-[11px]"
+                  >
+                    <Pencil className="h-4 w-4 mr-1.5" /> EDITAR JUGADOR
+                  </Button>
+                  <Button 
+                    onClick={() => { 
+                      if (confirm(`¿Estás seguro de eliminar a ${selectedPlayer.player.name}?`)) {
+                        handleRemovePlayer(selectedPlayer.side, selectedPlayer.player.id); 
+                      }
+                    }} 
+                    variant="outline" 
+                    className="h-10 font-bold border-red-200 text-red-600 hover:bg-red-50 text-[11px]"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1.5" /> ELIMINAR
+                  </Button>
+                </div>
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modal === 'edit-player'} onOpenChange={() => setModal('player-actions')}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader><DialogTitle className="text-center font-black uppercase">Editar Jugador</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-black uppercase text-slate-400">Número</Label>
+              <Input type="number" placeholder="00" className="text-2xl h-14 text-center font-black" value={editPlayerNumber} onChange={e => setEditPlayerNumber(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-black uppercase text-slate-400">Nombre completo</Label>
+              <div className="relative">
+                <Input placeholder="Nombre completo" className="uppercase font-bold pr-10" value={editPlayerName} onChange={e => setEditPlayerName(e.target.value)} />
+                <button onClick={() => startListening('edit')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                </button>
+              </div>
+            </div>
+            <Button onClick={handleUpdatePlayer} className="w-full h-12 font-black bg-indigo-600 text-white uppercase shadow-md">GUARDAR CAMBIOS</Button>
+          </div>
         </DialogContent>
       </Dialog>
 
