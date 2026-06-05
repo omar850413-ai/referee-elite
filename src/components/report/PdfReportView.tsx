@@ -192,7 +192,9 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     <div className="w-full h-full flex flex-col bg-slate-900 overflow-hidden" ref={containerRef}>
       <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 shrink-0 z-10">
         <div className="text-white font-black uppercase text-sm italic">Vista Previa Reporte PDF</div>
-        <DialogClose className="text-white p-2 hover:bg-white/10 rounded-full"><X size={24} /></DialogClose>
+        <DialogClose className="text-white bg-white/20 hover:bg-white/30 border border-white/30 p-2 rounded-full transition-colors flex items-center justify-center shadow-lg">
+          <X size={24} strokeWidth={3.5} className="text-white" />
+        </DialogClose>
       </div>
 
       <div className="flex-1 overflow-auto touch-none bg-slate-900 p-4 flex justify-center items-start" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
