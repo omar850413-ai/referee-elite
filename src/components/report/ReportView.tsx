@@ -20,51 +20,6 @@ const roleInitials: Record<string, string> = {
   'MÉDICO': 'MED'
 };
 
-const YellowCardIcon = () => (
-  <span className="inline-flex items-center justify-center align-middle ml-1">
-    <span className="w-2 h-3 bg-[#FFD700] border border-[#E6B800] rounded-[1px] shadow-sm inline-block" />
-  </span>
-);
-
-const RedCardIcon = () => (
-  <span className="inline-flex items-center justify-center align-middle ml-1">
-    <span className="w-2 h-3 bg-[#FF3B30] border border-[#D62F27] rounded-[1px] shadow-sm inline-block" />
-  </span>
-);
-
-const GoalIcon = () => (
-  <span className="inline-flex items-center justify-center align-middle ml-1">
-    <svg className="w-3.5 h-3.5 text-slate-800" viewBox="0 0 24 24" fill="currentColor">
-      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
-      <polygon points="12,7.5 8.5,10 9.8,14.2 14.2,14.2 15.5,10" />
-      <line x1="12" y1="7.5" x2="12" y2="2" stroke="currentColor" strokeWidth="1.5" />
-      <line x1="8.5" y1="10" x2="3.3" y2="8.3" stroke="currentColor" strokeWidth="1.5" />
-      <line x1="9.8" y1="14.2" x2="6.5" y2="19" stroke="currentColor" strokeWidth="1.5" />
-      <line x1="14.2" y1="14.2" x2="17.5" y2="19" stroke="currentColor" strokeWidth="1.5" />
-      <line x1="15.5" y1="10" x2="20.7" y2="8.3" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  </span>
-);
-
-const OwnGoalIcon = () => (
-  <span className="inline-flex items-center justify-center align-middle ml-1">
-    <svg className="w-4 h-3.5 text-slate-800" viewBox="0 0 24 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="2" width="20" height="16" rx="1" />
-      <path d="M2 6h20M2 10h20M2 14h20" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.4" />
-      <path d="M6 2v16M10 2v16M14 2v16M18 2v16" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.4" strokeDasharray="1,1" />
-      <path d="M2 18V2h20v16" stroke="currentColor" strokeWidth="2" />
-    </svg>
-  </span>
-);
-
-const YellowCardHeaderIcon = () => (
-  <span className="w-2.5 h-3.5 bg-[#FFD700] border border-[#E6B800] rounded-[1.5px] shadow-sm inline-block mr-1.5 align-middle" />
-);
-
-const RedCardHeaderIcon = () => (
-  <span className="w-2.5 h-3.5 bg-[#FF3B30] border border-[#D62F27] rounded-[1.5px] shadow-sm inline-block mr-1.5 align-middle" />
-);
-
 export function ReportView({ matchState }: ReportViewProps) {
   const { 
     matchInfo, 
@@ -168,38 +123,16 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const getPlayerEventsSummary = (side: 'home' | 'away', number: string, p?: Player) => {
     const playerEvs = (events || []).filter(e => e.side === side && e.playerNumber === number);
-    
-    return (
-      <span className="inline-flex items-center gap-1.5 ml-1.5">
-        {playerEvs.map((e, idx) => {
-          const timeStr = e.time !== '--' && e.time !== '' ? ` (${e.time})` : '';
-          if (e.category === 'goals') {
-            const isOwnGoal = e.message.includes('AUTOGOL');
-            return (
-              <span key={e.id || idx} className="inline-flex items-center text-[8px] font-bold text-slate-700">
-                {isOwnGoal ? <OwnGoalIcon /> : <GoalIcon />}
-                {timeStr}
-              </span>
-            );
-          }
-          if (e.category === 'cards') {
-            const isYellow = e.message.includes('🟨');
-            return (
-              <span key={e.id || idx} className="inline-flex items-center text-[8px] font-bold text-slate-700">
-                {isYellow ? <YellowCardIcon /> : <RedCardIcon />}
-                {timeStr}
-              </span>
-            );
-          }
-          return null;
-        })}
-        {p?.replacedNumber && (
-          <span className="text-[7.5px] font-semibold text-slate-500 lowercase">
-            (por: #{p.replacedNumber})
-          </span>
-        )}
-      </span>
-    );
+    let summary = playerEvs.map(e => {
+      if (e.category === 'goals') return `${e.message.includes('AUTOGOL') ? '🥅' : '⚽'}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`;
+      if (e.category === 'cards') return `${e.message.includes('🟨') ? '🟨' : '🟥'}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`;
+      return '';
+    }).filter(Boolean).join(' ');
+
+    if (p?.replacedNumber) {
+      summary += ` (POR: #${p.replacedNumber})`;
+    }
+    return summary;
   };
 
   const getSortedCards = (side: 'home' | 'away', type: 'yellow' | 'red') => {
@@ -216,17 +149,22 @@ export function ReportView({ matchState }: ReportViewProps) {
 
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
-  const renderPlayerRow = (p: Player, side: 'home' | 'away') => (
-    <div key={p.id} className="flex uppercase leading-none items-baseline py-0">
-      <div className="inline-block w-[18px] text-right mr-1 font-bold">{p.number}.-</div>
-      <div className="flex-1 text-left">{p.name} {getPlayerEventsSummary(side, p.number, p)}</div>
-    </div>
-  );
+  const renderPlayerRow = (p: Player, side: 'home' | 'away') => {
+    const eventsSummary = getPlayerEventsSummary(side, p.number, p);
+    return (
+      <div key={p.id} className="flex uppercase leading-none items-baseline py-0">
+        <div className="inline-block w-[18px] text-right mr-1 font-bold">{p.number}.-</div>
+        <div className="flex-1 text-left">
+          {p.name}
+          {eventsSummary && <span className="ml-3 text-[8px] font-bold text-slate-700">{eventsSummary}</span>}
+        </div>
+      </div>
+    );
+  };
 
   const renderCardEntry = (e: any, side: 'home' | 'away') => {
     let nameDisplay = e.playerName;
     let numberDisplay = e.playerNumber ? `${e.playerNumber}.-` : '';
-    const isYellow = e.message.includes('🟨');
 
     if (!e.playerNumber) {
       const staffMember = (staff[side] || []).find(s => s.name === e.playerName);
@@ -238,9 +176,6 @@ export function ReportView({ matchState }: ReportViewProps) {
 
     return (
       <div key={e.id} className="leading-none border-b border-gray-100 flex items-center py-1 gap-1.5 text-[8px]">
-        <span className="flex-shrink-0 text-sm leading-none">
-          {isYellow ? <YellowCardIcon /> : <RedCardIcon />}
-        </span>
         <div className="inline-block w-[18px] text-right font-bold">{numberDisplay}</div> 
         <div className="flex-1 text-left truncate">{nameDisplay} - {e.message.split(' - ').pop()}</div>
       </div>
@@ -324,18 +259,18 @@ export function ReportView({ matchState }: ReportViewProps) {
               <p className="text-[9px] font-black uppercase text-black border-b mb-1">SANCIONES</p>
               <div className="grid grid-cols-2 gap-8">
                 <div className="text-[8px] space-y-1 uppercase">
-                  <p className="font-black border-b border-yellow-200 mb-1 text-yellow-600 flex items-center gap-1"><YellowCardHeaderIcon /> AMONESTACIÓN</p>
+                  <p className="font-black border-b border-yellow-200 mb-1 text-yellow-600 flex items-center gap-1">🟨 AMONESTACIÓN</p>
                   {getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home'))}
                   <div className="mt-4 text-[8px] space-y-1 uppercase">
-                    <p className="font-black border-b border-red-200 mb-1 text-red-600 flex items-center gap-1"><RedCardHeaderIcon /> EXPULSIÓN</p>
+                    <p className="font-black border-b border-red-200 mb-1 text-red-600 flex items-center gap-1">🟥 EXPULSIÓN</p>
                     {getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home'))}
                   </div>
                 </div>
                 <div className="text-[8px] space-y-1 uppercase">
-                  <p className="font-black border-b border-yellow-200 mb-1 text-yellow-600 flex items-center gap-1"><YellowCardHeaderIcon /> AMONESTACIÓN</p>
+                  <p className="font-black border-b border-yellow-200 mb-1 text-yellow-600 flex items-center gap-1">🟨 AMONESTACIÓN</p>
                   {getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away'))}
                   <div className="mt-4 text-[8px] space-y-1 uppercase">
-                    <p className="font-black border-b border-red-200 mb-1 text-red-600 flex items-center gap-1"><RedCardHeaderIcon /> EXPULSIÓN</p>
+                    <p className="font-black border-b border-red-200 mb-1 text-red-600 flex items-center gap-1">🟥 EXPULSIÓN</p>
                     {getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away'))}
                   </div>
                 </div>
