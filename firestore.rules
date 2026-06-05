@@ -10,18 +10,15 @@ service cloud.firestore {
     }
     
     function isFromThisApp() {
-      let data = getUserData();
-      return isSuperAdmin() || (data != null && data.appId == 'referee-elite');
+      return isSuperAdmin() || (getUserData() != null && getUserData().appId == 'referee-elite');
     }
 
     function isApproved() { 
-      let data = getUserData();
-      return isSuperAdmin() || (data != null && data.isApproved == true && data.appId == 'referee-elite'); 
+      return isSuperAdmin() || (getUserData() != null && getUserData().isApproved == true && getUserData().appId == 'referee-elite'); 
     }
     
     function isAdmin() { 
-      let data = getUserData();
-      return isSuperAdmin() || (data != null && data.isAdmin == true && data.appId == 'referee-elite'); 
+      return isSuperAdmin() || (getUserData() != null && getUserData().isAdmin == true && getUserData().appId == 'referee-elite'); 
     }
 
     match /users/{userId} {
