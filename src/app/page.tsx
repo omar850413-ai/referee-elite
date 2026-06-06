@@ -68,6 +68,7 @@ export default function Home() {
   const [isListening, setIsListening] = useState(false);
   const [tempIncidents, setTempIncidents] = useState('');
   const [currentMinute, setCurrentMinute] = useState('');
+  const [addPlayerType, setAddPlayerType] = useState<'starter' | 'substitute'>('starter');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
@@ -224,8 +225,7 @@ export default function Home() {
       return;
     }
 
-    const startersCount = (currentLineups[side] || []).filter(p => p.type === 'starter').length;
-    const type = startersCount < 11 ? 'starter' : 'substitute';
+    const type = addPlayerType;
 
     const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type };
     const updatedLineup = [...(currentLineups[side] || []), player];
@@ -238,7 +238,7 @@ export default function Home() {
       if (newStartersCount === 11) {
         toast({
           title: "ONCE TITULAR COMPLETO",
-          description: "HAS REGISTRADO LOS 11 TITULARES. A PARTIR DE AHORA SE INSCRIBIRÁN COMO SUPLENTES.",
+          description: "HAS REGISTRADO LOS 11 TITULARES.",
         });
       }
     }
@@ -457,11 +457,35 @@ export default function Home() {
           {(['home', 'away'] as const).map(side => (
             <Card key={side} className="border-none shadow-md overflow-hidden">
               <CardHeader className={`${side === 'home' ? 'bg-amber-500' : 'bg-blue-600'} text-white p-4`}>
-                <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
-                  <CardTitle className="text-lg font-black uppercase italic">{teamNames[side]}</CardTitle>
-                  <div className="flex gap-2">
-                    <Button onClick={() => { setCurrentSide(side); setModal('add-player'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[10px] uppercase"><UserPlus className="h-3 w-3 mr-1" /> JUGADOR</Button>
-                    <Button onClick={() => { setCurrentSide(side); setModal('add-staff'); }} variant="secondary" size="sm" className="bg-white text-slate-800 font-bold text-[10px] uppercase"><Users className="h-3 w-3 mr-1" /> STAFF</Button>
+                <div className="flex flex-col gap-3 mb-2">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-lg font-black uppercase italic">{teamNames[side]}</CardTitle>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <Button 
+                      onClick={() => { setCurrentSide(side); setAddPlayerType('starter'); setModal('add-player'); }} 
+                      variant="secondary" 
+                      size="sm" 
+                      className="bg-white hover:bg-slate-100 text-slate-800 font-bold text-[8px] sm:text-[9px] uppercase px-1 h-8 shadow-sm flex items-center justify-center gap-1 border-none"
+                    >
+                      <Plus className="h-3 w-3 shrink-0" /> TITULAR
+                    </Button>
+                    <Button 
+                      onClick={() => { setCurrentSide(side); setAddPlayerType('substitute'); setModal('add-player'); }} 
+                      variant="secondary" 
+                      size="sm" 
+                      className="bg-white hover:bg-slate-100 text-slate-800 font-bold text-[8px] sm:text-[9px] uppercase px-1 h-8 shadow-sm flex items-center justify-center gap-1 border-none"
+                    >
+                      <Plus className="h-3 w-3 shrink-0" /> SUPLENTE
+                    </Button>
+                    <Button 
+                      onClick={() => { setCurrentSide(side); setModal('add-staff'); }} 
+                      variant="secondary" 
+                      size="sm" 
+                      className="bg-white hover:bg-slate-100 text-slate-800 font-bold text-[8px] sm:text-[9px] uppercase px-1 h-8 shadow-sm flex items-center justify-center gap-1 border-none"
+                    >
+                      <Plus className="h-3 w-3 shrink-0" /> C. TÉCNICO
+                    </Button>
                   </div>
                 </div>
                 <div className="text-center bg-black/20 rounded-lg p-2">
@@ -469,8 +493,8 @@ export default function Home() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                {renderPlayerTable(side, lineups[side].slice(0, 11), "TITULARES", false)}
-                {renderPlayerTable(side, lineups[side].slice(11), "SUPLENTES", true)}
+                {renderPlayerTable(side, (lineups[side] || []).filter(p => p.type === 'starter'), "TITULARES", false)}
+                {renderPlayerTable(side, (lineups[side] || []).filter(p => p.type === 'substitute'), "SUPLENTES", true)}
                 {renderStaffTable(side, staff[side])}
               </CardContent>
             </Card>
@@ -735,7 +759,7 @@ export default function Home() {
         </DialogContent>
       </Dialog>
       <Dialog open={isImageReportOpen} onOpenChange={setIsImageReportOpen}>
-        <DialogContent className="max-w-5xl p-0 bg-transparent border-none">
+        <DialogContent className="max-w-5xl h-[95vh] p-0 overflow-auto bg-transparent border-none">
           <DialogHeader className="sr-only">
             <DialogTitle>Vista Previa de Cédula Imagen</DialogTitle>
           </DialogHeader>
