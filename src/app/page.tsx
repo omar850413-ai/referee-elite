@@ -40,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft, ArrowRightLeft, Users } from 'lucide-react';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft, ArrowRightLeft, Users, Pencil } from 'lucide-react';
 import { causalesAmarilla, causalesRoja, causalesStaff } from '@/lib/causales';
 import Link from 'next/link';
 
@@ -60,6 +60,8 @@ export default function Home() {
   const [cardType, setCardType] = useState<'yellow' | 'red' | null>(null);
   const [newPlayerNumber, setNewPlayerNumber] = useState('');
   const [newPlayerName, setNewPlayerName] = useState('');
+  const [editPlayerNumber, setEditPlayerNumber] = useState('');
+  const [editPlayerName, setEditPlayerName] = useState('');
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffRole, setNewStaffRole] = useState('DIRECTOR TÉCNICO');
   const [subReplacedNumber, setSubReplacedNumber] = useState('');
@@ -189,7 +191,7 @@ export default function Home() {
     setModal(null);
   };
 
-  const startListening = (target: 'player' | 'staff') => {
+  const startListening = (target: 'player' | 'staff' | 'edit') => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
     try {
@@ -200,6 +202,7 @@ export default function Home() {
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
         if (target === 'player') setNewPlayerName(transcript.toUpperCase());
+        else if (target === 'edit') setEditPlayerName(transcript.toUpperCase());
         else setNewStaffName(transcript.toUpperCase());
       };
       recognition.start();
@@ -209,10 +212,54 @@ export default function Home() {
   const handleAddPlayer = (side: 'home' | 'away') => {
     if (!newPlayerNumber || !newPlayerName || !matchState) return;
     const currentLineups = matchState.lineups || { home: [], away: [] };
-    const isSubstitute = currentLineups[side].length >= 11;
-    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type: isSubstitute ? 'substitute' : 'starter' };
-    updateMatch({ lineups: { ...currentLineups, [side]: [...currentLineups[side], player] } });
+    
+    // Validar si el número de camiseta ya existe en la alineación del equipo
+    const isDuplicateNumber = (currentLineups[side] || []).some(p => p.number === newPlayerNumber);
+    if (isDuplicateNumber) {
+      toast({
+        variant: "destructive",
+        title: "NÚMERO REPETIDO",
+        description: `EL NÚMERO DE JUGADOR #${newPlayerNumber} YA SE ENCUENTRA REGISTRADO EN LA ALINEACIÓN.`,
+      });
+      return;
+    }
+
+    const startersCount = (currentLineups[side] || []).filter(p => p.type === 'starter').length;
+    const type = startersCount < 11 ? 'starter' : 'substitute';
+
+    const player: Player = { id: Date.now().toString(), number: newPlayerNumber, name: newPlayerName.toUpperCase(), type };
+    const updatedLineup = [...(currentLineups[side] || []), player];
+    
+    updateMatch({ lineups: { ...currentLineups, [side]: updatedLineup } });
+
+    // Notificación al completar 11 titulares
+    if (type === 'starter') {
+      const newStartersCount = updatedLineup.filter(p => p.type === 'starter').length;
+      if (newStartersCount === 11) {
+        toast({
+          title: "ONCE TITULAR COMPLETO",
+          description: "HAS REGISTRADO LOS 11 TITULARES. A PARTIR DE AHORA SE INSCRIBIRÁN COMO SUPLENTES.",
+        });
+      }
+    }
+
     setNewPlayerNumber(''); setNewPlayerName(''); setModal(null);
+  };
+
+  const handleUpdatePlayer = () => {
+    if (!selectedPlayer || !editPlayerNumber || !editPlayerName || !matchState) return;
+    const { side, player } = selectedPlayer;
+    const updatedLineups = { ...matchState.lineups, [side]: matchState.lineups[side].map(p => p.id === player.id ? { ...p, number: editPlayerNumber, name: editPlayerName.toUpperCase() } : p) };
+    const updatedEvents = (matchState.events || []).map(e => e.side === side && e.playerNumber === player.number ? { ...e, playerNumber: editPlayerNumber, playerName: editPlayerName.toUpperCase() } : e);
+    updateMatch({ lineups: updatedLineups, events: updatedEvents });
+    setModal(null);
+  };
+
+  const handleRemovePlayer = (side: 'home' | 'away', id: string) => {
+    if (!matchState) return;
+    const updatedPlayers = matchState.lineups[side].filter(p => p.id !== id);
+    updateMatch({ lineups: { ...matchState.lineups, [side]: updatedPlayers } });
+    setModal(null);
   };
 
   const handleAddStaff = (side: 'home' | 'away') => {
@@ -545,9 +592,55 @@ export default function Home() {
 
                 <div className="grid grid-cols-2 gap-3"><Button onClick={() => handleAddGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-emerald-600 text-white uppercase">⚽ GOL</Button><Button onClick={() => handleAddOwnGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-orange-600 text-white uppercase">🥅 AUTOGOL</Button></div>
                 <div className="grid grid-cols-2 gap-3"><Button onClick={() => { setCardType('yellow'); setModal('causales'); }} className="h-14 font-black bg-yellow-400 text-yellow-900 uppercase">🟨 AMONESTACION</Button><Button onClick={() => { setCardType('red'); setModal('causales'); }} className="h-14 font-black bg-red-600 text-white uppercase">🟥 EXPULSION</Button></div>
+                <div className="border-t pt-4 grid grid-cols-2 gap-3">
+                  <Button 
+                    onClick={() => { 
+                      setEditPlayerNumber(selectedPlayer.player.number); 
+                      setEditPlayerName(selectedPlayer.player.name); 
+                      setModal('edit-player'); 
+                    }} 
+                    variant="outline" 
+                    className="h-10 font-bold border-indigo-200 text-indigo-700 hover:bg-indigo-50 text-[11px] uppercase"
+                  >
+                    <Pencil className="h-4 w-4 mr-1.5" /> EDITAR JUGADOR
+                  </Button>
+                  <Button 
+                    onClick={() => { 
+                      if (confirm(`¿ESTÁS SEGURO DE ELIMINAR A ${selectedPlayer.player.name}?`)) {
+                        handleRemovePlayer(selectedPlayer.side, selectedPlayer.player.id); 
+                      }
+                    }} 
+                    variant="outline" 
+                    className="h-10 font-bold border-red-200 text-red-600 hover:bg-red-50 text-[11px] uppercase"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1.5" /> ELIMINAR
+                  </Button>
+                </div>
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modal === 'edit-player'} onOpenChange={() => setModal('player-actions')}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader><DialogTitle className="text-center font-black uppercase">EDITAR JUGADOR</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-black uppercase text-slate-400">NÚMERO</Label>
+              <Input type="number" placeholder="00" className="text-2xl h-14 text-center font-black" value={editPlayerNumber} onChange={e => setEditPlayerNumber(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-black uppercase text-slate-400">NOMBRE COMPLETO</Label>
+              <div className="relative">
+                <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={editPlayerName} onChange={e => setEditPlayerName(e.target.value.toUpperCase())} />
+                <button onClick={() => startListening('edit')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                </button>
+              </div>
+            </div>
+            <Button onClick={handleUpdatePlayer} className="w-full h-12 font-black bg-indigo-600 text-white uppercase shadow-md">GUARDAR CAMBIOS</Button>
+          </div>
         </DialogContent>
       </Dialog>
 

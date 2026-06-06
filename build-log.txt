@@ -1,0 +1,25 @@
+   ▲ Next.js 15.0.7
+   - Environments: .env
+
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'C:\Users\Administrador\Downloads\referee elite\project\.next\cache\webpack\server-production\2.pack_' -> 'C:\Users\Administrador\Downloads\referee elite\project\.next\cache\webpack\server-production\2.pack'
+request to https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap failed, reason: read ECONNRESET
+
+Retrying 1/3...
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'C:\Users\Administrador\Downloads\referee elite\project\.next\cache\webpack\client-production\1.pack_' -> 'C:\Users\Administrador\Downloads\referee elite\project\.next\cache\webpack\client-production\1.pack'
+ ✓ Compiled successfully
+   Skipping validation of types
+   Linting ...
+   Collecting page data ...
+unhandledRejection Error [PageNotFoundError]: Cannot find module for page: /_document
+    at getPagePath (C:\Users\Administrador\Downloads\referee elite\project\node_modules\next\dist\server\require.js:88:15)
+    at requirePage (C:\Users\Administrador\Downloads\referee elite\project\node_modules\next\dist\server\require.js:93:22)
+    at loadComponentsImpl (C:\Users\Administrador\Downloads\referee elite\project\node_modules\next\dist\server\load-components.js:73:38)
+    at Object.hasCustomGetInitialProps (C:\Users\Administrador\Downloads\referee elite\project\node_modules\next\dist\build\utils.js:1276:65)
+    at execFunction (C:\Users\Administrador\Downloads\referee elite\project\node_modules\next\dist\compiled\jest-worker\processChild.js:1:2764)
+    at execHelper (C:\Users\Administrador\Downloads\referee elite\project\node_modules\next\dist\compiled\jest-worker\processChild.js:1:2422)
+    at execMethod (C:\Users\Administrador\Downloads\referee elite\project\node_modules\next\dist\compiled\jest-worker\processChild.js:1:2510)
+    at process.messageListener (C:\Users\Administrador\Downloads\referee elite\project\node_modules\next\dist\compiled\jest-worker\processChild.js:1:1228) {
+  type: 'PageNotFoundError',
+  code: 'ENOENT'
+}
