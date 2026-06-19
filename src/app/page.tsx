@@ -380,6 +380,17 @@ export default function Home() {
     });
   };
 
+  const handleOtherIncident = () => {
+    setTempIncidents('');
+    updateMatch({
+      events: events.filter(e => e.category !== 'notes')
+    });
+    toast({
+      title: "REPORTE PERSONALIZADO",
+      description: "ESCRIBE TU PROPIO REPORTE EN EL CUADRO DE TEXTO.",
+    });
+  };
+
   const handleLogout = async () => {
     await signOut(auth);
     localStorage.removeItem('sessionId');
@@ -761,22 +772,30 @@ export default function Home() {
           <div className="space-y-4 py-2">
             <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 space-y-3">
               <Label className="text-xs font-black uppercase text-slate-500">PLANTILLAS RÁPIDAS</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={handleNoIncidents}
-                  className="bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-black uppercase py-2 h-auto flex items-center justify-center gap-1"
+                  className="bg-white hover:bg-slate-100 border border-slate-200 text-[8px] sm:text-[9px] font-black uppercase py-2 h-auto flex items-center justify-center gap-0.5"
                 >
-                  ✅ NINGUNO (LIMPIO)
+                  ✅ NINGUNO
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={handlePlayerInjury}
-                  className="bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-black uppercase py-2 h-auto flex items-center justify-center gap-1"
+                  className="bg-white hover:bg-slate-100 border border-slate-200 text-[8px] sm:text-[9px] font-black uppercase py-2 h-auto flex items-center justify-center gap-0.5"
                 >
-                  🏥 LESIÓN DE JUGADOR
+                  🏥 LESIÓN
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleOtherIncident}
+                  className="bg-white hover:bg-slate-100 border border-slate-200 text-[8px] sm:text-[9px] font-black uppercase py-2 h-auto flex items-center justify-center gap-0.5"
+                >
+                  📝 OTRO
                 </Button>
               </div>
               <div className="h-px bg-slate-200 my-2"></div>
