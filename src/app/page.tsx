@@ -350,6 +350,36 @@ export default function Home() {
     });
   };
 
+  const handleNoIncidents = () => {
+    const text = "SIN INCIDENTES REPORTADOS.";
+    setTempIncidents(text);
+    updateMatch({
+      events: [
+        { id: Date.now(), time: '--', category: 'notes', message: `📝 ${text}` },
+        ...events.filter(e => e.category !== 'notes')
+      ]
+    });
+    toast({
+      title: "REPORTE LIMPIO",
+      description: "SE REGISTRÓ SIN INCIDENTES.",
+    });
+  };
+
+  const handlePlayerInjury = () => {
+    const text = "EL JUGADOR NO. --- DE NOMBRE ----------- DEL EQUIPO ----------- ABANDONÓ EL TERRENO DE JUEGO POR UNA APARENTE LESIÓN EN ----------- SIENDO POSTERIORMENTE SUSTITUIDO.";
+    setTempIncidents(text);
+    updateMatch({
+      events: [
+        { id: Date.now(), time: '--', category: 'notes', message: `📝 ${text}` },
+        ...events.filter(e => e.category !== 'notes')
+      ]
+    });
+    toast({
+      title: "PLANTILLA DE LESIÓN GENERADA",
+      description: "LLENA LOS DATOS VACÍOS EN EL TEXTO.",
+    });
+  };
+
   const handleLogout = async () => {
     await signOut(auth);
     localStorage.removeItem('sessionId');
@@ -729,7 +759,27 @@ export default function Home() {
         <DialogContent className="max-w-lg rounded-2xl">
           <DialogHeader><DialogTitle className="font-black uppercase">INCIDENTES</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 space-y-2">
+            <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 space-y-3">
+              <Label className="text-xs font-black uppercase text-slate-500">PLANTILLAS RÁPIDAS</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleNoIncidents}
+                  className="bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-black uppercase py-2 h-auto flex items-center justify-center gap-1"
+                >
+                  ✅ NINGUNO (LIMPIO)
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handlePlayerInjury}
+                  className="bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-black uppercase py-2 h-auto flex items-center justify-center gap-1"
+                >
+                  🏥 LESIÓN DE JUGADOR
+                </Button>
+              </div>
+              <div className="h-px bg-slate-200 my-2"></div>
               <Label className="text-xs font-black uppercase text-slate-500">RESOLVER POR DEFAULT (1-0)</Label>
               <div className="grid grid-cols-2 gap-2">
                 <Button 
