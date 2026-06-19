@@ -328,6 +328,28 @@ export default function Home() {
     setSubReplacedNumber(''); setCurrentMinute(''); setModal(null);
   };
 
+  const handleDefaultMatch = (winner: 'home' | 'away') => {
+    if (!matchState) return;
+    const loser = winner === 'home' ? 'away' : 'home';
+    const winnerName = teamNames[winner];
+    const loserName = teamNames[loser];
+    const text = `EL PARTIDO SE DECLARA GANADO POR DEFAULT A FAVOR DE ${winnerName} POR UN MARCADOR DE 1-0, DEBIDO A QUE EL EQUIPO ${loserName} NO SE PRESENTÓ A JUGAR.`.toUpperCase();
+    
+    setTempIncidents(text);
+    updateMatch({
+      scores: { [winner]: 1, [loser]: 0 } as any,
+      events: [
+        { id: Date.now(), time: '--', category: 'notes', message: `📝 ${text}` },
+        ...events.filter(e => e.category !== 'notes')
+      ]
+    });
+    
+    toast({
+      title: "PARTIDO RESUELTO POR DEFAULT",
+      description: `${winnerName} GANA 1-0 AUTOMÁTICAMENTE.`,
+    });
+  };
+
   const handleLogout = async () => {
     await signOut(auth);
     localStorage.removeItem('sessionId');
@@ -706,7 +728,31 @@ export default function Home() {
       <Dialog open={modal === 'incidents'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-lg rounded-2xl">
           <DialogHeader><DialogTitle className="font-black uppercase">INCIDENTES</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4"><Textarea className="min-h-[200px]" value={tempIncidents} onChange={e => setTempIncidents(e.target.value.toUpperCase())} /><Button onClick={() => { updateMatch({ events: [ { id: Date.now(), time: '--', category: 'notes', message: `📝 ${tempIncidents.toUpperCase()}` }, ...events.filter(e => e.category !== 'notes') ] }); setModal(null); }} className="w-full font-bold bg-primary text-white uppercase">GUARDAR</Button></div>
+          <div className="space-y-4 py-2">
+            <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 space-y-2">
+              <Label className="text-xs font-black uppercase text-slate-500">RESOLVER POR DEFAULT (1-0)</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleDefaultMatch('home')}
+                  className="bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-black uppercase py-2 h-auto"
+                >
+                  🏆 GANA {teamNames.home}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleDefaultMatch('away')}
+                  className="bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-black uppercase py-2 h-auto"
+                >
+                  🏆 GANA {teamNames.away}
+                </Button>
+              </div>
+            </div>
+            <Textarea className="min-h-[200px]" value={tempIncidents} onChange={e => setTempIncidents(e.target.value.toUpperCase())} />
+            <Button onClick={() => { updateMatch({ events: [ { id: Date.now(), time: '--', category: 'notes', message: `📝 ${tempIncidents.toUpperCase()}` }, ...events.filter(e => e.category !== 'notes') ] }); setModal(null); }} className="w-full font-bold bg-primary text-white uppercase">GUARDAR</Button>
+          </div>
         </DialogContent>
       </Dialog>
 
