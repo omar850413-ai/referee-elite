@@ -333,7 +333,7 @@ export default function Home() {
     const loser = winner === 'home' ? 'away' : 'home';
     const winnerName = teamNames[winner];
     const loserName = teamNames[loser];
-    const text = `EL PARTIDO SE DECLARA GANADO POR DEFAULT A FAVOR DE ${winnerName} POR UN MARCADOR DE 1-0, DEBIDO A QUE EL EQUIPO ${loserName} NO SE PRESENTÓ A JUGAR.`.toUpperCase();
+    const text = `EL PARTIDO SE DECLARA GANADO POR DEFAULT A FAVOR DE ${winnerName} POR UN MARCADOR DE 1-0, DEBIDO A QUE EL EQUIPO ${loserName} NO SE PRESENTÓ AL TERRENO DE JUEGO CUMPLIENDOSE LA TOLERANCIA.`.toUpperCase();
     
     setTempIncidents(text);
     updateMatch({
