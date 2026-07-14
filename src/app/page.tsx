@@ -391,6 +391,19 @@ export default function Home() {
     });
   };
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        updateMatch({ matchInfo: { ...(matchState?.matchInfo || {}), collegeLogo: reader.result } as any });
+        toast({ title: "ESCUDO DEL COLEGIO ACTUALIZADO" });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleLogout = async () => {
     await signOut(auth);
     localStorage.removeItem('sessionId');
@@ -861,6 +874,45 @@ export default function Home() {
             <div className="grid grid-cols-2 gap-4"><Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value.toUpperCase()}})} placeholder="JORNADA" /><Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value.toUpperCase()}})} placeholder="CAMPO" /></div>
             <Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} />
             <div className="border-t pt-4 space-y-2"><Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value.toUpperCase()}})} placeholder="ÁRBITRO CENTRAL" /><Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value.toUpperCase()}})} placeholder="ASISTENTE 1" /><Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value.toUpperCase()}})} placeholder="ASISTENTE 2" /></div>
+            <div className="border-t pt-4 space-y-3">
+              <Label className="text-xs font-black uppercase text-slate-500">COLEGIO DE ÁRBITROS</Label>
+              <Input 
+                value={matchInfo.refereeCollege || ''} 
+                onChange={e => updateMatch({matchInfo: {...matchInfo, refereeCollege: e.target.value.toUpperCase()}})} 
+                placeholder="EJ. COLEGIO DE ÁRBITROS DE MÉXICO" 
+              />
+              <div className="space-y-2">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleLogoUpload} 
+                  className="hidden" 
+                  id="college-logo-upload" 
+                />
+                <div className="flex items-center gap-3">
+                  <Label htmlFor="college-logo-upload" className="cursor-pointer flex-1">
+                    <Button type="button" variant="outline" className="w-full font-bold uppercase gap-2">
+                      <ImageIcon size={16} /> SUBIR ESCUDO COLEGIO
+                    </Button>
+                  </Label>
+                  {matchInfo.collegeLogo && (
+                    <Button 
+                      type="button" 
+                      variant="destructive" 
+                      onClick={() => updateMatch({ matchInfo: { ...matchInfo, collegeLogo: '' } as any })}
+                      className="font-bold uppercase"
+                    >
+                      ELIMINAR
+                    </Button>
+                  )}
+                </div>
+                {matchInfo.collegeLogo && (
+                  <div className="flex justify-center border p-2 rounded-lg bg-slate-50">
+                    <img src={matchInfo.collegeLogo} alt="Logo preview" className="h-16 object-contain" />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

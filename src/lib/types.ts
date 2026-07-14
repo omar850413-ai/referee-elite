@@ -67,6 +67,8 @@ export interface MatchInfo {
   fourthOfficial?: string;
   var?: string;
   avar?: string;
+  refereeCollege?: string;
+  collegeLogo?: string;
 }
 
 export interface PenaltyShootout {

@@ -194,10 +194,20 @@ export function ReportView({ matchState }: ReportViewProps) {
       <div className="flex-1 overflow-auto touch-none bg-slate-900 p-4 flex justify-center items-start" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center top' }}>
           <div ref={reportRef} className="p-8 bg-white text-black font-sans shadow-2xl" style={{ width: '800px', minHeight: '1100px' }}>
-            <div className="text-center mb-6">
-              <h1 className="text-3xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
-              <div className="h-1 bg-black w-full mt-2"></div>
+            <div className="flex items-center justify-between mb-6 relative">
+              <div className="w-[80px] h-[80px] flex items-center justify-center">
+                {matchInfo.collegeLogo && (
+                  <img src={matchInfo.collegeLogo} className="max-w-full max-h-full object-contain" />
+                )}
+              </div>
+              <div className="flex-1 text-center pr-[80px]">
+                <h1 className="text-3xl font-black uppercase tracking-tighter leading-none">INFORME ARBITRAL</h1>
+                {matchInfo.refereeCollege && (
+                  <p className="text-sm font-black uppercase text-slate-700 mt-1 leading-tight">{matchInfo.refereeCollege}</p>
+                )}
+              </div>
             </div>
+            <div className="h-1 bg-black w-full mb-6"></div>
 
             <div className="grid grid-cols-2 gap-4 text-[10px] mb-6">
               <div className="space-y-1">

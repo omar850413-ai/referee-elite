@@ -200,10 +200,20 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
       <div className="flex-1 overflow-auto touch-none bg-slate-900 p-4 flex justify-center items-start" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center top' }}>
           <div ref={reportRef} className="p-6 bg-white text-black font-sans shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
-            <div className="text-center mb-2">
-              <h1 className="text-xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
-              <div className="h-0.5 bg-black w-full mt-1"></div>
+            <div className="flex items-center justify-between mb-2 relative">
+              <div className="w-[60px] h-[60px] flex items-center justify-center">
+                {matchInfo.collegeLogo && (
+                  <img src={matchInfo.collegeLogo} className="max-w-full max-h-full object-contain" />
+                )}
+              </div>
+              <div className="flex-1 text-center pr-[60px]">
+                <h1 className="text-xl font-black uppercase tracking-tighter leading-none">INFORME ARBITRAL</h1>
+                {matchInfo.refereeCollege && (
+                  <p className="text-[8px] font-black uppercase text-slate-700 mt-1 leading-tight">{matchInfo.refereeCollege}</p>
+                )}
+              </div>
             </div>
+            <div className="h-0.5 bg-black w-full mb-2"></div>
 
             <div className="grid grid-cols-2 gap-2 text-[8px] mb-2">
               <div className="space-y-0.5">
