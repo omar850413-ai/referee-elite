@@ -71,6 +71,7 @@ export default function Home() {
   const [addPlayerType, setAddPlayerType] = useState<'starter' | 'substitute'>('starter');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const isDrawingRef = useRef(false);
 
   const userProfileRef = useMemoFirebase(
@@ -908,17 +909,20 @@ export default function Home() {
               <div className="space-y-2">
                 <input 
                   type="file" 
+                  ref={logoInputRef}
                   accept="image/*" 
                   onChange={handleLogoUpload} 
                   className="hidden" 
-                  id="college-logo-upload" 
                 />
                 <div className="flex items-center gap-3">
-                  <Label htmlFor="college-logo-upload" className="cursor-pointer flex-1">
-                    <Button type="button" variant="outline" className="w-full font-bold uppercase gap-2">
-                      <ImageIcon size={16} /> SUBIR ESCUDO COLEGIO
-                    </Button>
-                  </Label>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => logoInputRef.current?.click()}
+                    className="w-full font-bold uppercase gap-2 flex-1"
+                  >
+                    <ImageIcon size={16} /> SUBIR ESCUDO COLEGIO
+                  </Button>
                   {matchInfo.collegeLogo && (
                     <Button 
                       type="button" 
