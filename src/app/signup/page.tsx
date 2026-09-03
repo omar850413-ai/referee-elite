@@ -21,6 +21,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SignUpPage() {
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -43,6 +44,13 @@ export default function SignUpPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    const trimmedFullName = fullName.toUpperCase().trim();
+    if (!trimmedFullName || trimmedFullName.length < 5) {
+      setError('Por favor ingresa tu nombre completo oficial (mínimo 5 caracteres).');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -61,10 +69,11 @@ export default function SignUpPage() {
 
       const profileData = {
         email: user.email,
+        fullName: trimmedFullName,
         isAdmin: isSigningUpAsAdmin,
         isApproved: isSigningUpAsAdmin,
         sessionId: sessionId,
-        appId: 'referee-elite', // Marcamos al usuario para esta app
+        appId: 'referee-elite',
       };
 
       await setDoc(userDocRef, profileData).catch((err) => {
@@ -126,31 +135,53 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-sky-100">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-black uppercase italic text-primary">
-            Crear Cuenta
+    <div className="flex items-center justify-center min-h-screen bg-slate-900 p-4">
+      <Card className="w-full max-w-md border-none shadow-2xl rounded-3xl overflow-hidden">
+        <CardHeader className="text-center bg-blue-900 text-white p-6">
+          <CardTitle className="text-3xl font-black uppercase italic tracking-tighter">
+            Referee <span className="text-emerald-400">Elite</span>
           </CardTitle>
-          <CardDescription>
-            Regístrate para convertirte en asesor con Referee Elite.
+          <CardDescription className="text-blue-100 text-xs font-bold uppercase mt-1">
+            Registro Oficial de Árbitros y Asesores
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSignUp}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-6 bg-white">
             <div className="space-y-2">
-              <Label htmlFor="email">Correo Electrónico</Label>
+              <Label htmlFor="fullName" className="font-bold text-slate-800 text-xs uppercase">
+                Nombre Completo Oficial *
+              </Label>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="EJ. OMAR ALEJANDRO LÓPEZ PÉREZ"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="uppercase font-bold"
+                required
+              />
+              <p className="text-[10px] text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200 font-medium leading-tight">
+                🔒 <strong>Atención:</strong> Ingresa tu nombre real completo. Este nombre aparecerá automáticamente y de forma inalterable en todas tus cédulas arbitrales en PDF e Imagen.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="font-bold text-slate-800 text-xs uppercase">
+                Correo Electrónico *
+              </Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="TU@EMAIL.COM"
                 value={email}
-                onChange={(e) => setEmail(e.target.value.toUpperCase())}
+                onChange={(e) => setEmail(e.target.value.toLowerCase())}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password" className="font-bold text-slate-800 text-xs uppercase">
+                Contraseña *
+              </Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -173,17 +204,17 @@ export default function SignUpPage() {
                 </button>
               </div>
             </div>
-            {error && <p className="text-sm text-red-600 font-bold">{error}</p>}
+            {error && <p className="text-sm text-red-600 font-bold bg-red-50 p-3 rounded-xl border border-red-200">{error}</p>}
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full font-black italic" disabled={isLoading}>
-              {isLoading ? 'REGISTRANDO...' : 'REGISTRARME'}
+          <CardFooter className="flex flex-col gap-4 p-6 bg-slate-50 border-t">
+            <Button type="submit" className="w-full font-black italic bg-blue-900 hover:bg-black text-white h-12 rounded-xl text-base shadow-lg" disabled={isLoading}>
+              {isLoading ? 'REGISTRANDO...' : 'CREAR MI CUENTA'}
             </Button>
             <p className="text-xs text-center text-gray-600">
               ¿YA TIENES CUENTA?{' '}
               <Link
                 href="/login"
-                className="text-primary hover:underline font-semibold"
+                className="text-blue-700 hover:underline font-bold"
               >
                 INICIA SESIÓN
               </Link>

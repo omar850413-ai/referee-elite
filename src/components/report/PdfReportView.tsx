@@ -307,9 +307,14 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 <div className="h-8 flex items-center justify-center">{signatures.captainAway && <img src={signatures.captainAway} className="max-h-full" />}</div>
                 <div className="h-px bg-black w-full"></div>
                 <p className="text-[6px] font-black uppercase">Capitán Visitante</p>
-              </div>
+            <div className="mt-4 pt-2 border-t border-gray-200 text-center">
+              <p className="text-[7px] font-black uppercase text-slate-700 tracking-wider">
+                🔒 DOCUMENTO OFICIAL EMITIDO POR LA CUENTA VERIFICADA DE: <span className="text-blue-900">{matchInfo.advisor || 'ÁRBITRO REGISTRADO'}</span>
+              </p>
+              <p className="text-[5px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                REFEREE ELITE - REGISTRO INALTERABLE E INDEPENDIENTE
+              </p>
             </div>
-            <p className="text-center text-[5px] text-gray-300 mt-4 font-bold uppercase tracking-widest">REFEREE ELITE - REPORTE OFICIAL INDEPENDIENTE</p>
           </div>
         </div>
       </div>
