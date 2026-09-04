@@ -107,13 +107,13 @@ export default function Home() {
   };
 
   const userProfileRef = useMemoFirebase(
-    () => (user ? doc(firestore, 'users', user.uid) : null),
+    () => (user && firestore ? doc(firestore, 'users', user.uid) : null),
     [user, firestore]
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const matchRef = useMemoFirebase(
-    () => (user ? doc(firestore, 'matches', user.uid) : null),
+    () => (user && firestore ? doc(firestore, 'matches', user.uid) : null),
     [user, firestore]
   );
   const { data: matchState, isLoading: isMatchLoading } = useDoc<MatchState>(matchRef);
