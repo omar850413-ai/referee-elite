@@ -40,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft, ArrowRightLeft, Users, Pencil, Download, Lock } from 'lucide-react';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft, ArrowRightLeft, Users, Pencil } from 'lucide-react';
 import { causalesAmarilla, causalesRoja, causalesStaff } from '@/lib/causales';
 import Link from 'next/link';
 
@@ -70,130 +70,21 @@ export default function Home() {
   const [currentMinute, setCurrentMinute] = useState('');
   const [addPlayerType, setAddPlayerType] = useState<'starter' | 'substitute'>('starter');
 
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showInstallButton, setShowInstallButton] = useState(false);
-  const [migrationFullName, setMigrationFullName] = useState('');
-  const [isMigrating, setIsMigrating] = useState(false);
-  const [migrationError, setMigrationError] = useState<string | null>(null);
-
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const isDrawingRef = useRef(false);
 
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShowInstallButton(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setShowInstallButton(false);
-    }
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallApp = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    setDeferredPrompt(null);
-    setShowInstallButton(false);
-  };
-
   const userProfileRef = useMemoFirebase(
-    () => (user && firestore ? doc(firestore, 'users', user.uid) : null),
+    () => (user ? doc(firestore, 'users', user.uid) : null),
     [user, firestore]
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const matchRef = useMemoFirebase(
-    () => (user && firestore ? doc(firestore, 'matches', user.uid) : null),
+    () => (user ? doc(firestore, 'matches', user.uid) : null),
     [user, firestore]
   );
   const { data: matchState, isLoading: isMatchLoading } = useDoc<MatchState>(matchRef);
-
-  const officialAdvisorName = userProfile?.fullName || user?.displayName || user?.email || '';
-  const syncedAdvisorRef = useRef(false);
-
-  // Auto-sync advisor name with profile full name (safely without infinite loop)
-  useEffect(() => {
-    if (matchState && matchState.matchInfo && officialAdvisorName && matchRef) {
-      if (matchState.matchInfo.advisor !== officialAdvisorName && !syncedAdvisorRef.current) {
-        syncedAdvisorRef.current = true;
-        updateDoc(matchRef, {
-          'matchInfo.advisor': officialAdvisorName
-        }).catch(console.error);
-      }
-    }
-  }, [matchState, officialAdvisorName, matchRef]);
-
-  // Auto-create userProfile if missing
-  useEffect(() => {
-    if (!isUserLoading && !isProfileLoading && user && !userProfile && firestore) {
-      const emailLower = user.email?.toLowerCase() || '';
-      const isSuperAdmin = emailLower === 'omar850413@gmail.com' || emailLower === 'omar850413-ai@gmail.com';
-      setDoc(doc(firestore, 'users', user.uid), {
-        email: user.email,
-        isAdmin: isSuperAdmin,
-        isApproved: isSuperAdmin,
-        appId: 'referee-elite',
-      }, { merge: true }).catch(console.error);
-    }
-  }, [user, userProfile, isUserLoading, isProfileLoading, firestore]);
-
-  // Auto-create matchState if missing
-  useEffect(() => {
-    if (!isUserLoading && !isMatchLoading && user && !matchState && firestore && matchRef) {
-      const advisorName = officialAdvisorName || user.email?.toUpperCase() || '';
-      const resetState: MatchState = {
-        title: 'INFORME ARBITRAL',
-        scores: { home: 0, away: 0 },
-        fouls: { home: 0, away: 0 },
-        teamNames: { home: 'LOCAL', away: 'VISITA' },
-        events: [],
-        matchInfo: { advisor: advisorName, league: '', round: '', place: '', date: new Date().toISOString().split('T')[0], referee: '', assistant1: '', assistant2: '', fourthOfficial: '', var: '', avar: '' },
-        timer: { status: 'NOT_STARTED', startTime: 0, elapsedSeconds: 0, isRunning: false },
-        penaltyShootout: { home: 0, away: 0, active: false },
-        lineups: { home: [], away: [] },
-        staff: { home: [], away: [] },
-        signatures: {},
-        ownerId: user.uid
-      };
-      setDoc(matchRef, resetState).catch(console.error);
-    }
-  }, [user, matchState, isUserLoading, isMatchLoading, firestore, matchRef, officialAdvisorName]);
-
-  const handleSaveFullNameMigration = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMigrationError(null);
-    const trimmed = migrationFullName.toUpperCase().trim();
-    if (!trimmed || trimmed.length < 5) {
-      setMigrationError('Por favor ingresa tu Nombre Completo Oficial (mínimo 5 caracteres).');
-      return;
-    }
-    if (!user?.uid || !firestore) return;
-    setIsMigrating(true);
-    try {
-      await updateDoc(doc(firestore, 'users', user.uid), {
-        fullName: trimmed
-      });
-      toast({
-        title: "¡Perfil Actualizado Exitosamente!",
-        description: `Tu nombre oficial "${trimmed}" ha quedado vinculado permanentemente a tu cuenta.`,
-      });
-    } catch (err: any) {
-      console.error("Error updating full name:", err);
-      setMigrationError("Error al guardar en base de datos. Inténtalo de nuevo.");
-    } finally {
-      setIsMigrating(false);
-    }
-  };
 
   useEffect(() => {
     if (isUserLoading || isProfileLoading) return;
@@ -202,8 +93,7 @@ export default function Home() {
       return;
     }
     
-    const emailLower = user.email?.toLowerCase() || '';
-    const isSuperAdmin = emailLower === 'omar850413@gmail.com' || emailLower === 'omar850413-ai@gmail.com';
+    const isSuperAdmin = user.email === 'omar850413@gmail.com';
     if (userProfile && !userProfile.isApproved && !isSuperAdmin) {
       router.push('/pending-approval');
     }
@@ -1001,20 +891,10 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={modal === 'info'} onOpenChange={() => setModal(null)}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto rounded-3xl">
-          <DialogHeader><DialogTitle className="font-black uppercase">DATOS GENERALES DEL PARTIDO</DialogTitle></DialogHeader>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="font-black uppercase">DATOS GENERALES</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-1">
-              <Label className="text-xs font-bold uppercase text-slate-700">Asesor / Árbitro Registrado</Label>
-              <div className="relative">
-                <Input value={officialAdvisorName} disabled className="bg-slate-100 font-bold uppercase border-slate-300 pr-10 text-slate-700" />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">🔒</span>
-              </div>
-              <p className="text-[10px] text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200 font-semibold leading-tight mt-1">
-                🔒 <strong>Nombre Inalterable:</strong> Vinculado permanentemente a tu cuenta oficial. No se puede modificar por partido.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-4"><div><Label className="uppercase text-xs font-bold">LOCAL</Label><Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} /></div><div><Label className="uppercase text-xs font-bold">VISITA</Label><Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} /></div></div>
+            <div className="grid grid-cols-2 gap-4"><div><Label className="uppercase">LOCAL</Label><Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} /></div><div><Label className="uppercase">VISITA</Label><Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} /></div></div>
             <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value.toUpperCase()}})} placeholder="LIGA" />
             <div className="grid grid-cols-2 gap-4"><Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value.toUpperCase()}})} placeholder="JORNADA" /><Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value.toUpperCase()}})} placeholder="CAMPO" /></div>
             <Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} />
@@ -1081,66 +961,6 @@ export default function Home() {
           <ReportView matchState={matchState} />
         </DialogContent>
       </Dialog>
-
-      {/* Mandatory Migration Dialog for Existing Users without Full Name */}
-      <Dialog open={!!(userProfile && !userProfile.fullName)}>
-        <DialogContent className="max-w-md rounded-3xl p-6 bg-white border-2 border-amber-500 shadow-2xl">
-          <DialogHeader className="text-center space-y-2">
-            <div className="mx-auto bg-amber-100 text-amber-800 w-12 h-12 rounded-full flex items-center justify-center">
-              <Lock className="h-6 w-6" />
-            </div>
-            <DialogTitle className="text-xl font-black uppercase italic text-slate-900">
-              Confirmación de Nombre Oficial
-            </DialogTitle>
-            <DialogDescription className="text-xs text-slate-600 font-bold leading-relaxed">
-              Para garantizar la autenticidad e inalterabilidad de tus cédulas en PDF e Imagen, debes ingresar tu Nombre Completo Oficial por única vez.
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSaveFullNameMigration} className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-slate-800">
-                Nombre Completo Oficial (Árbitro / Asesor) *
-              </Label>
-              <Input
-                type="text"
-                placeholder="EJ. OMAR ALEJANDRO LÓPEZ PÉREZ"
-                value={migrationFullName}
-                onChange={(e) => setMigrationFullName(e.target.value)}
-                className="uppercase font-bold border-2 border-slate-300 focus:border-blue-700"
-                required
-              />
-              <p className="text-[10px] text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 font-medium">
-                🔒 <strong>Importante:</strong> Este nombre aparecerá automáticamente en todas tus cédulas y no se podrá modificar posteriormente.
-              </p>
-            </div>
-
-            {migrationError && (
-              <p className="text-xs font-bold text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-200">
-                {migrationError}
-              </p>
-            )}
-
-            <Button
-              type="submit"
-              disabled={isMigrating}
-              className="w-full h-12 font-black italic uppercase bg-blue-900 hover:bg-black text-white rounded-xl shadow-lg"
-            >
-              {isMigrating ? 'GUARDANDO...' : 'CONFIRMAR Y VINCULAR MI NOMBRE'}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {showInstallButton && (
-        <button
-          onClick={handleInstallApp}
-          className="fixed bottom-6 left-6 z-[100] flex items-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black uppercase italic text-xs px-5 py-3.5 rounded-full border-2 border-slate-950 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] active:scale-95 transition-all animate-bounce"
-        >
-          <Download className="h-4 w-4" />
-          Instalar App
-        </button>
-      )}
     </div>
   );
 }

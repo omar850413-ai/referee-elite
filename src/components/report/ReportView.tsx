@@ -312,14 +312,7 @@ export function ReportView({ matchState }: ReportViewProps) {
               </div>
             </div>
             
-            <div className="mt-8 pt-3 border-t border-gray-200 text-center">
-              <p className="text-[9px] font-black uppercase text-slate-800 tracking-wider">
-                🔒 DOCUMENTO OFICIAL EMITIDO POR LA CUENTA VERIFICADA DE: <span className="text-blue-900">{matchInfo.advisor || 'ÁRBITRO REGISTRADO'}</span>
-              </p>
-              <p className="text-[7px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-1">
-                REFEREE ELITE - REGISTRO INALTERABLE E INDEPENDIENTE
-              </p>
-            </div>
+            <p className="text-center text-[7px] text-gray-400 mt-10 font-bold uppercase tracking-[0.2em]">REFEREE ELITE - REPORTE OFICIAL INDEPENDIENTE</p>
           </div>
         </div>
       </div>

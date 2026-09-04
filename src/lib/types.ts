@@ -117,7 +117,6 @@ export interface UserProfile {
   email: string;
   isApproved: boolean;
   isAdmin: boolean;
-  fullName?: string;
   sessionId?: string;
   appId?: string; 
 }
