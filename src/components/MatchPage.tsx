@@ -65,6 +65,7 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
   const [tempIncidents, setTempIncidents] = useState('');
   const [isIncidentsDirty, setIsIncidentsDirty] = useState(false);
   const [currentMinute, setCurrentMinute] = useState('');
+  const [customCausalText, setCustomCausalText] = useState('');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
@@ -137,7 +138,7 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
     });
   };
 
-  const startListening = (target: 'new' | 'edit') => {
+  const startListening = (target: 'new' | 'edit' | 'causal') => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
     try {
@@ -148,7 +149,8 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
         if (target === 'new') setNewPlayerName(transcript.toUpperCase());
-        else setEditPlayerName(transcript.toUpperCase());
+        else if (target === 'edit') setEditPlayerName(transcript.toUpperCase());
+        else if (target === 'causal') setCustomCausalText(transcript.toUpperCase());
       };
       recognition.start();
     } catch (e) { setIsListening(false); }
@@ -485,7 +487,36 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
       <Dialog open={modal === 'causales'} onOpenChange={() => setModal('player-actions')}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-black uppercase">Causales - #{selectedPlayer?.player.number}</DialogTitle></DialogHeader>
-          <div className="space-y-2 py-4">{(cardType === 'yellow' ? causalesAmarilla : causalesRoja).map((causal, idx) => (<Button key={idx} variant="outline" className="w-full justify-start text-left h-auto py-2 text-xs" onClick={() => handleAddCard(selectedPlayer!.side, selectedPlayer!.player, cardType!, idx, causal)}><span className="font-bold mr-2 text-primary">#{idx + 1}</span> {causal}</Button>))}</div>
+          <div className="space-y-2 py-4">
+            {(cardType === 'yellow' ? causalesAmarilla : causalesRoja).map((causal, idx) => (<Button key={idx} variant="outline" className="w-full justify-start text-left h-auto py-2 text-xs" onClick={() => handleAddCard(selectedPlayer!.side, selectedPlayer!.player, cardType!, idx, causal)}><span className="font-bold mr-2 text-primary">#{idx + 1}</span> {causal}</Button>))}
+            
+            <div className="pt-4 border-t mt-4">
+              <Label className="text-xs font-black uppercase text-slate-400 mb-2 block">Agregar otra causal</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input 
+                    placeholder="Escribe la causal..." 
+                    className="pr-10 uppercase text-xs" 
+                    value={customCausalText} 
+                    onChange={e => setCustomCausalText(e.target.value)} 
+                  />
+                  <button onClick={() => startListening('causal')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                    {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                  </button>
+                </div>
+                <Button 
+                  onClick={() => {
+                    if (!customCausalText.trim()) return;
+                    handleAddCard(selectedPlayer!.side, selectedPlayer!.player, cardType!, 99, customCausalText.trim().toUpperCase());
+                    setCustomCausalText('');
+                  }} 
+                  className="bg-primary text-white font-bold"
+                >
+                  <Plus size={16} />
+                </Button>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

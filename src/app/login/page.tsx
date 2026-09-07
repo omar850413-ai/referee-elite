@@ -39,6 +39,7 @@ export default function LoginPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const adminEmail = 'omar850413@gmail.com';
+  const APP_ID = 'referee-elite';
   
   const { user, isUserLoading } = useUser();
 
@@ -63,10 +64,9 @@ export default function LoginPage() {
         const data = userDoc.data();
         const isSuperAdmin = user.email === adminEmail;
         
-        // Bloqueo de seguridad: Si el usuario existe pero es de otra app (Asesor Pro)
-        if (data.appId && data.appId !== 'referee-elite' && !isSuperAdmin) {
+        if (data.appId && data.appId !== APP_ID && !isSuperAdmin) {
           await signOut(auth);
-          setError('ESTA CUENTA PERTENECE A OTRA APLICACIÓN. POR FAVOR, REGÍSTRATE CON UN CORREO DIFERENTE PARA REFEREE ELITE.');
+          setError('ESTA CUENTA PERTENECE A OTRA APLICACIÓN. POR FAVOR, REGÍSTRATE CON UN CORREO DIFERENTE.');
           setIsLoading(false);
           return;
         }
@@ -84,7 +84,6 @@ export default function LoginPage() {
             throw err;
         });
       } else {
-        // Si no tiene perfil, lo mandamos a registro
         await signOut(auth);
         setError('NO SE ENCONTRÓ UN PERFIL PARA ESTA CUENTA. POR FAVOR, REGÍSTRATE.');
         setIsLoading(false);
@@ -130,7 +129,7 @@ export default function LoginPage() {
 
   if (isUserLoading || user) {
      return (
-      <div className="flex items-center justify-center min-h-screen bg-sky-100">
+      <div className="flex items-center justify-center min-h-screen bg-slate-100">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center space-y-4">
              <Skeleton className="h-8 w-48 mx-auto" />
@@ -146,11 +145,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-sky-100">
+    <div className="flex items-center justify-center min-h-screen bg-slate-100">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-black uppercase italic text-primary">Iniciar Sesión</CardTitle>
-          <CardDescription>ACCEDE A TU PANEL DE REFEREE ELITE.</CardDescription>
+          <CardTitle className="text-2xl font-black uppercase italic text-emerald-600">Iniciar Sesión</CardTitle>
+          <CardDescription>REFEREE ELITE - INGRESO OFICIAL</CardDescription>
         </CardHeader>
         <form onSubmit={handleSignIn}>
           <CardContent className="space-y-4">
@@ -159,9 +158,9 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="TU@EMAIL.COM"
+                placeholder="tu@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value.toUpperCase())}
+                onChange={(e) => setEmail(e.target.value.toLowerCase())}
                 required
               />
             </div>
@@ -170,7 +169,7 @@ export default function LoginPage() {
                 <Label htmlFor="password">CONTRASEÑA</Label>
                 <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
                   <DialogTrigger asChild>
-                    <button type="button" className="text-xs text-primary hover:underline font-semibold">
+                    <button type="button" className="text-xs text-emerald-600 hover:underline font-semibold">
                       ¿OLVIDASTE TU CONTRASEÑA?
                     </button>
                   </DialogTrigger>
@@ -182,9 +181,9 @@ export default function LoginPage() {
                     <div className="space-y-4 py-4">
                        <Input
                          type="email"
-                         placeholder="TU@EMAIL.COM"
+                         placeholder="tu@email.com"
                          value={resetEmail}
-                         onChange={(e) => setResetEmail(e.target.value.toUpperCase())}
+                         onChange={(e) => setResetEmail(e.target.value.toLowerCase())}
                        />
                     </div>
                     <DialogFooter>
@@ -215,12 +214,12 @@ export default function LoginPage() {
             {error && <p className="text-sm text-red-600 font-bold text-center uppercase">{error}</p>}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full font-black italic" disabled={isLoading}>
+            <Button type="submit" className="w-full font-black italic bg-emerald-600 hover:bg-emerald-700" disabled={isLoading}>
               {isLoading ? 'INGRESANDO...' : 'INGRESAR'}
             </Button>
             <p className="text-xs text-center text-gray-600">
               ¿NO TIENES CUENTA?{' '}
-              <Link href="/signup" className="text-primary hover:underline font-semibold">
+              <Link href="/signup" className="text-emerald-600 hover:underline font-semibold">
                 REGÍSTRATE AQUÍ
               </Link>
             </p>
