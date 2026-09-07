@@ -129,16 +129,19 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
   const getPlayerEventsSummary = (side: 'home' | 'away', number: string, p?: Player) => {
     const playerEvs = (events || []).filter(e => e.side === side && e.playerNumber === number);
-    let summary = playerEvs.map(e => {
-      if (e.category === 'goals') return `${e.message.includes('AUTOGOL') ? '🥅' : '⚽'}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`;
-      if (e.category === 'cards') return `${e.message.includes('🟨') ? '🟨' : '🟥'}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`;
-      return '';
-    }).filter(Boolean).join(' ');
-
+    let summary = [];
+    playerEvs.forEach(e => {
+      if (e.category === 'goals') {
+        summary.push(`${e.message.includes('AUTOGOL') ? '🥅' : '⚽'}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`);
+      }
+      if (e.category === 'cards') {
+        summary.push(`${e.message.includes('🟨') ? '🟨' : '🟥'}${e.time !== '--' && e.time !== '' ? ` (${e.time})` : ''}`);
+      }
+    });
     if (p?.replacedNumber) {
-      summary += ` (POR: #${p.replacedNumber})`;
+      summary.push(` (POR: #${p.replacedNumber})`);
     }
-    return summary;
+    return summary.join(' ');
   };
 
   const getSortedCards = (side: 'home' | 'away', type: 'yellow' | 'red') => {
@@ -155,18 +158,12 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
-  const renderPlayerRow = (p: Player, side: 'home' | 'away') => {
-    const eventsSummary = getPlayerEventsSummary(side, p.number, p);
-    return (
-      <div key={p.id} className="flex uppercase leading-none items-baseline py-0">
-        <div className="inline-block w-[18px] text-right mr-1 font-bold">{p.number}.-</div>
-        <div className="flex-1 text-left">
-          {p.name}
-          {eventsSummary && <span className="ml-3 text-[7px] font-bold text-slate-700">{eventsSummary}</span>}
-        </div>
-      </div>
-    );
-  };
+  const renderPlayerRow = (p: Player, side: 'home' | 'away') => (
+    <div key={p.id} className="flex uppercase leading-none items-baseline py-0">
+      <div className="inline-block w-[18px] text-right mr-1 font-bold">{p.number}.-</div>
+      <div className="flex-1 text-left">{p.name} {getPlayerEventsSummary(side, p.number, p)}</div>
+    </div>
+  );
 
   const renderCardEntry = (e: any, side: 'home' | 'away') => {
     let nameDisplay = e.playerName;
@@ -181,9 +178,9 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     }
 
     return (
-      <div key={e.id} className="leading-none border-b border-gray-100 flex items-center py-1 gap-1.5 text-[7px]">
-        <div className="inline-block w-[18px] text-right font-bold">{numberDisplay}</div> 
-        <div className="flex-1 text-left truncate">{nameDisplay} - {e.message.split(' - ').pop()}</div>
+      <div key={e.id} className="leading-none border-b border-gray-50 flex items-baseline py-0.5">
+        <div className="inline-block w-[18px] text-right mr-1 font-bold">{numberDisplay}</div> 
+        <div className="flex-1 text-left">{nameDisplay} {e.message.split(' - ').pop()}</div>
       </div>
     );
   };
@@ -192,124 +189,120 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     <div className="w-full h-full flex flex-col bg-slate-900 overflow-hidden" ref={containerRef}>
       <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 shrink-0 z-10">
         <div className="text-white font-black uppercase text-sm italic">Vista Previa Reporte PDF</div>
-        <DialogClose className="text-white bg-white/20 hover:bg-white/30 border border-white/30 p-2 rounded-full transition-colors flex items-center justify-center shadow-lg">
-          <X size={24} strokeWidth={3.5} className="text-white" />
-        </DialogClose>
+        <DialogClose className="text-white p-2 hover:bg-white/10 rounded-full"><X size={24} /></DialogClose>
       </div>
 
       <div className="flex-1 overflow-auto touch-none bg-slate-900 p-4 flex justify-center items-start" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center top' }}>
           <div ref={reportRef} className="p-6 bg-white text-black font-sans shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
-            <div className="flex items-center justify-between mb-2 relative">
-              <div className="w-[60px] h-[60px] flex items-center justify-center">
-                {matchInfo.collegeLogo && (
-                  <img src={matchInfo.collegeLogo} className="max-w-full max-h-full object-contain" />
-                )}
-              </div>
-              <div className="flex-1 text-center pr-[60px]">
-                <h1 className="text-xl font-black uppercase tracking-tighter leading-none">INFORME ARBITRAL</h1>
-                {matchInfo.refereeCollege && (
-                  <p className="text-[8px] font-black uppercase text-slate-700 mt-1 leading-tight">{matchInfo.refereeCollege}</p>
-                )}
-              </div>
+            <div className="text-center mb-2">
+              <h1 className="text-xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
+              <div className="h-0.5 bg-black w-full mt-1"></div>
             </div>
-            <div className="h-0.5 bg-black w-full mb-2"></div>
 
-            <div className="grid grid-cols-2 gap-2 text-[8px] mb-2">
-              <div className="space-y-0.5">
+            <div className="grid grid-cols-2 gap-4 text-xs mb-3">
+              <div className="space-y-1">
                 <p><strong>ÁRBITRO CENTRAL:</strong> <span className="uppercase">{matchInfo.referee}</span></p>
                 <p><strong>ASISTENTE 1:</strong> <span className="uppercase">{matchInfo.assistant1}</span></p>
                 <p><strong>ASISTENTE 2:</strong> <span className="uppercase">{matchInfo.assistant2}</span></p>
               </div>
-              <div className="space-y-0.5 text-right">
+              <div className="space-y-1 text-right">
                 <p><strong>LIGA:</strong> <span className="uppercase">{matchInfo.league}</span></p>
                 <p><strong>JORNADA:</strong> <span className="uppercase">{matchInfo.round}</span></p>
                 <p><strong>LUGAR:</strong> <span className="uppercase">{matchInfo.place}</span></p>
                 <p><strong>FECHA:</strong> <span className="uppercase">{matchInfo.date}</span></p>
+                <p><strong>HORA:</strong> <span className="uppercase">{matchInfo.time || '--'}</span></p>
               </div>
             </div>
 
             <div className="flex justify-center mb-3">
               <div className="grid grid-cols-2 border border-black text-center divide-x divide-black w-full max-w-sm">
                 <div className="p-1 bg-gray-50 flex flex-col justify-center">
-                  <p className="text-[11px] font-black uppercase leading-none">{teamNames.home}</p>
-                  <p className="text-[12px] font-black mt-0.5">{scores.home} ({numberToSpanishWords(scores.home)})</p>
+                  <p className="text-[13px] font-black uppercase leading-none">{teamNames.home}</p>
+                  <p className="text-[14px] font-black mt-0.5">{scores.home} ({numberToSpanishWords(scores.home)})</p>
                 </div>
                 <div className="p-1 bg-gray-50 flex flex-col justify-center">
-                  <p className="text-[11px] font-black uppercase leading-none">{teamNames.away}</p>
-                  <p className="text-[12px] font-black mt-0.5">{scores.away} ({numberToSpanishWords(scores.away)})</p>
+                  <p className="text-[13px] font-black uppercase leading-none">{teamNames.away}</p>
+                  <p className="text-[14px] font-black mt-0.5">{scores.away} ({numberToSpanishWords(scores.away)})</p>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-0 text-[8px]">
-                <p className="text-[7px] font-black border-b uppercase mb-1">TITULARES</p>
+            <div className="grid grid-cols-2 gap-8">
+              <div className="space-y-1 text-xs">
+                <p className="text-xs font-black border-b border-gray-300 uppercase mb-2">TITULARES</p>
                 {(lineups.home || []).filter(p => p.type === 'starter').map(p => renderPlayerRow(p, 'home'))}
                 
-                <p className="text-[7px] font-black border-b uppercase mt-2 mb-1">SUPLENTES</p>
+                <p className="text-xs font-black border-b border-gray-300 uppercase mt-4 mb-2">SUPLENTES</p>
                 {(lineups.home || []).filter(p => p.type === 'substitute').map(p => renderPlayerRow(p, 'home'))}
                 
-                <p className="text-[7px] font-black border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
+                <p className="text-xs font-black border-b border-gray-300 uppercase mt-4 mb-2">CUERPO TÉCNICO</p>
                 {(staff.home || []).map(s => <p key={s.id} className="uppercase leading-tight py-0">{roleInitials[s.role] || 'STAFF'} - {s.name}</p>)}
               </div>
-              <div className="space-y-0 text-[8px]">
-                <p className="text-[7px] font-black border-b uppercase mb-1">TITULARES</p>
+              <div className="space-y-1 text-xs">
+                <p className="text-xs font-black border-b border-gray-300 uppercase mb-2">TITULARES</p>
                 {(lineups.away || []).filter(p => p.type === 'starter').map(p => renderPlayerRow(p, 'away'))}
                 
-                <p className="text-[7px] font-black border-b uppercase mt-2 mb-1">SUPLENTES</p>
+                <p className="text-xs font-black border-b border-gray-300 uppercase mt-4 mb-2">SUPLENTES</p>
                 {(lineups.away || []).filter(p => p.type === 'substitute').map(p => renderPlayerRow(p, 'away'))}
                 
-                <p className="text-[7px] font-black border-b uppercase mt-2 mb-1">CUERPO TÉCNICO</p>
+                <p className="text-xs font-black border-b border-gray-300 uppercase mt-4 mb-2">CUERPO TÉCNICO</p>
                 {(staff.away || []).map(s => <p key={s.id} className="uppercase leading-tight py-0">{roleInitials[s.role] || 'STAFF'} - {s.name}</p>)}
               </div>
             </div>
 
-            <div className="mt-4 border-t pt-2">
-              <p className="text-[8px] font-black uppercase text-black border-b mb-1">SANCIONES</p>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="text-[7px] space-y-1 uppercase">
-                  <p className="font-black border-b border-yellow-200 mb-1 text-yellow-600 flex items-center gap-1">🟨 AMONESTACIÓN</p>
-                  {getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home'))}
-                  <div className="mt-2 text-[7px] space-y-1 uppercase">
-                    <p className="font-black border-b border-red-200 mb-1 text-red-600 flex items-center gap-1">🟥 EXPULSIÓN</p>
-                    {getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home'))}
+            <div className="mt-6 border-t-2 border-gray-300 pt-3">
+              <p className="text-xs font-black uppercase text-black border-b border-gray-300 mb-2">SANCIONES</p>
+              <div className="grid grid-cols-2 gap-8">
+                <div className="text-xs space-y-2 uppercase">
+                  <p className="font-bold border-b border-gray-200 mb-1 text-gray-500">🟨 AMONESTACIÓN</p>
+                  <div className="space-y-1">{getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home'))}</div>
+                  <div className="mt-3 text-xs space-y-2 uppercase">
+                    <p className="font-bold border-b border-gray-200 mb-1 text-gray-500">🟥 EXPULSIÓN</p>
+                    <div className="space-y-1">{getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home'))}</div>
                   </div>
                 </div>
-                <div className="text-[7px] space-y-1 uppercase">
-                  <p className="font-black border-b border-yellow-200 mb-1 text-yellow-600 flex items-center gap-1">🟨 AMONESTACIÓN</p>
-                  {getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away'))}
-                  <div className="mt-2 text-[7px] space-y-1 uppercase">
-                    <p className="font-black border-b border-red-200 mb-1 text-red-600 flex items-center gap-1">🟥 EXPULSIÓN</p>
-                    {getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away'))}
+                <div className="text-xs space-y-2 uppercase">
+                  <p className="font-bold border-b border-gray-200 mb-1 text-gray-500">🟨 AMONESTACIÓN</p>
+                  <div className="space-y-1">{getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away'))}</div>
+                  <div className="mt-3 text-xs space-y-2 uppercase">
+                    <p className="font-bold border-b border-gray-200 mb-1 text-gray-500">🟥 EXPULSIÓN</p>
+                    <div className="space-y-1">{getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away'))}</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-4">
-              <p className="text-[8px] font-black uppercase text-gray-400 border-b mb-1">INCIDENTES DEL PARTIDO</p>
-              <div className="text-[8px] p-2 border border-gray-100 min-h-[50px] whitespace-pre-wrap uppercase font-bold bg-gray-50 leading-tight">{incidentNote}</div>
+            <div className="mt-6">
+              <p className="text-xs font-black uppercase text-gray-500 border-b border-gray-300 mb-2">INCIDENTES DEL PARTIDO</p>
+              <div className="text-xs p-3 border-2 border-gray-200 min-h-[60px] whitespace-pre-wrap uppercase font-bold bg-gray-50 leading-tight">{incidentNote}</div>
             </div>
 
             <div className="grid grid-cols-3 gap-6 mt-6 text-center">
               <div className="space-y-1">
                 <div className="h-8 flex items-center justify-center">{signatures.captainHome && <img src={signatures.captainHome} className="max-h-full" />}</div>
                 <div className="h-px bg-black w-full"></div>
-                <p className="text-[6px] font-black uppercase">Capitán Local</p>
+                <p className="text-[10px] font-black uppercase">Capitán Local</p>
               </div>
               <div className="space-y-1">
                 <div className="h-8 flex items-center justify-center">{signatures.referee && <img src={signatures.referee} className="max-h-full" />}</div>
                 <div className="h-px bg-black w-full"></div>
-                <p className="text-[6px] font-black uppercase">Árbitro Central</p>
+                <p className="text-[10px] font-black uppercase">Árbitro Central</p>
               </div>
               <div className="space-y-1">
                 <div className="h-8 flex items-center justify-center">{signatures.captainAway && <img src={signatures.captainAway} className="max-h-full" />}</div>
                 <div className="h-px bg-black w-full"></div>
-                <p className="text-[6px] font-black uppercase">Capitán Visitante</p>
+                <p className="text-[10px] font-black uppercase">Capitán Visitante</p>
               </div>
             </div>
-            <p className="text-center text-[5px] text-gray-300 mt-4 font-bold uppercase tracking-widest">REFEREE ELITE - REPORTE OFICIAL INDEPENDIENTE</p>
+            <div className="mt-4 pt-2 border-t border-gray-200 text-center">
+              <p className="text-[7px] font-black uppercase text-slate-700 tracking-wider">
+                🔒 DOCUMENTO OFICIAL EMITIDO POR LA CUENTA VERIFICADA DE: <span className="text-blue-900">{matchInfo.advisor || 'ÁRBITRO REGISTRADO'}</span>
+              </p>
+              <p className="text-[5px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                REFEREE ELITE - REGISTRO INALTERABLE E INDEPENDIENTE
+              </p>
+            </div>
           </div>
         </div>
       </div>

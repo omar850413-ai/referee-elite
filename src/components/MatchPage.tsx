@@ -63,6 +63,7 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
   
   const [isListening, setIsListening] = useState(false);
   const [tempIncidents, setTempIncidents] = useState('');
+  const [isIncidentsDirty, setIsIncidentsDirty] = useState(false);
   const [currentMinute, setCurrentMinute] = useState('');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -246,6 +247,7 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
     const otherEvents = events.filter(e => e.category !== 'notes');
     const incidentEvent: MatchEvent = { id: Date.now(), time: '--', category: 'notes', message: `📝 ${tempIncidents}` };
     updateMatch({ events: [incidentEvent, ...otherEvents] });
+    setIsIncidentsDirty(false);
     setModal(null);
   };
 
@@ -363,7 +365,7 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
               </AlertDialogContent>
             </AlertDialog>
             <Button onClick={() => setModal('info')} className="bg-indigo-600 text-white font-black h-12 shadow-md"><Settings2 className="h-5 w-5 mr-2" /> DATOS PARTIDO</Button>
-            <Button onClick={() => { setTempIncidents(currentIncidents); setModal('incidents'); }} className="bg-rose-500 text-white font-black h-12 shadow-md"><AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES</Button>
+            <Button onClick={() => { if (!isIncidentsDirty) setTempIncidents(currentIncidents); setModal('incidents'); }} className="bg-rose-500 text-white font-black h-12 shadow-md"><AlertCircle className="h-5 w-5 mr-2" /> INCIDENTES</Button>
             <Button onClick={() => setIsPdfReportOpen(true)} className="bg-slate-900 text-white font-black h-12 shadow-md"><FileText className="h-5 w-5 mr-2" /> CÉDULA PDF</Button>
             <Button onClick={() => setIsImageReportOpen(true)} className="bg-emerald-500 text-white font-black h-12 shadow-md"><ImageIcon className="h-5 w-5 mr-2" /> IMAGEN</Button>
           </div>
@@ -490,7 +492,7 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
       <Dialog open={modal === 'incidents'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-lg rounded-2xl">
           <DialogHeader><DialogTitle className="font-black uppercase">Incidentes</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4"><Textarea className="min-h-[200px]" value={tempIncidents} onChange={e => setTempIncidents(e.target.value)} /><Button onClick={handleSaveIncidents} className="w-full font-bold bg-primary text-white">GUARDAR</Button></div>
+          <div className="space-y-4 py-4"><Textarea className="min-h-[200px]" value={tempIncidents} onChange={e => { setTempIncidents(e.target.value); setIsIncidentsDirty(true); }} /><Button onClick={handleSaveIncidents} className="w-full font-bold bg-primary text-white">GUARDAR</Button></div>
         </DialogContent>
       </Dialog>
 
@@ -506,7 +508,7 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
             <div className="grid grid-cols-2 gap-4"><div><Label>Local</Label><Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} /></div><div><Label>Visita</Label><Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} /></div></div>
             <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value}})} placeholder="Liga" />
             <div className="grid grid-cols-2 gap-4"><Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value}})} placeholder="Jornada" /><Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value}})} placeholder="Campo" /></div>
-            <Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} />
+            <div className="grid grid-cols-2 gap-4"><Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} /><Input type="time" value={matchInfo.time || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, time: e.target.value}})} /></div>
             <div className="border-t pt-4 space-y-2"><Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value}})} placeholder="Árbitro Central" /><Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value}})} placeholder="Asistente 1" /><Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value}})} placeholder="Asistente 2" /></div>
           </div>
         </DialogContent>

@@ -4,9 +4,9 @@ import React, { useRef, useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { MatchState, Player } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { DialogClose } from '@/components/ui/dialog';
 import { Download, X } from 'lucide-react';
-import { parseTimeToMinutes, numberToSpanishWords } from '@/lib/utils';
+import { DialogClose } from '@/components/ui/dialog';
+import { numberToSpanishWords, parseTimeToMinutes } from '@/lib/utils';
 
 interface ReportViewProps {
   matchState: MatchState;
@@ -21,19 +21,10 @@ const roleInitials: Record<string, string> = {
 };
 
 export function ReportView({ matchState }: ReportViewProps) {
-  const { 
-    matchInfo, 
-    teamNames, 
-    scores, 
-    events, 
-    lineups = { home: [], away: [] }, 
-    staff = { home: [], away: [] },
-    signatures = {}
-  } = matchState;
-  
+  const { scores, teamNames, matchInfo, events, lineups = { home: [], away: [] }, staff = { home: [], away: [] }, signatures = {} } = matchState;
   const reportRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [initialDistance, setInitialDistance] = useState<number | null>(null);
@@ -43,7 +34,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     const handleResize = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
-        const targetWidth = 800; 
+        const targetWidth = 800;
         const newScale = Math.min(1, (containerWidth - 40) / targetWidth);
         setScale(newScale);
         setOffset({ x: 0, y: 0 });
@@ -57,14 +48,9 @@ export function ReportView({ matchState }: ReportViewProps) {
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       setLastTouch({ x: e.touches[0].pageX, y: e.touches[0].pageY });
-      setInitialDistance(null);
     } else if (e.touches.length === 2) {
-      const dist = Math.hypot(
-        e.touches[0].pageX - e.touches[1].pageX,
-        e.touches[0].pageY - e.touches[1].pageY
-      );
+      const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
       setInitialDistance(dist);
-      setLastTouch(null);
     }
   };
 
@@ -75,19 +61,11 @@ export function ReportView({ matchState }: ReportViewProps) {
       setOffset(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
       setLastTouch({ x: e.touches[0].pageX, y: e.touches[0].pageY });
     } else if (e.touches.length === 2 && initialDistance) {
-      const dist = Math.hypot(
-        e.touches[0].pageX - e.touches[1].pageX,
-        e.touches[0].pageY - e.touches[1].pageY
-      );
+      const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
       const factor = dist / initialDistance;
       setScale(prev => Math.max(0.2, Math.min(4, prev * factor)));
       setInitialDistance(dist);
     }
-  };
-
-  const handleTouchEnd = () => {
-    setLastTouch(null);
-    setInitialDistance(null);
   };
 
   const handleDownload = async () => {
@@ -135,32 +113,28 @@ export function ReportView({ matchState }: ReportViewProps) {
     return summary;
   };
 
-  const getSortedCards = (side: 'home' | 'away', type: 'yellow' | 'red') => {
-    const symbol = type === 'yellow' ? '🟨' : '🟥';
-    return (events || [])
-      .filter(e => e.side === side && e.category === 'cards' && e.message.includes(symbol))
-      .sort((a, b) => {
-        const numA = parseInt(a.playerNumber || '999');
-        const numB = parseInt(b.playerNumber || '999');
-        if (numA !== numB) return numA - numB;
-        return parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
-      });
+  const getSortedCards = (side: 'home' | 'away', type?: 'yellow' | 'red') => {
+    let filtered = (events || []).filter(e => e.side === side && e.category === 'cards');
+    if (type) {
+      const symbol = type === 'yellow' ? '🟨' : '🟥';
+      filtered = filtered.filter(e => e.message.includes(symbol));
+    }
+    return filtered.sort((a, b) => {
+      const numA = parseInt(a.playerNumber || '999');
+      const numB = parseInt(b.playerNumber || '999');
+      if (numA !== numB) return numA - numB;
+      return parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
+    });
   };
 
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
-  const renderPlayerRow = (p: Player, side: 'home' | 'away') => {
-    const eventsSummary = getPlayerEventsSummary(side, p.number, p);
-    return (
-      <div key={p.id} className="flex uppercase leading-none items-baseline py-0">
-        <div className="inline-block w-[18px] text-right mr-1 font-bold">{p.number}.-</div>
-        <div className="flex-1 text-left">
-          {p.name}
-          {eventsSummary && <span className="ml-3 text-[8px] font-bold text-slate-700">{eventsSummary}</span>}
-        </div>
-      </div>
-    );
-  };
+  const renderPlayerRow = (p: Player, side: 'home' | 'away') => (
+    <div key={p.id} className="flex uppercase leading-none items-baseline py-0">
+      <div className="inline-block w-[18px] text-right mr-1 font-bold">{p.number}.-</div>
+      <div className="flex-1 text-left">{p.name} {getPlayerEventsSummary(side, p.number, p)}</div>
+    </div>
+  );
 
   const renderCardEntry = (e: any, side: 'home' | 'away') => {
     let nameDisplay = e.playerName;
@@ -175,51 +149,40 @@ export function ReportView({ matchState }: ReportViewProps) {
     }
 
     return (
-      <div key={e.id} className="leading-none border-b border-gray-100 flex items-center py-1 gap-1.5 text-[8px]">
-        <div className="inline-block w-[18px] text-right font-bold">{numberDisplay}</div> 
-        <div className="flex-1 text-left truncate">{nameDisplay} - {e.message.split(' - ').pop()}</div>
+      <div key={e.id} className="leading-none border-b border-gray-50 flex items-baseline py-0.5">
+        <div className="inline-block w-[18px] text-right mr-1 font-bold">{numberDisplay}</div> 
+        <div className="flex-1 text-left">{nameDisplay} {e.message.split(' - ').pop()}</div>
       </div>
     );
   };
 
   return (
     <div className="w-full h-full flex flex-col bg-slate-900 overflow-hidden" ref={containerRef}>
-      <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 shrink-0 z-10">
+      <div className="p-4 flex justify-between items-center bg-slate-800 border-b border-white/10 z-10">
         <div className="text-white font-black uppercase text-sm italic">Cédula Digital (Imagen)</div>
-        <DialogClose className="text-white bg-white/20 hover:bg-white/30 border border-white/30 p-2 rounded-full transition-colors flex items-center justify-center shadow-lg">
-          <X size={24} strokeWidth={3.5} className="text-white" />
-        </DialogClose>
+        <DialogClose className="text-white p-2 hover:bg-white/10 rounded-full"><X size={24} /></DialogClose>
       </div>
-
-      <div className="flex-1 overflow-auto touch-none bg-slate-900 p-4 flex justify-center items-start" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+      
+      <div className="flex-1 overflow-auto touch-none bg-slate-900 p-4 flex justify-center items-start" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove}>
         <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center top' }}>
-          <div ref={reportRef} className="p-8 bg-white text-black font-sans shadow-2xl" style={{ width: '800px', minHeight: '1100px' }}>
-            <div className="flex items-center justify-between mb-6 relative">
-              <div className="w-[80px] h-[80px] flex items-center justify-center">
-                {matchInfo.collegeLogo && (
-                  <img src={matchInfo.collegeLogo} className="max-w-full max-h-full object-contain" />
-                )}
-              </div>
-              <div className="flex-1 text-center pr-[80px]">
-                <h1 className="text-3xl font-black uppercase tracking-tighter leading-none">INFORME ARBITRAL</h1>
-                {matchInfo.refereeCollege && (
-                  <p className="text-sm font-black uppercase text-slate-700 mt-1 leading-tight">{matchInfo.refereeCollege}</p>
-                )}
-              </div>
+          <div ref={reportRef} className="p-10 bg-white text-black font-sans shadow-2xl" style={{ width: '1000px', minHeight: '1200px' }}>
+            <div className="text-center mb-6">
+              <h1 className="text-3xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
+              <div className="h-1 bg-black w-full mt-2"></div>
             </div>
-            <div className="h-1 bg-black w-full mb-6"></div>
 
-            <div className="grid grid-cols-2 gap-4 text-[10px] mb-6">
-              <div className="space-y-1">
+            <div className="grid grid-cols-2 gap-6 text-base mb-8">
+              <div className="space-y-1.5">
                 <p><strong>ÁRBITRO CENTRAL:</strong> <span className="uppercase">{matchInfo.referee}</span></p>
                 <p><strong>ASISTENTE 1:</strong> <span className="uppercase">{matchInfo.assistant1}</span></p>
                 <p><strong>ASISTENTE 2:</strong> <span className="uppercase">{matchInfo.assistant2}</span></p>
               </div>
-              <div className="space-y-1 text-right">
+              <div className="space-y-1.5 text-right">
                 <p><strong>LIGA:</strong> <span className="uppercase">{matchInfo.league}</span></p>
                 <p><strong>JORNADA:</strong> <span className="uppercase">{matchInfo.round}</span></p>
                 <p><strong>LUGAR:</strong> <span className="uppercase">{matchInfo.place}</span></p>
                 <p><strong>FECHA:</strong> <span className="uppercase">{matchInfo.date}</span></p>
+                <p><strong>HORA:</strong> <span className="uppercase">{matchInfo.time || '--'}</span></p>
               </div>
             </div>
 
@@ -236,88 +199,107 @@ export function ReportView({ matchState }: ReportViewProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8">
-              <div className="text-[9px] space-y-3">
+            <div className="grid grid-cols-2 gap-10">
+              <div className="text-sm space-y-4">
                 <div>
-                  <p className="text-[8px] font-black border-b mb-1 uppercase">TITULARES</p>
-                  {lineups.home.filter(p => p.type === 'starter').map(p => renderPlayerRow(p, 'home'))}
-                </div>
-                <div>
-                  <p className="text-[8px] font-black border-b mb-1 uppercase">SUPLENTES</p>
-                  {lineups.home.filter(p => p.type === 'substitute').map(p => renderPlayerRow(p, 'home'))}
-                </div>
-                <div>
-                  <p className="text-[8px] font-black border-b mb-1 uppercase">CUERPO TÉCNICO</p>
-                  {staff.home.map(s => <p key={s.id} className="uppercase leading-none py-0">{roleInitials[s.role] || 'STAFF'} - {s.name}</p>)}
-                </div>
-              </div>
-              <div className="text-[9px] space-y-3">
-                <div>
-                  <p className="text-[8px] font-black border-b mb-1 uppercase">TITULARES</p>
-                  {lineups.away.filter(p => p.type === 'starter').map(p => renderPlayerRow(p, 'away'))}
-                </div>
-                <div>
-                  <p className="text-[8px] font-black border-b mb-1 uppercase">SUPLENTES</p>
-                  {lineups.away.filter(p => p.type === 'substitute').map(p => renderPlayerRow(p, 'away'))}
-                </div>
-                <div>
-                  <p className="text-[8px] font-black border-b mb-1 uppercase">CUERPO TÉCNICO</p>
-                  {staff.away.map(s => <p key={s.id} className="uppercase leading-none py-0">{roleInitials[s.role] || 'STAFF'} - {s.name}</p>)}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 border-t pt-4">
-              <p className="text-[9px] font-black uppercase text-black border-b mb-1">SANCIONES</p>
-              <div className="grid grid-cols-2 gap-8">
-                <div className="text-[8px] space-y-1 uppercase">
-                  <p className="font-black border-b border-yellow-200 mb-1 text-yellow-600 flex items-center gap-1">🟨 AMONESTACIÓN</p>
-                  {getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home'))}
-                  <div className="mt-4 text-[8px] space-y-1 uppercase">
-                    <p className="font-black border-b border-red-200 mb-1 text-red-600 flex items-center gap-1">🟥 EXPULSIÓN</p>
-                    {getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home'))}
+                  <p className="text-xs font-black border-b-2 border-gray-200 mb-2 uppercase text-gray-500">TITULARES</p>
+                  <div className="space-y-1">
+                    {lineups.home.filter(p => p.type === 'starter').map(p => renderPlayerRow(p, 'home'))}
                   </div>
                 </div>
-                <div className="text-[8px] space-y-1 uppercase">
-                  <p className="font-black border-b border-yellow-200 mb-1 text-yellow-600 flex items-center gap-1">🟨 AMONESTACIÓN</p>
-                  {getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away'))}
-                  <div className="mt-4 text-[8px] space-y-1 uppercase">
-                    <p className="font-black border-b border-red-200 mb-1 text-red-600 flex items-center gap-1">🟥 EXPULSIÓN</p>
-                    {getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away'))}
+                <div>
+                  <p className="text-xs font-black border-b-2 border-gray-200 mb-2 uppercase text-gray-500">SUPLENTES</p>
+                  <div className="space-y-1">
+                    {lineups.home.filter(p => p.type === 'substitute').map(p => renderPlayerRow(p, 'home'))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-black border-b-2 border-gray-200 mb-2 uppercase text-gray-500">CUERPO TÉCNICO</p>
+                  <div className="space-y-1">
+                    {staff.home.map(s => <p key={s.id} className="uppercase py-0.5">{roleInitials[s.role] || 'STAFF'} - {s.name}</p>)}
+                  </div>
+                </div>
+              </div>
+              <div className="text-sm space-y-4">
+                <div>
+                  <p className="text-xs font-black border-b-2 border-gray-200 mb-2 uppercase text-gray-500">TITULARES</p>
+                  <div className="space-y-1">
+                    {lineups.away.filter(p => p.type === 'starter').map(p => renderPlayerRow(p, 'away'))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-black border-b-2 border-gray-200 mb-2 uppercase text-gray-500">SUPLENTES</p>
+                  <div className="space-y-1">
+                    {lineups.away.filter(p => p.type === 'substitute').map(p => renderPlayerRow(p, 'away'))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-black border-b-2 border-gray-200 mb-2 uppercase text-gray-500">CUERPO TÉCNICO</p>
+                  <div className="space-y-1">
+                    {staff.away.map(s => <p key={s.id} className="uppercase py-0.5">{roleInitials[s.role] || 'STAFF'} - {s.name}</p>)}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6">
-              <p className="text-[9px] font-black uppercase text-gray-400 border-b mb-1">INCIDENTES DEL PARTIDO</p>
-              <div className="text-[9px] p-4 border border-gray-100 min-h-[100px] whitespace-pre-wrap uppercase font-bold bg-gray-50 leading-tight">{incidentNote}</div>
+            <div className="mt-8 border-t-2 border-gray-800 pt-4">
+              <p className="text-sm font-black uppercase text-black border-b-2 border-gray-200 mb-3">SANCIONES</p>
+              <div className="grid grid-cols-2 gap-10">
+                <div className="text-sm space-y-2 uppercase">
+                  <p className="font-bold border-b border-gray-100 mb-2 text-gray-500">🟨 AMONESTACIÓN</p>
+                  <div className="space-y-1">{getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home'))}</div>
+                  <div className="mt-4 text-sm space-y-2 uppercase">
+                    <p className="font-bold border-b border-gray-100 mb-2 text-gray-500">🟥 EXPULSIÓN</p>
+                    <div className="space-y-1">{getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home'))}</div>
+                  </div>
+                </div>
+                <div className="text-sm space-y-2 uppercase">
+                  <p className="font-bold border-b border-gray-100 mb-2 text-gray-500">🟨 AMONESTACIÓN</p>
+                  <div className="space-y-1">{getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away'))}</div>
+                  <div className="mt-4 text-sm space-y-2 uppercase">
+                    <p className="font-bold border-b border-gray-100 mb-2 text-gray-500">🟥 EXPULSIÓN</p>
+                    <div className="space-y-1">{getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away'))}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <p className="text-sm font-black uppercase text-gray-500 border-b-2 border-gray-200 mb-2">INCIDENTES DEL PARTIDO</p>
+              <div className="text-sm p-4 border-2 border-gray-200 min-h-[100px] whitespace-pre-wrap uppercase font-bold bg-gray-50 leading-snug">{incidentNote}</div>
             </div>
 
             <div className="grid grid-cols-3 gap-10 mt-12 text-center">
               <div className="space-y-2">
                 <div className="h-16 flex items-center justify-center">{signatures.captainHome && <img src={signatures.captainHome} className="max-h-full" />}</div>
                 <div className="h-0.5 bg-black w-full"></div>
-                <p className="text-[8px] font-black uppercase">Capitán Local</p>
+                <p className="text-xs font-black uppercase">Capitán Local</p>
               </div>
               <div className="space-y-2">
                 <div className="h-16 flex items-center justify-center">{signatures.referee && <img src={signatures.referee} className="max-h-full" />}</div>
                 <div className="h-0.5 bg-black w-full"></div>
-                <p className="text-[8px] font-black uppercase">Árbitro Central</p>
+                <p className="text-xs font-black uppercase">Árbitro Central</p>
               </div>
               <div className="space-y-2">
                 <div className="h-16 flex items-center justify-center">{signatures.captainAway && <img src={signatures.captainAway} className="max-h-full" />}</div>
                 <div className="h-0.5 bg-black w-full"></div>
-                <p className="text-[8px] font-black uppercase">Capitán Visitante</p>
+                <p className="text-xs font-black uppercase">Capitán Visitante</p>
               </div>
             </div>
             
-            <p className="text-center text-[7px] text-gray-400 mt-10 font-bold uppercase tracking-[0.2em]">REFEREE ELITE - REPORTE OFICIAL INDEPENDIENTE</p>
+            <div className="mt-8 pt-3 border-t border-gray-200 text-center">
+              <p className="text-[10px] font-black uppercase text-slate-800 tracking-wider">
+                🔒 DOCUMENTO OFICIAL EMITIDO POR LA CUENTA VERIFICADA DE: <span className="text-blue-900">{matchInfo.advisor || 'ÁRBITRO REGISTRADO'}</span>
+              </p>
+              <p className="text-[7px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-1">
+                REFEREE ELITE - REGISTRO INALTERABLE E INDEPENDIENTE
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="p-4 bg-slate-800 border-t border-white/10 shrink-0 flex justify-center z-10">
+      <div className="p-4 bg-slate-800 border-t border-white/10 shrink-0 flex justify-center">
         <Button onClick={handleDownload} className="bg-emerald-600 hover:bg-emerald-700 font-black px-10 h-12 uppercase shadow-xl w-full max-w-md">
           <Download className="mr-2 h-5 w-5" /> Descargar Imagen JPG
         </Button>

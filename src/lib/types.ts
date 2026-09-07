@@ -61,6 +61,7 @@ export interface MatchInfo {
   round: string;
   place: string;
   date: string;
+  time?: string;
   referee?: string;
   assistant1?: string;
   assistant2?: string;
