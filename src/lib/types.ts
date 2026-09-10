@@ -116,6 +116,7 @@ export interface MatchState {
 
 export interface UserProfile {
   email: string;
+  fullName?: string;
   isApproved: boolean;
   isAdmin: boolean;
   sessionId?: string;

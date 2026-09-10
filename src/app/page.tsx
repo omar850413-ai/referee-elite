@@ -69,6 +69,8 @@ export default function Home() {
   const [tempIncidents, setTempIncidents] = useState('');
   const [currentMinute, setCurrentMinute] = useState('');
   const [addPlayerType, setAddPlayerType] = useState<'starter' | 'substitute'>('starter');
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [tempFullName, setTempFullName] = useState('');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -96,8 +98,25 @@ export default function Home() {
     const isSuperAdmin = user.email === 'omar850413@gmail.com';
     if (userProfile && !userProfile.isApproved && !isSuperAdmin) {
       router.push('/pending-approval');
+      return;
+    }
+
+    if (userProfile && !userProfile.fullName) {
+      setShowNamePrompt(true);
     }
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+
+  const handleSaveFullName = async () => {
+    if (tempFullName.trim().length < 3) return;
+    if (!userProfileRef) return;
+    try {
+      await updateDoc(userProfileRef, { fullName: tempFullName.trim().toUpperCase() });
+      setShowNamePrompt(false);
+      toast({ title: "Nombre guardado", description: "Tu nombre se utilizará como Árbitro Central." });
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
     if (modal?.startsWith('sign-')) {
@@ -273,6 +292,7 @@ export default function Home() {
 
   const handleAddGoal = (side: 'home' | 'away', player: Player) => {
     if (!matchState) return;
+    if (!window.confirm(`¿Confirmar GOL de #${player.number} ${player.name}?`)) return;
     const newScores = { ...matchState.scores, [side]: (matchState.scores[side] || 0) + 1 };
     const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
     const newEvent: MatchEvent = { id: Date.now(), time: timeDisplay, category: 'goals', message: `⚽ GOL #${player.number} ${player.name}${currentMinute ? ` (${currentMinute}')` : ''}`, side, playerNumber: player.number, playerName: player.name };
@@ -282,16 +302,19 @@ export default function Home() {
 
   const handleAddOwnGoal = (playerSide: 'home' | 'away', player: Player) => {
     if (!matchState) return;
-    const opponentSide = playerSide === 'home' ? 'away' : 'home';
-    const newScores = { ...matchState.scores, [opponentSide]: (matchState.scores[opponentSide] || 0) + 1 };
+    if (!window.confirm(`¿Confirmar AUTOGOL de #${player.number} ${player.name}?`)) return;
+    const benefitingSide = playerSide === 'home' ? 'away' : 'home';
+    const newScores = { ...matchState.scores, [benefitingSide]: (matchState.scores[benefitingSide] || 0) + 1 };
     const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
-    const newEvent: MatchEvent = { id: Date.now(), time: timeDisplay, category: 'goals', message: `🥅 AUTOGOL #${player.number} ${player.name}${currentMinute ? ` (${currentMinute}')` : ''}`, side: playerSide, playerNumber: player.number, playerName: player.name };
+    const newEvent: MatchEvent = { id: Date.now(), time: timeDisplay, category: 'goals', message: `⚽ AUTOGOL #${player.number} ${player.name}${currentMinute ? ` (${currentMinute}')` : ''}`, side: benefitingSide, playerNumber: player.number, playerName: player.name };
     updateMatch({ scores: newScores, events: [newEvent, ...(matchState.events || [])] });
     setCurrentMinute(''); setModal(null);
   };
 
   const handleAddCard = (side: 'home' | 'away', player: Player, type: 'yellow' | 'red', causalIdx: number, causalText: string) => {
     if (!matchState) return;
+    const cardName = type === 'yellow' ? 'AMONESTACIÓN' : 'EXPULSIÓN';
+    if (!window.confirm(`¿Confirmar ${cardName} para #${player.number} ${player.name}?`)) return;
     const symbol = type === 'yellow' ? '🟨' : '🟥';
     const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
     const newEvent: MatchEvent = { id: Date.now(), time: timeDisplay, category: 'cards', message: `${symbol} #${player.number} ${player.name} - #${causalIdx + 1} ${causalText.toUpperCase()}${currentMinute ? ` (${currentMinute}')` : ''}`, side, playerNumber: player.number, playerName: player.name };
@@ -301,6 +324,8 @@ export default function Home() {
 
   const handleAddStaffCard = (side: 'home' | 'away', staff: StaffMember, type: 'yellow' | 'red', causalIdx: number, causalText: string) => {
     if (!matchState) return;
+    const cardName = type === 'yellow' ? 'AMONESTACIÓN' : 'EXPULSIÓN';
+    if (!window.confirm(`¿Confirmar ${cardName} para ${staff.name}?`)) return;
     const symbol = type === 'yellow' ? '🟨' : '🟥';
     const timeDisplay = currentMinute ? `${currentMinute}'` : '--';
     const newEvent: MatchEvent = { id: Date.now(), time: timeDisplay, category: 'cards', message: `${symbol} ${staff.role} ${staff.name} - #${causalIdx + 1} ${causalText.toUpperCase()}${currentMinute ? ` (${currentMinute}')` : ''}`, side, playerName: staff.name };
@@ -907,7 +932,14 @@ export default function Home() {
                 <Input type="time" value={matchInfo.time || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, time: e.target.value}})} />
               </div>
             </div>
-            <div className="border-t pt-4 space-y-2"><Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value.toUpperCase()}})} placeholder="ÁRBITRO CENTRAL" /><Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value.toUpperCase()}})} placeholder="ASISTENTE 1" /><Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value.toUpperCase()}})} placeholder="ASISTENTE 2" /></div>
+            <div className="border-t pt-4 space-y-2">
+              <div className="relative">
+                <Input value={userProfile?.fullName || matchInfo.referee || ''} disabled className="bg-gray-100 cursor-not-allowed font-bold" />
+                <div className="absolute right-3 top-2.5 text-gray-500">🔒</div>
+              </div>
+              <Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value.toUpperCase()}})} placeholder="ASISTENTE 1" />
+              <Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value.toUpperCase()}})} placeholder="ASISTENTE 2" />
+            </div>
             <div className="border-t pt-4 space-y-3">
               <Label className="text-xs font-black uppercase text-slate-500">COLEGIO DE ÁRBITROS</Label>
               <Input 
@@ -930,7 +962,7 @@ export default function Home() {
                     onClick={() => logoInputRef.current?.click()}
                     className="w-full font-bold uppercase gap-2 flex-1"
                   >
-                    <ImageIcon size={16} /> SUBIR ESCUDO COLEGIO
+                    <ImageIcon size={16} /> {matchInfo.collegeLogo ? 'CAMBIAR LOGO' : 'SUBIR ESCUDO COLEGIO'}
                   </Button>
                   {matchInfo.collegeLogo && (
                     <Button 
@@ -939,7 +971,7 @@ export default function Home() {
                       onClick={() => updateMatch({ matchInfo: { ...matchInfo, collegeLogo: '' } as any })}
                       className="font-bold uppercase"
                     >
-                      ELIMINAR
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   )}
                 </div>

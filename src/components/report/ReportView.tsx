@@ -293,11 +293,12 @@ export function ReportView({ matchState }: ReportViewProps) {
                 <div className="h-0.5 bg-black w-full"></div>
                 <p className="text-xs font-black uppercase">Capitán Local</p>
               </div>
-              <div className="space-y-2">
-                <div className="h-16 flex items-center justify-center">{signatures.referee && <img src={signatures.referee} className="max-h-full" />}</div>
-                <div className="h-0.5 bg-black w-full"></div>
-                <p className="text-xs font-black uppercase">Árbitro Central</p>
-              </div>
+                <div className="space-y-1">
+                  <div className="h-16 flex items-center justify-center">{signatures.referee && <img src={signatures.referee} className="max-h-full" />}</div>
+                  <div className="h-0.5 bg-black w-full"></div>
+                  <p className="text-[10px] font-black uppercase leading-tight">{matchInfo.referee}</p>
+                  <p className="text-[10px] font-bold uppercase text-gray-500 leading-tight">ÁRBITRO CENTRAL</p>
+                </div>
               <div className="space-y-2">
                 <div className="h-16 flex items-center justify-center">{signatures.captainAway && <img src={signatures.captainAway} className="max-h-full" />}</div>
                 <div className="h-0.5 bg-black w-full"></div>

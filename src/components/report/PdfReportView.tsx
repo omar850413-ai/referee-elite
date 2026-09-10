@@ -303,9 +303,10 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 <p className="text-[10px] font-black uppercase">Capitán Local</p>
               </div>
               <div className="space-y-1">
-                <div className="h-8 flex items-center justify-center">{signatures.referee && <img src={signatures.referee} className="max-h-full" />}</div>
-                <div className="h-px bg-black w-full"></div>
-                <p className="text-[10px] font-black uppercase">Árbitro Central</p>
+                <div className="h-16 flex items-center justify-center">{signatures.referee && <img src={signatures.referee} className="max-h-full" />}</div>
+                <div className="h-0.5 bg-black w-full"></div>
+                <p className="text-[10px] font-black uppercase leading-tight">{matchInfo.referee}</p>
+                <p className="text-[10px] font-bold uppercase text-gray-500 leading-tight">ÁRBITRO CENTRAL</p>
               </div>
               <div className="space-y-1">
                 <div className="h-8 flex items-center justify-center">{signatures.captainAway && <img src={signatures.captainAway} className="max-h-full" />}</div>
