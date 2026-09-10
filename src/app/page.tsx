@@ -341,6 +341,27 @@ export default function Home() {
     setCurrentMinute(''); setModal('staff-actions');
   };
 
+  const handleEditEvent = (ev: MatchEvent) => {
+    const newMessage = window.prompt("Edita la descripción o el minuto del evento:", ev.message);
+    if (newMessage !== null && newMessage.trim() !== '') {
+      const newEvents = matchState!.events.map(e => e.id === ev.id ? { ...e, message: newMessage.toUpperCase() } : e);
+      updateMatch({ events: newEvents });
+    }
+  };
+
+  const handleDeleteEvent = (ev: MatchEvent) => {
+    if (window.confirm("¿Seguro que deseas eliminar este evento?")) {
+      const newEvents = matchState!.events.filter(e => e.id !== ev.id);
+      if (ev.category === 'goals') {
+        const sideToDecrement = ev.side; 
+        const newScores = { ...matchState!.scores, [sideToDecrement]: Math.max(0, (matchState!.scores[sideToDecrement] || 0) - 1) };
+        updateMatch({ events: newEvents, scores: newScores });
+      } else {
+        updateMatch({ events: newEvents });
+      }
+    }
+  };
+
   const handleRegisterSubstitution = () => {
     if (!selectedPlayer || !matchState || !subReplacedNumber) return;
     const { side, player } = selectedPlayer;
@@ -750,6 +771,24 @@ export default function Home() {
 
                 <div className="grid grid-cols-2 gap-3"><Button onClick={() => handleAddGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-emerald-600 text-white uppercase">⚽ GOL</Button><Button onClick={() => handleAddOwnGoal(selectedPlayer.side, selectedPlayer.player)} className="h-16 font-black bg-orange-600 text-white uppercase">🥅 AUTOGOL</Button></div>
                 <div className="grid grid-cols-2 gap-3"><Button onClick={() => { setCardType('yellow'); setModal('causales'); }} className="h-14 font-black bg-yellow-400 text-yellow-900 uppercase">🟨 AMONESTACION</Button><Button onClick={() => { setCardType('red'); setModal('causales'); }} className="h-14 font-black bg-red-600 text-white uppercase">🟥 EXPULSION</Button></div>
+                {(() => {
+                  const playerEvents = (matchState?.events || []).filter(e => e.playerNumber === selectedPlayer.player.number && (e.side === selectedPlayer.side || e.message.includes('AUTOGOL')));
+                  if (playerEvents.length === 0) return null;
+                  return (
+                    <div className="border-t pt-4 space-y-2">
+                      <Label className="text-xs font-black uppercase text-slate-400">ACCIONES REGISTRADAS</Label>
+                      {playerEvents.map(ev => (
+                        <div key={ev.id} className="flex justify-between items-center bg-slate-50 p-2 rounded border text-xs font-bold">
+                          <span className="flex-1 truncate pr-2" title={ev.message}>{ev.message}</span>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-full" onClick={() => handleEditEvent(ev)}><Pencil className="h-4 w-4"/></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 bg-red-50 hover:bg-red-100 rounded-full" onClick={() => handleDeleteEvent(ev)}><Trash2 className="h-4 w-4"/></Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
                 <div className="border-t pt-4 grid grid-cols-2 gap-3">
                   <Button 
                     onClick={() => { 
@@ -817,6 +856,24 @@ export default function Home() {
                   <Button onClick={() => { setCardType('yellow'); setModal('causales-staff'); }} className="h-14 font-black bg-yellow-400 text-yellow-900 uppercase">🟨 AMONESTACION</Button>
                   <Button onClick={() => { setCardType('red'); setModal('causales-staff'); }} className="h-14 font-black bg-red-600 text-white uppercase">🟥 EXPULSION</Button>
                 </div>
+                {(() => { 
+                  const staffEvents = (matchState?.events || []).filter(e => e.playerName === selectedStaff.staff.name); 
+                  if (staffEvents.length === 0) return null; 
+                  return ( 
+                    <div className="border-t pt-4 mt-4 space-y-2"> 
+                      <Label className="text-xs font-black uppercase text-slate-400">ACCIONES REGISTRADAS</Label> 
+                      {staffEvents.map(ev => ( 
+                        <div key={ev.id} className="flex justify-between items-center bg-slate-50 p-2 rounded border text-xs font-bold"> 
+                          <span className="flex-1 truncate pr-2" title={ev.message}>{ev.message}</span> 
+                          <div className="flex gap-1"> 
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-full" onClick={() => handleEditEvent(ev)}><Pencil className="h-4 w-4"/></Button> 
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 bg-red-50 hover:bg-red-100 rounded-full" onClick={() => handleDeleteEvent(ev)}><Trash2 className="h-4 w-4"/></Button> 
+                          </div> 
+                        </div> 
+                      ))} 
+                    </div> 
+                  ) 
+                })()}
               </div>
             </div>
           )}
