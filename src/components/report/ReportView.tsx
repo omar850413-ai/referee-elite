@@ -198,7 +198,7 @@ export function ReportView({ matchState }: ReportViewProps) {
             </div>
 
             <div className="flex justify-center mb-6">
-              <div className="flex border-4 border-black text-center shadow-md bg-white w-full max-w-lg rounded-xl overflow-hidden items-stretch">
+              <div className="flex border-4 border-black text-center shadow-md bg-white w-full max-w-sm rounded-xl overflow-hidden items-stretch">
                 <div className="flex-1 p-3 bg-gray-50 flex flex-col justify-center items-center">
                   <p className="text-lg font-black uppercase leading-tight text-center">{teamNames.home}</p>
                 </div>
