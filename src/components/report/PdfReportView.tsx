@@ -194,11 +194,22 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
 
       <div className="flex-1 overflow-auto touch-none bg-slate-900 p-4 flex justify-center items-start" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center top' }}>
-          <div ref={reportRef} className="p-6 bg-white text-black font-sans shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
-            <div className="text-center mb-2">
-              <h1 className="text-xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
-              <div className="h-0.5 bg-black w-full mt-1"></div>
+          <div ref={reportRef} className="p-8 bg-white text-black font-sans shadow-2xl relative" style={{ width: '210mm', minHeight: '297mm' }}>
+            <div className="flex items-center justify-between mb-3 relative min-h-[70px]">
+              <div className="w-[80px] h-[80px] flex items-center justify-center absolute left-0 top-0">
+                {matchInfo.collegeLogo && (
+                  <img src={matchInfo.collegeLogo} className="max-w-full max-h-full object-contain" />
+                )}
+              </div>
+              <div className="flex-1 text-center px-[90px]">
+                <h1 className="text-2xl font-black uppercase tracking-tighter leading-none mb-1">INFORME ARBITRAL</h1>
+                {matchInfo.refereeCollege && (
+                  <p className="text-sm font-bold uppercase text-slate-700 leading-tight">{matchInfo.refereeCollege}</p>
+                )}
+              </div>
             </div>
+            
+            <div className="h-0.5 bg-black w-full mb-3"></div>
 
             <div className="grid grid-cols-2 gap-4 text-xs mb-3">
               <div className="space-y-1">
@@ -216,14 +227,15 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
             </div>
 
             <div className="flex justify-center mb-3">
-              <div className="grid grid-cols-2 border border-black text-center divide-x divide-black w-full max-w-sm">
-                <div className="p-1 bg-gray-50 flex flex-col justify-center">
-                  <p className="text-[13px] font-black uppercase leading-none">{teamNames.home}</p>
-                  <p className="text-[14px] font-black mt-0.5">{scores.home} ({numberToSpanishWords(scores.home)})</p>
+              <div className="flex border-2 border-black text-center shadow-sm bg-white w-full max-w-sm rounded-lg overflow-hidden items-stretch">
+                <div className="flex-1 p-2 bg-gray-50 flex flex-col justify-center items-center">
+                  <p className="text-sm font-black uppercase leading-tight text-center">{teamNames.home}</p>
                 </div>
-                <div className="p-1 bg-gray-50 flex flex-col justify-center">
-                  <p className="text-[13px] font-black uppercase leading-none">{teamNames.away}</p>
-                  <p className="text-[14px] font-black mt-0.5">{scores.away} ({numberToSpanishWords(scores.away)})</p>
+                <div className="flex-none px-4 py-1 bg-black text-white flex flex-col justify-center items-center min-w-[90px]">
+                  <div className="text-xl font-black tracking-widest">{scores.home} - {scores.away}</div>
+                </div>
+                <div className="flex-1 p-2 bg-gray-50 flex flex-col justify-center items-center">
+                  <p className="text-sm font-black uppercase leading-tight text-center">{teamNames.away}</p>
                 </div>
               </div>
             </div>

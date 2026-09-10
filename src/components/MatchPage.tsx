@@ -539,7 +539,16 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
             <div className="grid grid-cols-2 gap-4"><div><Label>Local</Label><Input value={teamNames.home} onChange={e => updateMatch({teamNames: {...teamNames, home: e.target.value.toUpperCase()}})} /></div><div><Label>Visita</Label><Input value={teamNames.away} onChange={e => updateMatch({teamNames: {...teamNames, away: e.target.value.toUpperCase()}})} /></div></div>
             <Input value={matchInfo.league} onChange={e => updateMatch({matchInfo: {...matchInfo, league: e.target.value}})} placeholder="Liga" />
             <div className="grid grid-cols-2 gap-4"><Input value={matchInfo.round} onChange={e => updateMatch({matchInfo: {...matchInfo, round: e.target.value}})} placeholder="Jornada" /><Input value={matchInfo.place} onChange={e => updateMatch({matchInfo: {...matchInfo, place: e.target.value}})} placeholder="Campo" /></div>
-            <div className="grid grid-cols-2 gap-4"><Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} /><Input type="time" value={matchInfo.time || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, time: e.target.value}})} /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label>Fecha del partido</Label>
+                <Input type="date" value={matchInfo.date} onChange={e => updateMatch({matchInfo: {...matchInfo, date: e.target.value}})} />
+              </div>
+              <div className="space-y-1">
+                <Label>Hora del partido</Label>
+                <Input type="time" value={matchInfo.time || ''} onChange={e => updateMatch({matchInfo: {...matchInfo, time: e.target.value}})} />
+              </div>
+            </div>
             <div className="border-t pt-4 space-y-2"><Input value={matchInfo.referee} onChange={e => updateMatch({matchInfo: {...matchInfo, referee: e.target.value}})} placeholder="Árbitro Central" /><Input value={matchInfo.assistant1} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant1: e.target.value}})} placeholder="Asistente 1" /><Input value={matchInfo.assistant2} onChange={e => updateMatch({matchInfo: {...matchInfo, assistant2: e.target.value}})} placeholder="Asistente 2" /></div>
           </div>
         </DialogContent>

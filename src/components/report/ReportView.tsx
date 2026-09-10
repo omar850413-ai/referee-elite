@@ -165,11 +165,22 @@ export function ReportView({ matchState }: ReportViewProps) {
       
       <div className="flex-1 overflow-auto touch-none bg-slate-900 p-4 flex justify-center items-start" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove}>
         <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: 'center top' }}>
-          <div ref={reportRef} className="p-10 bg-white text-black font-sans shadow-2xl" style={{ width: '1000px', minHeight: '1200px' }}>
-            <div className="text-center mb-6">
-              <h1 className="text-3xl font-black uppercase tracking-tighter">INFORME ARBITRAL</h1>
-              <div className="h-1 bg-black w-full mt-2"></div>
+          <div ref={reportRef} className="p-10 bg-white text-black font-sans shadow-2xl relative" style={{ width: '1000px', minHeight: '1300px' }}>
+            <div className="flex items-center justify-between mb-4 relative min-h-[100px]">
+              <div className="w-[120px] h-[120px] flex items-center justify-center absolute left-0 top-0">
+                {matchInfo.collegeLogo && (
+                  <img src={matchInfo.collegeLogo} className="max-w-full max-h-full object-contain" />
+                )}
+              </div>
+              <div className="flex-1 text-center px-[130px]">
+                <h1 className="text-4xl font-black uppercase tracking-tighter leading-none mb-2">INFORME ARBITRAL</h1>
+                {matchInfo.refereeCollege && (
+                  <p className="text-lg font-bold uppercase text-slate-700 leading-tight">{matchInfo.refereeCollege}</p>
+                )}
+              </div>
             </div>
+            
+            <div className="h-1.5 bg-black w-full mb-6"></div>
 
             <div className="grid grid-cols-2 gap-6 text-base mb-8">
               <div className="space-y-1.5">
@@ -187,14 +198,15 @@ export function ReportView({ matchState }: ReportViewProps) {
             </div>
 
             <div className="flex justify-center mb-6">
-              <div className="grid grid-cols-2 border-2 border-black text-center divide-x-2 divide-black w-full max-w-sm">
-                <div className="p-3 bg-gray-50 flex flex-col justify-center">
-                  <p className="text-xl font-black uppercase leading-tight">{teamNames.home}</p>
-                  <p className="text-sm font-black mt-1">{scores.home} ({numberToSpanishWords(scores.home)})</p>
+              <div className="flex border-4 border-black text-center shadow-md bg-white w-full max-w-lg rounded-xl overflow-hidden items-stretch">
+                <div className="flex-1 p-3 bg-gray-50 flex flex-col justify-center items-center">
+                  <p className="text-lg font-black uppercase leading-tight text-center">{teamNames.home}</p>
                 </div>
-                <div className="p-3 bg-gray-50 flex flex-col justify-center">
-                  <p className="text-xl font-black uppercase leading-tight">{teamNames.away}</p>
-                  <p className="text-sm font-black mt-1">{scores.away} ({numberToSpanishWords(scores.away)})</p>
+                <div className="flex-none px-6 py-2 bg-black text-white flex flex-col justify-center items-center min-w-[120px]">
+                  <div className="text-3xl font-black tracking-widest">{scores.home} - {scores.away}</div>
+                </div>
+                <div className="flex-1 p-3 bg-gray-50 flex flex-col justify-center items-center">
+                  <p className="text-lg font-black uppercase leading-tight text-center">{teamNames.away}</p>
                 </div>
               </div>
             </div>
