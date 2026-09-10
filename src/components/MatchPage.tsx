@@ -138,7 +138,7 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
     });
   };
 
-  const startListening = (target: 'new' | 'edit' | 'causal') => {
+  const startListening = (target: 'new' | 'edit' | 'causal' | 'incidents') => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
     try {
@@ -151,6 +151,10 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
         if (target === 'new') setNewPlayerName(transcript.toUpperCase());
         else if (target === 'edit') setEditPlayerName(transcript.toUpperCase());
         else if (target === 'causal') setCustomCausalText(transcript.toUpperCase());
+        else if (target === 'incidents') {
+          setTempIncidents(prev => prev ? prev + ' ' + transcript : transcript);
+          setIsIncidentsDirty(true);
+        }
       };
       recognition.start();
     } catch (e) { setIsListening(false); }
@@ -523,7 +527,15 @@ export default function MatchPage({ user, userProfile, matchDocRef, onBack }: Ma
       <Dialog open={modal === 'incidents'} onOpenChange={() => setModal(null)}>
         <DialogContent className="max-w-lg rounded-2xl">
           <DialogHeader><DialogTitle className="font-black uppercase">Incidentes</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4"><Textarea className="min-h-[200px]" value={tempIncidents} onChange={e => { setTempIncidents(e.target.value); setIsIncidentsDirty(true); }} /><Button onClick={handleSaveIncidents} className="w-full font-bold bg-primary text-white">GUARDAR</Button></div>
+          <div className="space-y-4 py-4">
+            <div className="relative">
+              <Textarea className="min-h-[200px] pr-10" value={tempIncidents} onChange={e => { setTempIncidents(e.target.value); setIsIncidentsDirty(true); }} placeholder="Escribe los incidentes o usa el micrófono..." />
+              <button onClick={() => startListening('incidents')} className={`absolute right-3 top-3 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                {isListening ? <MicOff size={24} /> : <Mic size={24} />}
+              </button>
+            </div>
+            <Button onClick={handleSaveIncidents} className="w-full font-bold bg-primary text-white">GUARDAR</Button>
+          </div>
         </DialogContent>
       </Dialog>
 
