@@ -1002,6 +1002,34 @@ export default function Home() {
           <ReportView matchState={matchState} />
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showNamePrompt}>
+        <DialogContent className="max-w-md sm:rounded-2xl border-none shadow-2xl p-6 [&>button]:hidden">
+          <DialogHeader>
+            <DialogTitle className="text-center font-black uppercase text-2xl text-slate-900 tracking-tighter">
+              TU NOMBRE COMPLETO
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-center text-slate-600">
+              Para garantizar la autenticidad de las cédulas, ingresa tu nombre completo. Este será usado por defecto como <strong>Árbitro Central</strong> en todos tus reportes y aparecerá en las firmas de manera automática. No podrás cambiarlo después.
+            </p>
+            <Input 
+              value={tempFullName} 
+              onChange={e => setTempFullName(e.target.value)} 
+              placeholder="EJ. JUAN PÉREZ GARCÍA" 
+              className="text-center font-bold text-lg h-12 uppercase"
+            />
+            <Button 
+              onClick={handleSaveFullName} 
+              disabled={tempFullName.trim().length < 3}
+              className="w-full h-12 text-lg font-black uppercase tracking-wider shadow-lg bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              Confirmar y Continuar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
