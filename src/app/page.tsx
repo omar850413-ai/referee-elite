@@ -125,6 +125,14 @@ export default function Home() {
     }
   }, [modal]);
 
+  useEffect(() => {
+    if (userProfile?.fullName && matchState && matchState.matchInfo) {
+      if (matchState.matchInfo.referee !== userProfile.fullName) {
+        updateMatch({ matchInfo: { ...matchState.matchInfo, referee: userProfile.fullName } });
+      }
+    }
+  }, [userProfile?.fullName, matchState?.matchInfo?.referee]);
+
   const updateMatch = (data: Partial<MatchState>) => {
     if (!matchRef) return;
     updateDoc(matchRef, data).catch((error) => {
