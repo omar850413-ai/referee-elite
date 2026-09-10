@@ -744,7 +744,7 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={modal === 'player-actions'} onOpenChange={() => setModal(null)}>
-        <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+        <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto rounded-3xl p-0 border-none shadow-2xl">
           <DialogHeader className="sr-only">
             <DialogTitle>Acciones del Jugador</DialogTitle>
           </DialogHeader>
@@ -842,7 +842,7 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={modal === 'staff-actions'} onOpenChange={() => setModal(null)}>
-        <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+        <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto rounded-3xl p-0 border-none shadow-2xl">
           <DialogHeader className="sr-only">
             <DialogTitle>Acciones de Cuerpo Técnico</DialogTitle>
           </DialogHeader>
