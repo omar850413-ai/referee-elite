@@ -111,6 +111,10 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
         useCORS: true,
         backgroundColor: '#FFFFFF',
         logging: false,
+        scrollY: -window.scrollY,
+        scrollX: 0,
+        windowWidth: clone.scrollWidth,
+        windowHeight: clone.scrollHeight,
         width: 794,
       });
 

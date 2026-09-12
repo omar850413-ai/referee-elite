@@ -88,6 +88,10 @@ export function ReportView({ matchState }: ReportViewProps) {
         useCORS: true,
         backgroundColor: '#FFFFFF',
         logging: false,
+        scrollY: -window.scrollY,
+        scrollX: 0,
+        windowWidth: clone.scrollWidth,
+        windowHeight: clone.scrollHeight
       });
       const jpegUrl = canvas.toDataURL('image/jpeg', 0.95);
       const link = document.createElement('a');
