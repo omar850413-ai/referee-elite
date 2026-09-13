@@ -134,7 +134,7 @@ export function ReportView({ matchState }: ReportViewProps) {
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
   const renderPlayerRow = (p: Player, side: 'home' | 'away') => (
-    <div key={p.id} className="flex uppercase leading-normal items-center py-0.5 justify-between">
+    <div key={p.id} className="flex uppercase leading-normal items-center  justify-between">
       <div className="flex items-center pr-2">
         <div className="inline-block w-[35px] text-right mr-2 font-bold shrink-0">{p.number}.-</div>
         <div className="text-left whitespace-normal break-words">{p.name}</div>
@@ -163,7 +163,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     }
 
     return (
-      <div key={e.id} className="leading-normal border-b border-gray-100 flex items-start py-0.5">
+      <div key={e.id} className="leading-normal border-b border-gray-100 flex items-start ">
         <div className="inline-block w-[35px] text-right mr-2 font-bold shrink-0">{numberDisplay}</div> 
         <div className="flex-1 whitespace-normal break-words text-left">
           <span className="font-bold mr-2">{nameDisplay}</span>
@@ -229,78 +229,78 @@ export function ReportView({ matchState }: ReportViewProps) {
             </div>
 
             <div className="grid grid-cols-2 gap-10">
-              <div className="text-sm space-y-2">
+              <div className="text-sm space-y-1">
                 <div>
-                  <p className="text-xs font-black border-b-2 border-gray-200 mb-2 uppercase text-gray-500">TITULARES</p>
-                  <div className="space-y-1">
+                  <p className="text-xs font-black border-b-2 border-gray-200 mb-0.5 uppercase text-gray-500">TITULARES</p>
+                  <div className="space-y-0">
                     {lineups.home.filter(p => p.type === 'starter').map(p => renderPlayerRow(p, 'home'))}
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-black border-b-2 border-gray-200 mb-2 uppercase text-gray-500">SUPLENTES</p>
-                  <div className="space-y-1">
+                  <p className="text-xs font-black border-b-2 border-gray-200 mb-0.5 uppercase text-gray-500">SUPLENTES</p>
+                  <div className="space-y-0">
                     {lineups.home.filter(p => p.type === 'substitute').map(p => renderPlayerRow(p, 'home'))}
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-black border-b-2 border-gray-200 mb-2 uppercase text-gray-500">CUERPO TÉCNICO</p>
-                  <div className="space-y-1">
-                    {staff.home.map(s => <p key={s.id} className="uppercase py-0.5">{roleInitials[s.role] || 'STAFF'} - {s.name}</p>)}
+                  <p className="text-xs font-black border-b-2 border-gray-200 mb-0.5 uppercase text-gray-500">CUERPO TÉCNICO</p>
+                  <div className="space-y-0">
+                    {staff.home.map(s => <p key={s.id} className="uppercase ">{roleInitials[s.role] || 'STAFF'} - {s.name}</p>)}
                   </div>
                 </div>
               </div>
-              <div className="text-sm space-y-2">
+              <div className="text-sm space-y-1">
                 <div>
-                  <p className="text-xs font-black border-b-2 border-gray-200 mb-2 uppercase text-gray-500">TITULARES</p>
-                  <div className="space-y-1">
+                  <p className="text-xs font-black border-b-2 border-gray-200 mb-0.5 uppercase text-gray-500">TITULARES</p>
+                  <div className="space-y-0">
                     {lineups.away.filter(p => p.type === 'starter').map(p => renderPlayerRow(p, 'away'))}
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-black border-b-2 border-gray-200 mb-2 uppercase text-gray-500">SUPLENTES</p>
-                  <div className="space-y-1">
+                  <p className="text-xs font-black border-b-2 border-gray-200 mb-0.5 uppercase text-gray-500">SUPLENTES</p>
+                  <div className="space-y-0">
                     {lineups.away.filter(p => p.type === 'substitute').map(p => renderPlayerRow(p, 'away'))}
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-black border-b-2 border-gray-200 mb-2 uppercase text-gray-500">CUERPO TÉCNICO</p>
-                  <div className="space-y-1">
-                    {staff.away.map(s => <p key={s.id} className="uppercase py-0.5">{roleInitials[s.role] || 'STAFF'} - {s.name}</p>)}
+                  <p className="text-xs font-black border-b-2 border-gray-200 mb-0.5 uppercase text-gray-500">CUERPO TÉCNICO</p>
+                  <div className="space-y-0">
+                    {staff.away.map(s => <p key={s.id} className="uppercase ">{roleInitials[s.role] || 'STAFF'} - {s.name}</p>)}
                   </div>
                 </div>
               </div>
             </div>
 
-              <div className="mt-8">
+              <div className="mt-4">
                 <p className="text-base font-black uppercase text-black border-b-2 border-gray-200 mb-2">SANCIONES</p>
-                <div className="space-y-3">
+                <div className="space-y-1">
                   
                   {/* LOCAL */}
                   <div>
-                    <p className="font-black uppercase bg-gray-100 p-1 mb-2 text-center text-sm">{teamNames.home || 'LOCAL'}</p>
-                    <div className="text-sm space-y-2 uppercase">
+                    <p className="font-black uppercase bg-gray-100 p-1 mb-1 text-center text-sm">{teamNames.home || 'LOCAL'}</p>
+                    <div className="text-sm space-y-0.5 uppercase">
                       <div>
-                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟨 AMONESTACIÓN</p>
-                        <div className="space-y-1">{getSortedCards('home', 'yellow').length > 0 ? getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-1">SIN AMONESTADOS</p>}</div>
+                        <p className="font-bold border-b border-gray-200 mb-0 text-gray-700">🟨 AMONESTACIÓN</p>
+                        <div className="space-y-0">{getSortedCards('home', 'yellow').length > 0 ? getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-0">SIN AMONESTADOS</p>}</div>
                       </div>
                       <div>
-                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟥 EXPULSIÓN</p>
-                        <div className="space-y-1">{getSortedCards('home', 'red').length > 0 ? getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-1">SIN EXPULSADOS</p>}</div>
+                        <p className="font-bold border-b border-gray-200 mb-0 text-gray-700">🟥 EXPULSIÓN</p>
+                        <div className="space-y-0">{getSortedCards('home', 'red').length > 0 ? getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-0">SIN EXPULSADOS</p>}</div>
                       </div>
                     </div>
                   </div>
 
                   {/* VISITA */}
                   <div>
-                    <p className="font-black uppercase bg-gray-100 p-1 mb-2 text-center text-sm">{teamNames.away || 'VISITANTE'}</p>
-                    <div className="text-sm space-y-2 uppercase">
+                    <p className="font-black uppercase bg-gray-100 p-1 mb-1 text-center text-sm">{teamNames.away || 'VISITANTE'}</p>
+                    <div className="text-sm space-y-0.5 uppercase">
                       <div>
-                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟨 AMONESTACIÓN</p>
-                        <div className="space-y-1">{getSortedCards('away', 'yellow').length > 0 ? getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-1">SIN AMONESTADOS</p>}</div>
+                        <p className="font-bold border-b border-gray-200 mb-0 text-gray-700">🟨 AMONESTACIÓN</p>
+                        <div className="space-y-0">{getSortedCards('away', 'yellow').length > 0 ? getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-0">SIN AMONESTADOS</p>}</div>
                       </div>
                       <div>
-                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟥 EXPULSIÓN</p>
-                        <div className="space-y-1">{getSortedCards('away', 'red').length > 0 ? getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-1">SIN EXPULSADOS</p>}</div>
+                        <p className="font-bold border-b border-gray-200 mb-0 text-gray-700">🟥 EXPULSIÓN</p>
+                        <div className="space-y-0">{getSortedCards('away', 'red').length > 0 ? getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-0">SIN EXPULSADOS</p>}</div>
                       </div>
                     </div>
                   </div>
@@ -308,7 +308,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                 </div>
               </div>
 
-            <div className="mt-8">
+            <div className="mt-4">
               <p className="text-sm font-black uppercase text-gray-500 border-b-2 border-gray-200 mb-2">INCIDENTES DEL PARTIDO</p>
               <div className="text-sm p-4 border-2 border-gray-200 min-h-[100px] whitespace-pre-wrap uppercase font-bold bg-gray-50 leading-snug">{incidentNote}</div>
             </div>
@@ -319,7 +319,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                 <div className="h-0.5 bg-black w-full"></div>
                 <p className="text-xs font-black uppercase">Capitán Local</p>
               </div>
-                <div className="space-y-1">
+                <div className="space-y-0">
                   <div className="h-16 flex items-center justify-center">{signatures.referee && <img src={signatures.referee} className="max-h-full" />}</div>
                   <div className="h-0.5 bg-black w-full"></div>
                   <p className="text-[10px] font-black uppercase leading-tight">{matchInfo.referee}</p>

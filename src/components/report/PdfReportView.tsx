@@ -163,7 +163,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
   const renderPlayerRow = (p: Player, side: 'home' | 'away') => (
-    <div key={p.id} className="flex uppercase leading-normal items-center py-0.5 justify-between">
+    <div key={p.id} className="flex uppercase leading-normal items-center  justify-between">
       <div className="flex items-center pr-2">
         <div className="inline-block w-[28px] text-right mr-1.5 font-bold shrink-0">{p.number}.-</div>
         <div className="text-left whitespace-normal break-words">{p.name}</div>
@@ -192,7 +192,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     }
 
     return (
-      <div key={e.id} className="leading-normal border-b border-gray-100 flex items-start py-0.5">
+      <div key={e.id} className="leading-normal border-b border-gray-100 flex items-start ">
         <div className="inline-block w-[28px] text-right mr-1.5 font-bold shrink-0">{numberDisplay}</div> 
         <div className="flex-1 whitespace-normal break-words text-left">
           <span className="font-bold mr-2">{nameDisplay}</span>
@@ -280,21 +280,21 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               </div>
             </div>
 
-              <div className="mt-4 border-t-2 border-gray-300 pt-2">
+              <div className="mt-2 border-t-2 border-gray-300 pt-2">
                 <p className="text-xs font-black uppercase text-black border-b border-gray-300 mb-1">SANCIONES</p>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   
                   {/* LOCAL */}
                   <div>
                     <p className="font-black uppercase bg-gray-100 p-0.5 mb-1 text-center text-[11px]">{teamNames.home || 'LOCAL'}</p>
-                    <div className="text-[11px] space-y-1 uppercase">
+                    <div className="text-[11px] space-y-0 uppercase">
                       <div>
-                        <p className="font-bold border-b border-gray-200 mb-0.5 text-gray-700">🟨 AMONESTACIÓN</p>
-                        <div className="space-y-0.5">{getSortedCards('home', 'yellow').length > 0 ? getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-0.5">SIN AMONESTADOS</p>}</div>
+                        <p className="font-bold border-b border-gray-200 mb-0 text-gray-700">🟨 AMONESTACIÓN</p>
+                        <div className="space-y-0.5">{getSortedCards('home', 'yellow').length > 0 ? getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 ">SIN AMONESTADOS</p>}</div>
                       </div>
                       <div>
-                        <p className="font-bold border-b border-gray-200 mb-0.5 text-gray-700">🟥 EXPULSIÓN</p>
-                        <div className="space-y-0.5">{getSortedCards('home', 'red').length > 0 ? getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-0.5">SIN EXPULSADOS</p>}</div>
+                        <p className="font-bold border-b border-gray-200 mb-0 text-gray-700">🟥 EXPULSIÓN</p>
+                        <div className="space-y-0.5">{getSortedCards('home', 'red').length > 0 ? getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 ">SIN EXPULSADOS</p>}</div>
                       </div>
                     </div>
                   </div>
@@ -302,14 +302,14 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                   {/* VISITA */}
                   <div>
                     <p className="font-black uppercase bg-gray-100 p-0.5 mb-1 text-center text-[11px]">{teamNames.away || 'VISITANTE'}</p>
-                    <div className="text-[11px] space-y-1 uppercase">
+                    <div className="text-[11px] space-y-0 uppercase">
                       <div>
-                        <p className="font-bold border-b border-gray-200 mb-0.5 text-gray-700">🟨 AMONESTACIÓN</p>
-                        <div className="space-y-0.5">{getSortedCards('away', 'yellow').length > 0 ? getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-0.5">SIN AMONESTADOS</p>}</div>
+                        <p className="font-bold border-b border-gray-200 mb-0 text-gray-700">🟨 AMONESTACIÓN</p>
+                        <div className="space-y-0.5">{getSortedCards('away', 'yellow').length > 0 ? getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 ">SIN AMONESTADOS</p>}</div>
                       </div>
                       <div>
-                        <p className="font-bold border-b border-gray-200 mb-0.5 text-gray-700">🟥 EXPULSIÓN</p>
-                        <div className="space-y-0.5">{getSortedCards('away', 'red').length > 0 ? getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-0.5">SIN EXPULSADOS</p>}</div>
+                        <p className="font-bold border-b border-gray-200 mb-0 text-gray-700">🟥 EXPULSIÓN</p>
+                        <div className="space-y-0.5">{getSortedCards('away', 'red').length > 0 ? getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 ">SIN EXPULSADOS</p>}</div>
                       </div>
                     </div>
                   </div>
@@ -317,24 +317,24 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 </div>
               </div>
 
-            <div className="mt-6">
+            <div className="mt-3">
               <p className="text-xs font-black uppercase text-gray-500 border-b border-gray-300 mb-2">INCIDENTES DEL PARTIDO</p>
               <div className="text-xs p-3 border-2 border-gray-200 min-h-[60px] whitespace-pre-wrap uppercase font-bold bg-gray-50 leading-tight">{incidentNote}</div>
             </div>
 
             <div className="grid grid-cols-3 gap-6 mt-6 text-center">
-              <div className="space-y-1">
+              <div className="space-y-0">
                 <div className="h-8 flex items-center justify-center">{signatures.captainHome && <img src={signatures.captainHome} className="max-h-full" />}</div>
                 <div className="h-px bg-black w-full"></div>
                 <p className="text-[10px] font-black uppercase">Capitán Local</p>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0">
                 <div className="h-16 flex items-center justify-center">{signatures.referee && <img src={signatures.referee} className="max-h-full" />}</div>
                 <div className="h-0.5 bg-black w-full"></div>
                 <p className="text-[10px] font-black uppercase leading-tight">{matchInfo.referee}</p>
                 <p className="text-[10px] font-bold uppercase text-gray-500 leading-tight">ÁRBITRO CENTRAL</p>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0">
                 <div className="h-8 flex items-center justify-center">{signatures.captainAway && <img src={signatures.captainAway} className="max-h-full" />}</div>
                 <div className="h-px bg-black w-full"></div>
                 <p className="text-[10px] font-black uppercase">Capitán Visitante</p>
