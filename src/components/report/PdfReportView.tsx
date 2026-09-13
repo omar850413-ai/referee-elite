@@ -163,10 +163,10 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
   const renderPlayerRow = (p: Player, side: 'home' | 'away') => (
-    <div key={p.id} className="flex uppercase leading-none items-baseline py-0.5 justify-between">
-      <div className="flex items-baseline overflow-hidden pr-2">
+    <div key={p.id} className="flex uppercase leading-normal items-center py-0.5 justify-between">
+      <div className="flex items-center pr-2">
         <div className="inline-block w-[28px] text-right mr-1.5 font-bold shrink-0">{p.number}.-</div>
-        <div className="text-left truncate">{p.name}</div>
+        <div className="text-left whitespace-normal break-words">{p.name}</div>
       </div>
       <div className="text-right shrink-0 font-medium tracking-tight">{getPlayerEventsSummary(side, p.number, p)}</div>
     </div>
@@ -185,10 +185,10 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     }
 
     return (
-      <div key={e.id} className="leading-none border-b border-gray-100 flex items-baseline justify-between py-1">
-        <div className="flex items-baseline flex-1 overflow-hidden pr-2">
+      <div key={e.id} className="leading-normal border-b border-gray-100 flex items-center justify-between py-1">
+        <div className="flex items-center flex-1 pr-2">
           <div className="inline-block w-[28px] text-right mr-1.5 font-bold shrink-0">{numberDisplay}</div> 
-          <div className="text-left truncate flex-1">{nameDisplay}</div>
+          <div className="text-left whitespace-normal break-words flex-1">{nameDisplay}</div>
         </div>
         <div className="text-right shrink-0 text-gray-700 font-medium">{e.message.split(' - ').pop()}</div>
       </div>
@@ -212,7 +212,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
                 )}
               </div>
               <div className="flex-1 text-center px-[90px]">
-                <h1 className="text-2xl font-black uppercase tracking-tighter leading-none mb-1">INFORME ARBITRAL</h1>
+                <h1 className="text-2xl font-black uppercase tracking-tighter leading-normal mb-1">INFORME ARBITRAL</h1>
                 {matchInfo.refereeCollege && (
                   <p className="text-sm font-bold uppercase text-slate-700 leading-tight">{matchInfo.refereeCollege}</p>
                 )}

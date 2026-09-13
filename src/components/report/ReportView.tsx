@@ -134,10 +134,10 @@ export function ReportView({ matchState }: ReportViewProps) {
   const incidentNote = (events || []).find(e => e.category === 'notes')?.message.replace('📝 ', '') || 'SIN INCIDENTES REPORTADOS.';
 
   const renderPlayerRow = (p: Player, side: 'home' | 'away') => (
-    <div key={p.id} className="flex uppercase leading-none items-baseline py-0.5 justify-between">
-      <div className="flex items-baseline overflow-hidden pr-2">
+    <div key={p.id} className="flex uppercase leading-normal items-center py-0.5 justify-between">
+      <div className="flex items-center pr-2">
         <div className="inline-block w-[35px] text-right mr-2 font-bold shrink-0">{p.number}.-</div>
-        <div className="text-left truncate">{p.name}</div>
+        <div className="text-left whitespace-normal break-words">{p.name}</div>
       </div>
       <div className="text-right shrink-0 font-medium tracking-tight">{getPlayerEventsSummary(side, p.number, p)}</div>
     </div>
@@ -156,12 +156,12 @@ export function ReportView({ matchState }: ReportViewProps) {
     }
 
     return (
-      <div key={e.id} className="leading-none border-b border-gray-100 flex items-baseline justify-between py-1">
-        <div className="flex items-baseline flex-1 overflow-hidden pr-2">
+      <div key={e.id} className="leading-normal border-b border-gray-100 flex items-center justify-between py-1">
+        <div className="flex items-center flex-1 pr-2">
           <div className="inline-block w-[35px] text-right mr-2 font-bold shrink-0">{numberDisplay}</div> 
-          <div className="text-left truncate flex-1">{nameDisplay}</div>
+          <div className="text-left whitespace-normal break-words">{nameDisplay}</div>
         </div>
-        <div className="text-right shrink-0 text-gray-700 font-medium">{e.message.split(' - ').pop()}</div>
+        <div className="text-right shrink-0 text-gray-700 font-medium whitespace-normal text-xs">{e.message.split(' - ').pop()}</div>
       </div>
     );
   };
@@ -264,7 +264,7 @@ export function ReportView({ matchState }: ReportViewProps) {
               </div>
             </div>
 
-            <div className="mt-8 border-t-2 border-gray-800 pt-4">
+            <div className="mt-8 ">
               <p className="text-sm font-black uppercase text-black border-b-2 border-gray-200 mb-3">SANCIONES</p>
               <div className="grid grid-cols-2 gap-10">
                 <div className="text-sm space-y-2 uppercase">
