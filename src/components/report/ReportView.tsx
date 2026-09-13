@@ -163,7 +163,7 @@ export function ReportView({ matchState }: ReportViewProps) {
     }
 
     return (
-      <div key={e.id} className="leading-normal border-b border-gray-100 flex items-start py-1.5">
+      <div key={e.id} className="leading-normal border-b border-gray-100 flex items-start py-0.5">
         <div className="inline-block w-[35px] text-right mr-2 font-bold shrink-0">{numberDisplay}</div> 
         <div className="flex-1 whitespace-normal break-words text-left">
           <span className="font-bold mr-2">{nameDisplay}</span>
@@ -199,13 +199,13 @@ export function ReportView({ matchState }: ReportViewProps) {
             
             <div className="h-1.5 bg-black w-full mb-6"></div>
 
-            <div className="grid grid-cols-2 gap-6 text-base mb-8">
-              <div className="space-y-1.5">
+            <div className="grid grid-cols-2 gap-6 text-xs mb-4">
+              <div className="space-y-0.5">
                 <p><strong>ÁRBITRO CENTRAL:</strong> <span className="uppercase">{matchInfo.referee}</span></p>
                 <p><strong>ASISTENTE 1:</strong> <span className="uppercase">{matchInfo.assistant1}</span></p>
                 <p><strong>ASISTENTE 2:</strong> <span className="uppercase">{matchInfo.assistant2}</span></p>
               </div>
-              <div className="space-y-1.5 text-right">
+              <div className="space-y-0.5 text-right">
                 <p><strong>LIGA:</strong> <span className="uppercase">{matchInfo.league}</span></p>
                 <p><strong>JORNADA:</strong> <span className="uppercase">{matchInfo.round}</span></p>
                 <p><strong>LUGAR:</strong> <span className="uppercase">{matchInfo.place}</span></p>
@@ -229,7 +229,7 @@ export function ReportView({ matchState }: ReportViewProps) {
             </div>
 
             <div className="grid grid-cols-2 gap-10">
-              <div className="text-sm space-y-4">
+              <div className="text-sm space-y-2">
                 <div>
                   <p className="text-xs font-black border-b-2 border-gray-200 mb-2 uppercase text-gray-500">TITULARES</p>
                   <div className="space-y-1">
@@ -249,7 +249,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                   </div>
                 </div>
               </div>
-              <div className="text-sm space-y-4">
+              <div className="text-sm space-y-2">
                 <div>
                   <p className="text-xs font-black border-b-2 border-gray-200 mb-2 uppercase text-gray-500">TITULARES</p>
                   <div className="space-y-1">
@@ -272,13 +272,13 @@ export function ReportView({ matchState }: ReportViewProps) {
             </div>
 
               <div className="mt-8">
-                <p className="text-base font-black uppercase text-black border-b-2 border-gray-200 mb-4">SANCIONES</p>
-                <div className="space-y-6">
+                <p className="text-base font-black uppercase text-black border-b-2 border-gray-200 mb-2">SANCIONES</p>
+                <div className="space-y-3">
                   
                   {/* LOCAL */}
                   <div>
                     <p className="font-black uppercase bg-gray-100 p-1 mb-2 text-center text-sm">{teamNames.home || 'LOCAL'}</p>
-                    <div className="text-sm space-y-4 uppercase">
+                    <div className="text-sm space-y-2 uppercase">
                       <div>
                         <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟨 AMONESTACIÓN</p>
                         <div className="space-y-1">{getSortedCards('home', 'yellow').length > 0 ? getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-1">SIN AMONESTADOS</p>}</div>
@@ -293,7 +293,7 @@ export function ReportView({ matchState }: ReportViewProps) {
                   {/* VISITA */}
                   <div>
                     <p className="font-black uppercase bg-gray-100 p-1 mb-2 text-center text-sm">{teamNames.away || 'VISITANTE'}</p>
-                    <div className="text-sm space-y-4 uppercase">
+                    <div className="text-sm space-y-2 uppercase">
                       <div>
                         <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟨 AMONESTACIÓN</p>
                         <div className="space-y-1">{getSortedCards('away', 'yellow').length > 0 ? getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-1">SIN AMONESTADOS</p>}</div>

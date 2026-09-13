@@ -192,7 +192,7 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
     }
 
     return (
-      <div key={e.id} className="leading-normal border-b border-gray-100 flex items-start py-1">
+      <div key={e.id} className="leading-normal border-b border-gray-100 flex items-start py-0.5">
         <div className="inline-block w-[28px] text-right mr-1.5 font-bold shrink-0">{numberDisplay}</div> 
         <div className="flex-1 whitespace-normal break-words text-left">
           <span className="font-bold mr-2">{nameDisplay}</span>
@@ -228,20 +228,20 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
             
             <div className="h-0.5 bg-black w-full mb-3"></div>
 
-            <div className="grid grid-cols-2 gap-4 text-xs mb-3">
-              <div className="space-y-1">
-                <p><strong>ÁRBITRO CENTRAL:</strong> <span className="uppercase">{matchInfo.referee}</span></p>
-                <p><strong>ASISTENTE 1:</strong> <span className="uppercase">{matchInfo.assistant1}</span></p>
-                <p><strong>ASISTENTE 2:</strong> <span className="uppercase">{matchInfo.assistant2}</span></p>
+              <div className="grid grid-cols-2 gap-4 text-[10px] mb-2">
+                <div className="space-y-0">
+                  <p><strong>ÁRBITRO CENTRAL:</strong> <span className="uppercase">{matchInfo.referee}</span></p>
+                  <p><strong>ASISTENTE 1:</strong> <span className="uppercase">{matchInfo.assistant1}</span></p>
+                  <p><strong>ASISTENTE 2:</strong> <span className="uppercase">{matchInfo.assistant2}</span></p>
+                </div>
+                <div className="space-y-0 text-right">
+                  <p><strong>LIGA:</strong> <span className="uppercase">{matchInfo.league}</span></p>
+                  <p><strong>JORNADA:</strong> <span className="uppercase">{matchInfo.round}</span></p>
+                  <p><strong>LUGAR:</strong> <span className="uppercase">{matchInfo.place}</span></p>
+                  <p><strong>FECHA:</strong> <span className="uppercase">{matchInfo.date}</span></p>
+                  <p><strong>HORA:</strong> <span className="uppercase">{matchInfo.time || '--'}</span></p>
+                </div>
               </div>
-              <div className="space-y-1 text-right">
-                <p><strong>LIGA:</strong> <span className="uppercase">{matchInfo.league}</span></p>
-                <p><strong>JORNADA:</strong> <span className="uppercase">{matchInfo.round}</span></p>
-                <p><strong>LUGAR:</strong> <span className="uppercase">{matchInfo.place}</span></p>
-                <p><strong>FECHA:</strong> <span className="uppercase">{matchInfo.date}</span></p>
-                <p><strong>HORA:</strong> <span className="uppercase">{matchInfo.time || '--'}</span></p>
-              </div>
-            </div>
 
             <div className="flex justify-center mb-3">
               <div className="flex border-2 border-black text-center shadow-sm bg-white w-full max-w-sm rounded-lg overflow-hidden items-stretch">
@@ -280,36 +280,36 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               </div>
             </div>
 
-              <div className="mt-6 border-t-2 border-gray-300 pt-3">
-                <p className="text-xs font-black uppercase text-black border-b border-gray-300 mb-2">SANCIONES</p>
-                <div className="space-y-4">
+              <div className="mt-4 border-t-2 border-gray-300 pt-2">
+                <p className="text-xs font-black uppercase text-black border-b border-gray-300 mb-1">SANCIONES</p>
+                <div className="space-y-2">
                   
                   {/* LOCAL */}
                   <div>
-                    <p className="font-black uppercase bg-gray-100 p-1 mb-2 text-center text-[11px]">{teamNames.home || 'LOCAL'}</p>
-                    <div className="text-xs space-y-3 uppercase">
+                    <p className="font-black uppercase bg-gray-100 p-0.5 mb-1 text-center text-[11px]">{teamNames.home || 'LOCAL'}</p>
+                    <div className="text-[11px] space-y-1 uppercase">
                       <div>
-                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟨 AMONESTACIÓN</p>
-                        <div className="space-y-1">{getSortedCards('home', 'yellow').length > 0 ? getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-1">SIN AMONESTADOS</p>}</div>
+                        <p className="font-bold border-b border-gray-200 mb-0.5 text-gray-700">🟨 AMONESTACIÓN</p>
+                        <div className="space-y-0.5">{getSortedCards('home', 'yellow').length > 0 ? getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-0.5">SIN AMONESTADOS</p>}</div>
                       </div>
                       <div>
-                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟥 EXPULSIÓN</p>
-                        <div className="space-y-1">{getSortedCards('home', 'red').length > 0 ? getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-1">SIN EXPULSADOS</p>}</div>
+                        <p className="font-bold border-b border-gray-200 mb-0.5 text-gray-700">🟥 EXPULSIÓN</p>
+                        <div className="space-y-0.5">{getSortedCards('home', 'red').length > 0 ? getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-0.5">SIN EXPULSADOS</p>}</div>
                       </div>
                     </div>
                   </div>
 
                   {/* VISITA */}
                   <div>
-                    <p className="font-black uppercase bg-gray-100 p-1 mb-2 text-center text-[11px]">{teamNames.away || 'VISITANTE'}</p>
-                    <div className="text-xs space-y-3 uppercase">
+                    <p className="font-black uppercase bg-gray-100 p-0.5 mb-1 text-center text-[11px]">{teamNames.away || 'VISITANTE'}</p>
+                    <div className="text-[11px] space-y-1 uppercase">
                       <div>
-                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟨 AMONESTACIÓN</p>
-                        <div className="space-y-1">{getSortedCards('away', 'yellow').length > 0 ? getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-1">SIN AMONESTADOS</p>}</div>
+                        <p className="font-bold border-b border-gray-200 mb-0.5 text-gray-700">🟨 AMONESTACIÓN</p>
+                        <div className="space-y-0.5">{getSortedCards('away', 'yellow').length > 0 ? getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-0.5">SIN AMONESTADOS</p>}</div>
                       </div>
                       <div>
-                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟥 EXPULSIÓN</p>
-                        <div className="space-y-1">{getSortedCards('away', 'red').length > 0 ? getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-1">SIN EXPULSADOS</p>}</div>
+                        <p className="font-bold border-b border-gray-200 mb-0.5 text-gray-700">🟥 EXPULSIÓN</p>
+                        <div className="space-y-0.5">{getSortedCards('away', 'red').length > 0 ? getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-0.5">SIN EXPULSADOS</p>}</div>
                       </div>
                     </div>
                   </div>
