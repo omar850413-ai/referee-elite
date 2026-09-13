@@ -184,13 +184,20 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
       }
     }
 
+    let causalAndMinute = '';
+    if (e.message && e.message.includes(' - ')) {
+       causalAndMinute = e.message.split(' - ').slice(1).join(' - ');
+    } else {
+       causalAndMinute = e.message || '';
+    }
+
     return (
-      <div key={e.id} className="leading-normal border-b border-gray-100 flex items-center justify-between py-1">
-        <div className="flex items-center flex-1 pr-2">
-          <div className="inline-block w-[28px] text-right mr-1.5 font-bold shrink-0">{numberDisplay}</div> 
-          <div className="text-left whitespace-normal break-words flex-1">{nameDisplay}</div>
+      <div key={e.id} className="leading-normal border-b border-gray-100 flex items-start py-1">
+        <div className="inline-block w-[28px] text-right mr-1.5 font-bold shrink-0">{numberDisplay}</div> 
+        <div className="flex-1 whitespace-normal break-words text-left">
+          <span className="font-bold mr-2">{nameDisplay}</span>
+          <span className="text-gray-700 text-[10px] font-semibold">{causalAndMinute}</span>
         </div>
-        <div className="text-right shrink-0 text-gray-700 font-medium">{e.message.split(' - ').pop()}</div>
       </div>
     );
   };
@@ -273,27 +280,42 @@ export function PdfReportView({ matchState }: PdfReportViewProps) {
               </div>
             </div>
 
-            <div className="mt-6 border-t-2 border-gray-300 pt-3">
-              <p className="text-xs font-black uppercase text-black border-b border-gray-300 mb-2">SANCIONES</p>
-              <div className="grid grid-cols-2 gap-8">
-                <div className="text-xs space-y-2 uppercase">
-                  <p className="font-bold border-b border-gray-200 mb-1 text-gray-500">🟨 AMONESTACIÓN</p>
-                  <div className="space-y-1">{getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home'))}</div>
-                  <div className="mt-3 text-xs space-y-2 uppercase">
-                    <p className="font-bold border-b border-gray-200 mb-1 text-gray-500">🟥 EXPULSIÓN</p>
-                    <div className="space-y-1">{getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home'))}</div>
+              <div className="mt-6 border-t-2 border-gray-300 pt-3">
+                <p className="text-xs font-black uppercase text-black border-b border-gray-300 mb-2">SANCIONES</p>
+                <div className="space-y-4">
+                  
+                  {/* LOCAL */}
+                  <div>
+                    <p className="font-black uppercase bg-gray-100 p-1 mb-2 text-center text-[11px]">{teamNames.home || 'LOCAL'}</p>
+                    <div className="text-xs space-y-3 uppercase">
+                      <div>
+                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟨 AMONESTACIÓN</p>
+                        <div className="space-y-1">{getSortedCards('home', 'yellow').length > 0 ? getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-1">SIN AMONESTADOS</p>}</div>
+                      </div>
+                      <div>
+                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟥 EXPULSIÓN</p>
+                        <div className="space-y-1">{getSortedCards('home', 'red').length > 0 ? getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-1">SIN EXPULSADOS</p>}</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-xs space-y-2 uppercase">
-                  <p className="font-bold border-b border-gray-200 mb-1 text-gray-500">🟨 AMONESTACIÓN</p>
-                  <div className="space-y-1">{getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away'))}</div>
-                  <div className="mt-3 text-xs space-y-2 uppercase">
-                    <p className="font-bold border-b border-gray-200 mb-1 text-gray-500">🟥 EXPULSIÓN</p>
-                    <div className="space-y-1">{getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away'))}</div>
+
+                  {/* VISITA */}
+                  <div>
+                    <p className="font-black uppercase bg-gray-100 p-1 mb-2 text-center text-[11px]">{teamNames.away || 'VISITANTE'}</p>
+                    <div className="text-xs space-y-3 uppercase">
+                      <div>
+                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟨 AMONESTACIÓN</p>
+                        <div className="space-y-1">{getSortedCards('away', 'yellow').length > 0 ? getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-1">SIN AMONESTADOS</p>}</div>
+                      </div>
+                      <div>
+                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟥 EXPULSIÓN</p>
+                        <div className="space-y-1">{getSortedCards('away', 'red').length > 0 ? getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-1">SIN EXPULSADOS</p>}</div>
+                      </div>
+                    </div>
                   </div>
+
                 </div>
               </div>
-            </div>
 
             <div className="mt-6">
               <p className="text-xs font-black uppercase text-gray-500 border-b border-gray-300 mb-2">INCIDENTES DEL PARTIDO</p>

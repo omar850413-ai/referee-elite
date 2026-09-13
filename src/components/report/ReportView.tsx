@@ -155,13 +155,20 @@ export function ReportView({ matchState }: ReportViewProps) {
       }
     }
 
+    let causalAndMinute = '';
+    if (e.message && e.message.includes(' - ')) {
+       causalAndMinute = e.message.split(' - ').slice(1).join(' - ');
+    } else {
+       causalAndMinute = e.message || '';
+    }
+
     return (
-      <div key={e.id} className="leading-normal border-b border-gray-100 flex items-center justify-between py-1">
-        <div className="flex items-center flex-1 pr-2">
-          <div className="inline-block w-[35px] text-right mr-2 font-bold shrink-0">{numberDisplay}</div> 
-          <div className="text-left whitespace-normal break-words">{nameDisplay}</div>
+      <div key={e.id} className="leading-normal border-b border-gray-100 flex items-start py-1.5">
+        <div className="inline-block w-[35px] text-right mr-2 font-bold shrink-0">{numberDisplay}</div> 
+        <div className="flex-1 whitespace-normal break-words text-left">
+          <span className="font-bold mr-2">{nameDisplay}</span>
+          <span className="text-gray-700 text-xs font-semibold">{causalAndMinute}</span>
         </div>
-        <div className="text-right shrink-0 text-gray-700 font-medium whitespace-normal text-xs">{e.message.split(' - ').pop()}</div>
       </div>
     );
   };
@@ -264,27 +271,42 @@ export function ReportView({ matchState }: ReportViewProps) {
               </div>
             </div>
 
-            <div className="mt-8 ">
-              <p className="text-sm font-black uppercase text-black border-b-2 border-gray-200 mb-3">SANCIONES</p>
-              <div className="grid grid-cols-2 gap-10">
-                <div className="text-sm space-y-2 uppercase">
-                  <p className="font-bold border-b border-gray-100 mb-2 text-gray-500">🟨 AMONESTACIÓN</p>
-                  <div className="space-y-1">{getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home'))}</div>
-                  <div className="mt-4 text-sm space-y-2 uppercase">
-                    <p className="font-bold border-b border-gray-100 mb-2 text-gray-500">🟥 EXPULSIÓN</p>
-                    <div className="space-y-1">{getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home'))}</div>
+              <div className="mt-8">
+                <p className="text-base font-black uppercase text-black border-b-2 border-gray-200 mb-4">SANCIONES</p>
+                <div className="space-y-6">
+                  
+                  {/* LOCAL */}
+                  <div>
+                    <p className="font-black uppercase bg-gray-100 p-1 mb-2 text-center text-sm">{teamNames.home || 'LOCAL'}</p>
+                    <div className="text-sm space-y-4 uppercase">
+                      <div>
+                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟨 AMONESTACIÓN</p>
+                        <div className="space-y-1">{getSortedCards('home', 'yellow').length > 0 ? getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-1">SIN AMONESTADOS</p>}</div>
+                      </div>
+                      <div>
+                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟥 EXPULSIÓN</p>
+                        <div className="space-y-1">{getSortedCards('home', 'red').length > 0 ? getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-1">SIN EXPULSADOS</p>}</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-sm space-y-2 uppercase">
-                  <p className="font-bold border-b border-gray-100 mb-2 text-gray-500">🟨 AMONESTACIÓN</p>
-                  <div className="space-y-1">{getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away'))}</div>
-                  <div className="mt-4 text-sm space-y-2 uppercase">
-                    <p className="font-bold border-b border-gray-100 mb-2 text-gray-500">🟥 EXPULSIÓN</p>
-                    <div className="space-y-1">{getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away'))}</div>
+
+                  {/* VISITA */}
+                  <div>
+                    <p className="font-black uppercase bg-gray-100 p-1 mb-2 text-center text-sm">{teamNames.away || 'VISITANTE'}</p>
+                    <div className="text-sm space-y-4 uppercase">
+                      <div>
+                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟨 AMONESTACIÓN</p>
+                        <div className="space-y-1">{getSortedCards('away', 'yellow').length > 0 ? getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-1">SIN AMONESTADOS</p>}</div>
+                      </div>
+                      <div>
+                        <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟥 EXPULSIÓN</p>
+                        <div className="space-y-1">{getSortedCards('away', 'red').length > 0 ? getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-1">SIN EXPULSADOS</p>}</div>
+                      </div>
+                    </div>
                   </div>
+
                 </div>
               </div>
-            </div>
 
             <div className="mt-8">
               <p className="text-sm font-black uppercase text-gray-500 border-b-2 border-gray-200 mb-2">INCIDENTES DEL PARTIDO</p>

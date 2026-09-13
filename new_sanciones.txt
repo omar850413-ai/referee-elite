@@ -1,0 +1,36 @@
+﻿            <div className="mt-8">
+              <p className="text-base font-black uppercase text-black border-b-2 border-gray-200 mb-4">SANCIONES</p>
+              <div className="space-y-6">
+                
+                {/* LOCAL */}
+                <div>
+                  <p className="font-black uppercase bg-gray-100 p-1 mb-2 text-center text-sm">{teamNames.home || 'LOCAL'}</p>
+                  <div className="text-sm space-y-4 uppercase">
+                    <div>
+                      <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟨 AMONESTACIÓN</p>
+                      <div className="space-y-1">{getSortedCards('home', 'yellow').length > 0 ? getSortedCards('home', 'yellow').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-2">SIN AMONESTADOS</p>}</div>
+                    </div>
+                    <div>
+                      <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟥 EXPULSIÓN</p>
+                      <div className="space-y-1">{getSortedCards('home', 'red').length > 0 ? getSortedCards('home', 'red').map(e => renderCardEntry(e, 'home')) : <p className="text-gray-400 py-2">SIN EXPULSADOS</p>}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* VISITA */}
+                <div>
+                  <p className="font-black uppercase bg-gray-100 p-1 mb-2 text-center text-sm">{teamNames.away || 'VISITANTE'}</p>
+                  <div className="text-sm space-y-4 uppercase">
+                    <div>
+                      <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟨 AMONESTACIÓN</p>
+                      <div className="space-y-1">{getSortedCards('away', 'yellow').length > 0 ? getSortedCards('away', 'yellow').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-2">SIN AMONESTADOS</p>}</div>
+                    </div>
+                    <div>
+                      <p className="font-bold border-b border-gray-200 mb-1 text-gray-700">🟥 EXPULSIÓN</p>
+                      <div className="space-y-1">{getSortedCards('away', 'red').length > 0 ? getSortedCards('away', 'red').map(e => renderCardEntry(e, 'away')) : <p className="text-gray-400 py-2">SIN EXPULSADOS</p>}</div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
