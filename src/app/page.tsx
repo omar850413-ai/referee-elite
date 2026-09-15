@@ -40,9 +40,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft, ArrowRightLeft, Users, Pencil } from 'lucide-react';
+import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft, ArrowRightLeft, Users, Pencil, Camera } from 'lucide-react';
 import { causalesAmarilla, causalesRoja, causalesStaff } from '@/lib/causales';
 import Link from 'next/link';
+import Tesseract from 'tesseract.js';
 
 export default function Home() {
   const router = useRouter();
@@ -79,10 +80,10 @@ export default function Home() {
     setIsScanning(true);
     try {
        const { data: { text } } = await Tesseract.recognize(file, 'spa');
-       const lines = text.split('\n').map(l => l.trim().toUpperCase()).filter(l => l.length > 3);
-       const filteredLines = lines.filter(l => !l.match(/LIGA|PRESIDENTE|TEMPORADA|VIGENCIA|FEDERACION|ASOCIACION|CREDENCIAL|FIRMA|EDAD|FECHA|CURP|FOLIO|JUGADOR|CATEGORIA|AFILIACION/));
+       const lines = text.split('\n').map((l: string) => l.trim().toUpperCase()).filter((l: string) => l.length > 3);
+       const filteredLines = lines.filter((l: string) => !l.match(/LIGA|PRESIDENTE|TEMPORADA|VIGENCIA|FEDERACION|ASOCIACION|CREDENCIAL|FIRMA|EDAD|FECHA|CURP|FOLIO|JUGADOR|CATEGORIA|AFILIACION/));
        // Try to find the first line that looks like a full name (mostly letters and spaces)
-       const bestLine = filteredLines.find(l => /^[A-ZÑÁÉÍÓÚ\s]{5,}$/.test(l.replace(/[^A-ZÑÁÉÍÓÚ\s]/g, ''))) || filteredLines[0] || text.substring(0, 30).trim().toUpperCase();
+       const bestLine = filteredLines.find((l: string) => /^[A-ZÑÁÉÍÓÚ\s]{5,}$/.test(l.replace(/[^A-ZÑÁÉÍÓÚ\s]/g, ''))) || filteredLines[0] || text.substring(0, 30).trim().toUpperCase();
        
        if (target === 'player') setNewPlayerName(bestLine);
        else setNewStaffName(bestLine);
@@ -383,7 +384,7 @@ export default function Home() {
     if (window.confirm("¿Seguro que deseas eliminar este evento?")) {
       const newEvents = matchState!.events.filter(e => e.id !== ev.id);
       if (ev.category === 'goals') {
-        const sideToDecrement = ev.side; 
+        const sideToDecrement = ev.side as 'home' | 'away'; 
         const newScores = { ...matchState!.scores, [sideToDecrement]: Math.max(0, (matchState!.scores[sideToDecrement] || 0) - 1) };
         updateMatch({ events: newEvents, scores: newScores });
       } else {

@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       // Intento de extracción simple por regex si falla el parseo
       const matches = textResult.match(/"([^"]+)"/g);
       if (matches) {
-        names = matches.map(m => m.replace(/"/g, ''));
+        names = matches.map((m: string) => m.replace(/"/g, ''));
       }
     }
 
