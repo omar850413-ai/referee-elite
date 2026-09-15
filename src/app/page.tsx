@@ -71,6 +71,36 @@ export default function Home() {
   const [addPlayerType, setAddPlayerType] = useState<'starter' | 'substitute'>('starter');
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [tempFullName, setTempFullName] = useState('');
+  const [isScanning, setIsScanning] = useState(false);
+
+  const handleScanImage = async (e: React.ChangeEvent<HTMLInputElement>, target: 'player' | 'staff') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsScanning(true);
+    try {
+       const { data: { text } } = await Tesseract.recognize(file, 'spa');
+       const lines = text.split('\n').map(l => l.trim().toUpperCase()).filter(l => l.length > 3);
+       const filteredLines = lines.filter(l => !l.match(/LIGA|PRESIDENTE|TEMPORADA|VIGENCIA|FEDERACION|ASOCIACION|CREDENCIAL|FIRMA|EDAD|FECHA|CURP|FOLIO|JUGADOR|CATEGORIA|AFILIACION/));
+       // Try to find the first line that looks like a full name (mostly letters and spaces)
+       const bestLine = filteredLines.find(l => /^[A-ZÑÁÉÍÓÚ\s]{5,}$/.test(l.replace(/[^A-ZÑÁÉÍÓÚ\s]/g, ''))) || filteredLines[0] || text.substring(0, 30).trim().toUpperCase();
+       
+       if (target === 'player') setNewPlayerName(bestLine);
+       else setNewStaffName(bestLine);
+
+       toast({
+         title: "ESCANEO EXITOSO",
+         description: `Texto detectado: ${bestLine}`,
+       });
+    } catch (error) {
+       console.error(error);
+       toast({
+         variant: "destructive",
+         title: "ERROR AL ESCANEAR",
+         description: "NO SE PUDO RECONOCER EL TEXTO. INTÉNTALO DE NUEVO.",
+       });
+    }
+    setIsScanning(false);
+  };
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -699,11 +729,17 @@ export default function Home() {
           <DialogHeader><DialogTitle className="text-center font-black uppercase">INSCRIBIR JUGADOR</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <Input type="number" placeholder="00" className="text-2xl h-14 text-center font-black" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} />
-            <div className="relative">
-              <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value.toUpperCase())} />
-              <button onClick={() => startListening('player')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
-                {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-              </button>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value.toUpperCase())} disabled={isScanning} />
+                <button onClick={() => startListening('player')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                </button>
+              </div>
+              <Label className="flex items-center justify-center bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 w-12 rounded-md cursor-pointer data-[disabled=true]:opacity-50 data-[disabled=true]:pointer-events-none" data-disabled={isScanning}>
+                {isScanning ? <RotateCcw className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleScanImage(e, 'player')} disabled={isScanning} />
+              </Label>
             </div>
             <Button onClick={() => handleAddPlayer(currentSide)} className="w-full h-12 font-black bg-primary text-white uppercase">AGREGAR</Button>
           </div>
@@ -731,11 +767,17 @@ export default function Home() {
             </div>
             <div className="space-y-2">
               <Label className="text-xs font-black uppercase">NOMBRE</Label>
-              <div className="relative">
-                <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newStaffName} onChange={e => setNewStaffName(e.target.value.toUpperCase())} />
-                <button onClick={() => startListening('staff')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
-                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-                </button>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newStaffName} onChange={e => setNewStaffName(e.target.value.toUpperCase())} disabled={isScanning} />
+                  <button onClick={() => startListening('staff')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                    {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                  </button>
+                </div>
+                <Label className="flex items-center justify-center bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 w-12 rounded-md cursor-pointer data-[disabled=true]:opacity-50 data-[disabled=true]:pointer-events-none" data-disabled={isScanning}>
+                  {isScanning ? <RotateCcw className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleScanImage(e, 'staff')} disabled={isScanning} />
+                </Label>
               </div>
             </div>
             <Button onClick={() => handleAddStaff(currentSide)} className="w-full h-12 font-black bg-primary text-white uppercase">AGREGAR</Button>
