@@ -99,8 +99,20 @@ export default function Home() {
           }
           if (newStaff.length > 0) {
              const currentStaff = matchState?.staff?.[currentSide] || [];
-             updateMatch({ staff: { ...(matchState?.staff || {home:[], away:[]}), [currentSide]: [...currentStaff, ...newStaff] } as any });
-             parsedCount = newStaff.length;
+             const uniqueNewStaff: StaffMember[] = [];
+             const existingNames = new Set(currentStaff.map(s => s.name.toUpperCase().replace(/\s+/g, ' ')));
+             
+             for (const s of newStaff) {
+                const normalizedName = s.name.toUpperCase().replace(/\s+/g, ' ');
+                if (existingNames.has(normalizedName)) continue;
+                existingNames.add(normalizedName);
+                uniqueNewStaff.push(s);
+             }
+             
+             if (uniqueNewStaff.length > 0) {
+                 updateMatch({ staff: { ...(matchState?.staff || {home:[], away:[]}), [currentSide]: [...currentStaff, ...uniqueNewStaff] } as any });
+                 parsedCount = uniqueNewStaff.length;
+             }
           }
        } else {
           const newPlayers: Player[] = [];
@@ -127,10 +139,46 @@ export default function Home() {
           }
           if (newPlayers.length > 0) {
              const currentLineups = matchState?.lineups?.[currentSide] || [];
-             const merged = [...currentLineups, ...newPlayers];
-             merged.sort((a, b) => (parseInt(a.number)||0) - (parseInt(b.number)||0));
-             updateMatch({ lineups: { ...(matchState?.lineups || {home:[], away:[]}), [currentSide]: merged } as any });
-             parsedCount = newPlayers.length;
+             const uniqueNewPlayers: Player[] = [];
+             let hasDuplicateNumber = false;
+             
+             // Nombres y numeros actualmente registrados
+             const existingNames = new Set(currentLineups.map(p => p.name.toUpperCase().replace(/\s+/g, ' ')));
+             const existingNumbers = new Set(currentLineups.filter(p => p.number).map(p => p.number));
+
+             for (const p of newPlayers) {
+                const normalizedName = p.name.toUpperCase().replace(/\s+/g, ' ');
+                // 1. Omitir si el nombre ya existe
+                if (existingNames.has(normalizedName)) continue;
+                
+                // 2. Si es un nuevo jugador, verificar numero repetido
+                if (p.number && existingNumbers.has(p.number) && p.number !== '0') {
+                    hasDuplicateNumber = true;
+                    p.number = ''; // Limpiar el numero para ingreso manual
+                } else if (p.number && p.number !== '0') {
+                    existingNumbers.add(p.number);
+                }
+                
+                existingNames.add(normalizedName);
+                uniqueNewPlayers.push(p);
+             }
+
+             if (uniqueNewPlayers.length > 0) {
+                 const merged = [...currentLineups, ...uniqueNewPlayers];
+                 merged.sort((a, b) => (parseInt(a.number)||0) - (parseInt(b.number)||0));
+                 updateMatch({ lineups: { ...(matchState?.lineups || {home:[], away:[]}), [currentSide]: merged } as any });
+                 parsedCount = uniqueNewPlayers.length;
+                 
+                 if (hasDuplicateNumber) {
+                     setTimeout(() => {
+                         toast({
+                             variant: "destructive",
+                             title: "NÚMERO REPETIDO DETECTADO",
+                             description: "Se detectó un número que ya estaba en uso. El número de ese jugador quedó en blanco para que lo asignes a mano.",
+                         });
+                     }, 1000);
+                 }
+             }
           }
        }
 
