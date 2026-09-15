@@ -40,6 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Plus, Trash2, FileText, UserPlus, LogOut, Settings2, Mic, MicOff, AlertCircle, Image as ImageIcon, ShieldAlert, Clock, RotateCcw, ChevronLeft, ArrowRightLeft, Users, Pencil, Camera } from 'lucide-react';
 import { causalesAmarilla, causalesRoja, causalesStaff } from '@/lib/causales';
 import Link from 'next/link';
@@ -738,6 +739,7 @@ export default function Home() {
 
   return (
     <div className="p-2 md:p-6 bg-slate-50 min-h-screen font-sans text-slate-900">
+      <input id="camera-scan" type="file" accept="image/*" capture="environment" className="hidden" onChange={handleScanBatch} disabled={isScanning} />
       <div className="max-w-5xl mx-auto space-y-4">
         
         <div className="flex justify-between items-center py-6">
@@ -770,9 +772,21 @@ export default function Home() {
             <Card key={side} className="border-none shadow-md overflow-hidden">
               <CardHeader className={`${side === 'home' ? 'bg-amber-500' : 'bg-blue-600'} text-white p-4`}>
                 <div className="flex flex-col gap-3 mb-2">
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg font-black uppercase italic">{teamNames[side]}</CardTitle>
-                  </div>
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-lg font-black uppercase italic">{teamNames[side]}</CardTitle>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                           <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-white/20 rounded-full text-white" disabled={isScanning}>
+                             {isScanning && currentSide === side ? <RotateCcw className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                           </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                           <DropdownMenuItem onClick={() => { setCurrentSide(side); setScanTarget('starter'); document.getElementById('camera-scan')?.click() }}>Cargar Titulares</DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => { setCurrentSide(side); setScanTarget('substitute'); document.getElementById('camera-scan')?.click() }}>Cargar Suplentes</DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => { setCurrentSide(side); setScanTarget('staff'); document.getElementById('camera-scan')?.click() }}>Cargar Cuerpo Técnico</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   <div className="grid grid-cols-3 gap-1.5">
                     <Button 
                       onClick={() => { setCurrentSide(side); setAddPlayerType('starter'); setModal('add-player'); }} 
@@ -856,17 +870,11 @@ export default function Home() {
           <DialogHeader><DialogTitle className="text-center font-black uppercase">INSCRIBIR JUGADOR</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <Input type="number" placeholder="00" className="text-2xl h-14 text-center font-black" value={newPlayerNumber} onChange={e => setNewPlayerNumber(e.target.value)} />
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value.toUpperCase())} disabled={isScanning} />
-                <button onClick={() => startListening('player')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
-                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-                </button>
-              </div>
-              <Label className="flex items-center justify-center bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 w-12 rounded-md cursor-pointer data-[disabled=true]:opacity-50 data-[disabled=true]:pointer-events-none" data-disabled={isScanning}>
-                {isScanning ? <RotateCcw className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleScanImage(e, 'player')} disabled={isScanning} />
-              </Label>
+            <div className="relative">
+              <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value.toUpperCase())} />
+              <button onClick={() => startListening('player')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+              </button>
             </div>
             <Button onClick={() => handleAddPlayer(currentSide)} className="w-full h-12 font-black bg-primary text-white uppercase">AGREGAR</Button>
           </div>
@@ -894,17 +902,11 @@ export default function Home() {
             </div>
             <div className="space-y-2">
               <Label className="text-xs font-black uppercase">NOMBRE</Label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newStaffName} onChange={e => setNewStaffName(e.target.value.toUpperCase())} disabled={isScanning} />
-                  <button onClick={() => startListening('staff')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
-                    {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-                  </button>
-                </div>
-                <Label className="flex items-center justify-center bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 w-12 rounded-md cursor-pointer data-[disabled=true]:opacity-50 data-[disabled=true]:pointer-events-none" data-disabled={isScanning}>
-                  {isScanning ? <RotateCcw className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleScanImage(e, 'staff')} disabled={isScanning} />
-                </Label>
+              <div className="relative">
+                <Input placeholder="NOMBRE COMPLETO" className="uppercase font-bold pr-10" value={newStaffName} onChange={e => setNewStaffName(e.target.value.toUpperCase())} />
+                <button onClick={() => startListening('staff')} className={`absolute right-2 top-1/2 -translate-y-1/2 ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                </button>
               </div>
             </div>
             <Button onClick={() => handleAddStaff(currentSide)} className="w-full h-12 font-black bg-primary text-white uppercase">AGREGAR</Button>
