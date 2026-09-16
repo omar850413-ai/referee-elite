@@ -56,7 +56,7 @@ const fileToBase64 = (file: File): Promise<string> => {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        const MAX_SIZE = 1500;
+        const MAX_SIZE = 1000;
         
         if (width > height && width > MAX_SIZE) {
           height *= MAX_SIZE / width;
@@ -71,7 +71,7 @@ const fileToBase64 = (file: File): Promise<string> => {
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
         
-        resolve(canvas.toDataURL('image/jpeg', 0.8));
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
       };
       img.onerror = reject;
       img.src = event.target?.result as string;
@@ -128,7 +128,9 @@ export default function Home() {
     try {
        const base64 = await fileToBase64(file);
        const res = await fetch('/api/vision', { method: 'POST', body: JSON.stringify({ imageBase64: base64 }) });
-       const { text } = await res.json();
+       const data = await res.json().catch(() => ({ error: 'Respuesta inválida del servidor' }));
+       if (!res.ok) throw new Error(data.error || 'Error de conexión con Vision API');
+       const text = data.text;
        
        if (!text) throw new Error("No text detected");
 
@@ -247,7 +249,7 @@ export default function Home() {
        toast({
          variant: "destructive",
          title: "ERROR AL ESCANEAR",
-         description: "NO SE PUDO RECONOCER EL TEXTO. INTÉNTALO DE NUEVO.",
+         description: (error as Error)?.message || "NO SE PUDO RECONOCER EL TEXTO. INTÉNTALO DE NUEVO.",
        });
     }
     e.target.value = '';
@@ -284,7 +286,7 @@ export default function Home() {
        toast({
          variant: "destructive",
          title: "ERROR AL ESCANEAR",
-         description: "NO SE PUDO RECONOCER EL TEXTO. INTÉNTALO DE NUEVO.",
+         description: (error as Error)?.message || "NO SE PUDO RECONOCER EL TEXTO. INTÉNTALO DE NUEVO.",
        });
     }
     e.target.value = '';
