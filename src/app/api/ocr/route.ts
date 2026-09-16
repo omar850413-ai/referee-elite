@@ -2,19 +2,21 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { image } = await request.json(); // base64 image data
+    const { image, isStaff } = await request.json();
     if (!image) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
     }
 
-    // Attempt to get the key from env
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: 'La API Key de Gemini no está configurada.' }, { status: 500 });
     }
 
-    // Call Gemini v1beta endpoint
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+    const promptText = isStaff 
+      ? "Analiza la imagen de esta lista o credenciales. Extrae todos los nombres del cuerpo técnico. Formatea la salida ESTRICTAMENTE como un arreglo JSON de objetos: [{\"name\": \"APELLIDO NOMBRE\"}]. Devuelve ÚNICAMENTE el JSON."
+      : "Analiza la imagen de esta lista de jugadores o credenciales. Extrae todos los jugadores. Formatea la salida ESTRICTAMENTE como un arreglo JSON de objetos con el siguiente formato: [{\"number\": \"10\", \"name\": \"APELLIDO NOMBRE\"}]. Asegúrate de ordenar el nombre poniendo primero los apellidos y luego el nombre. Si no encuentras el número, pon \"\". Devuelve ÚNICAMENTE el JSON válido sin markdown.";
 
     const response = await fetch(url, {
       method: 'POST',
@@ -25,9 +27,7 @@ export async function POST(request: Request) {
         contents: [
           {
             parts: [
-              {
-                text: "Analiza la imagen de esta lista de alumnos. Extrae todos los nombres de los estudiantes. Formatea la salida estrictamente como un arreglo JSON de cadenas conteniendo los nombres de los alumnos en formato 'APELLIDO NOMBRE' o 'NOMBRE APELLIDO', por ejemplo: [\"PÉREZ JUAN\", \"GÓMEZ MARÍA\"]. Devuelve ÚNICAMENTE el arreglo JSON, sin usar bloques de markdown (como ```json) ni texto adicional."
-              },
+              { text: promptText },
               {
                 inlineData: {
                   mimeType: "image/jpeg",
@@ -51,22 +51,17 @@ export async function POST(request: Request) {
     const result = await response.json();
     const textResult = result.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
     
-    let names = [];
+    let items = [];
     try {
-      names = JSON.parse(textResult.trim());
-      if (!Array.isArray(names)) {
-        names = [];
+      items = JSON.parse(textResult.trim());
+      if (!Array.isArray(items)) {
+        items = [];
       }
     } catch (e) {
       console.error("Error al parsear el JSON de Gemini:", textResult, e);
-      // Intento de extracción simple por regex si falla el parseo
-      const matches = textResult.match(/"([^"]+)"/g);
-      if (matches) {
-        names = matches.map((m: string) => m.replace(/"/g, ''));
-      }
     }
 
-    return NextResponse.json({ names });
+    return NextResponse.json({ items });
   } catch (error: any) {
     console.error('OCR API Route Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

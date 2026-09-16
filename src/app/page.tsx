@@ -127,82 +127,55 @@ export default function Home() {
     setIsScanning(true);
     try {
        const base64 = await fileToBase64(file);
-       const res = await fetch('/api/vision', { method: 'POST', body: JSON.stringify({ imageBase64: base64 }) });
-       const data = await res.json().catch(() => ({ error: 'Respuesta inválida del servidor' }));
-       if (!res.ok) throw new Error(data.error || 'Error de conexión con Vision API');
-       const text = data.text;
-       
-       if (!text) throw new Error("No text detected");
-
-       const cleanText = text.toUpperCase();
-       const forbidden = /LIGA|PRESIDENTE|TEMPORADA|VIGENCIA|FEDERACION|ASOCIACION|CREDENCIAL|FIRMA|EDAD|FECHA|CURP|FOLIO|JUGADOR|CATEGORIA|AFILIACION/;
-       
-       let parsedCount = 0;
-       
-       if (scanTarget === 'staff') {
-          const newStaff: StaffMember[] = [];
-          const names = cleanText.match(/(?:^|\s)([A-ZÑÁÉÍÓÚ]{3,}(?:\s+[A-ZÑÁÉÍÓÚ]{3,})+)(?=\s|$)/g)?.map((n: string) => n.trim()).filter((n: string) => !n.match(forbidden)) || [];
-          for (const raw of names) {
-              const name = formatName(raw);
-              newStaff.push({
-                id: Date.now().toString() + Math.random().toString(),
-                name,
-                role: 'AUXILIAR'
-              });
-          }
-          if (newStaff.length > 0) {
-               const currentStaff = matchState?.staff?.[currentSide] || [];
-               const uniqueNewStaff: StaffMember[] = [];
-               const existingNames = new Set(currentStaff.map(s => s.name.toUpperCase().replace(/\s+/g, ' ')));
-               
-               for (const s of newStaff) {
-                  const normalizedName = s.name.toUpperCase().replace(/\s+/g, ' ');
-                  if (existingNames.has(normalizedName)) continue;
-                  existingNames.add(normalizedName);
-                  uniqueNewStaff.push(s);
-               }
-               
-               if (uniqueNewStaff.length > 0) {
-                   updateMatch({ staff: { ...(matchState?.staff || {home:[], away:[]}), [currentSide]: [...currentStaff, ...uniqueNewStaff] } as any });
-                   parsedCount = uniqueNewStaff.length;
-               }
-            }
-         } else {
-            let newPlayers: Player[] = [];
-            const regex = /(?:^|\s)(\d{1,3})\s*[-.)|]?\s*([A-ZÑÁÉÍÓÚ]{2,}(?:\s+[A-ZÑÁÉÍÓÚ]{2,})+)/g;
-            const matches = Array.from(cleanText.matchAll(regex));
-            
-            for (const match of matches as RegExpMatchArray[]) {
-                let num = match[1];
-                let raw = match[2].trim().replace(/[^A-ZÑÁÉÍÓÚ\s]/g, '').trim();
-                if (raw.match(forbidden)) continue;
-                newPlayers.push({
+       const res = await fetch('/api/ocr', { method: 'POST', body: JSON.stringify({ image: base64, isStaff: scanTarget === 'staff' }) });
+         const data = await res.json().catch(() => ({ error: 'Respuesta invalida del servidor' }));
+         if (!res.ok) throw new Error(data.error || 'Error de conexion con OCR API');
+         
+         const items = data.items || [];
+         if (items.length === 0) throw new Error("No se detectaron nombres en la imagen");
+         
+         let parsedCount = 0;
+         
+         if (scanTarget === 'staff') {
+            const newStaff: StaffMember[] = [];
+            for (const item of items) {
+                if (!item.name || item.name.length < 3) continue;
+                newStaff.push({
                   id: Date.now().toString() + Math.random().toString(),
-                  number: num,
-                  name: formatName(raw),
-                  type: scanTarget as 'starter' | 'substitute'
+                  name: item.name,
+                  role: 'AUXILIAR'
                 });
             }
+            if (newStaff.length > 0) {
+                 const currentStaff = matchState?.staff?.[currentSide] || [];
+                 const uniqueNewStaff: StaffMember[] = [];
+                 const existingNames = new Set(currentStaff.map(s => s.name.toUpperCase().replace(/\s+/g, ' ')));
+                 
+                 for (const s of newStaff) {
+                    const normalizedName = s.name.toUpperCase().replace(/\s+/g, ' ');
+                    if (existingNames.has(normalizedName)) continue;
+                    existingNames.add(normalizedName);
+                    uniqueNewStaff.push(s);
+                 }
+                 
+                 if (uniqueNewStaff.length > 0) {
+                     updateMatch({ staff: { ...(matchState?.staff || {home:[], away:[]}), [currentSide]: [...currentStaff, ...uniqueNewStaff] } as any });
+                     parsedCount = uniqueNewStaff.length;
+                 }
+              }
+           } else {
+              let newPlayers: Player[] = [];
+              for (const item of items) {
+                  if (!item.name || item.name.length < 3) continue;
+                  newPlayers.push({
+                    id: Date.now().toString() + Math.random().toString(),
+                    number: item.number || "",
+                    name: item.name,
+                    type: scanTarget
+                  });
+              }
 
-            if (newPlayers.length < 3) {
-                const numbers = cleanText.match(/(?:^|\s)(\d{1,3})(?=\s|$)/g)?.map((n: string) => n.trim()) || [];
-                const names = cleanText.match(/(?:^|\s)([A-ZÑÁÉÍÓÚ]{3,}(?:\s+[A-ZÑÁÉÍÓÚ]{3,})+)(?=\s|$)/g)?.map((n: string) => n.trim().replace(/[^A-ZÑÁÉÍÓÚ\s]/g, '')).filter((n: string) => !n.match(forbidden)) || [];
-                
-                if (names.length > 0 && numbers.length > 0) {
-                   newPlayers = [];
-                   const limit = Math.min(numbers.length, names.length);
-                   for (let i = 0; i < limit; i++) {
-                      newPlayers.push({
-                        id: Date.now().toString() + Math.random().toString(),
-                        number: numbers[i],
-                        name: formatName(names[i]),
-                        type: scanTarget as 'starter' | 'substitute'
-                      });
-                   }
-                }
-            }
-
-            if (newPlayers.length > 0) {
+              if (newPlayers.length > 0) {
              const currentLineups = matchState?.lineups?.[currentSide] || [];
              const uniqueNewPlayers: Player[] = [];
              let hasDuplicateNumber = false;
@@ -281,20 +254,19 @@ export default function Home() {
     setIsScanning(true);
     try {
        const base64 = await fileToBase64(file);
-       const res = await fetch('/api/vision', { method: 'POST', body: JSON.stringify({ imageBase64: base64 }) });
-       const { text } = await res.json();
-       
-       if (!text) throw new Error("No text detected");
-
-       const lines = text.split('\n').map((l: string) => l.trim().toUpperCase()).filter((l: string) => l.length > 3);
-       const filteredLines = lines.filter((l: string) => !l.match(/LIGA|PRESIDENTE|TEMPORADA|VIGENCIA|FEDERACION|ASOCIACION|CREDENCIAL|FIRMA|EDAD|FECHA|CURP|FOLIO|JUGADOR|CATEGORIA|AFILIACION/));
-       // Try to find the first line that looks like a full name (mostly letters and spaces)
-       const bestLine = filteredLines.find((l: string) => /^[A-ZÑÁÉÍÓÚ\s]{5,}$/.test(l.replace(/[^A-ZÑÁÉÍÓÚ\s]/g, ''))) || filteredLines[0] || text.substring(0, 30).trim().toUpperCase();
-       
-       if (target === 'player') setNewPlayerName(formatName(bestLine));
-       else setNewStaffName(formatName(bestLine));
-
-       toast({
+       const res = await fetch('/api/ocr', { method: 'POST', body: JSON.stringify({ image: base64, isStaff: target === 'staff' }) });
+         const data = await res.json().catch(() => ({ error: 'Respuesta invalida del servidor' }));
+         if (!res.ok) throw new Error(data.error || 'Error de conexion con OCR API');
+         
+         const items = data.items || [];
+         if (items.length === 0 || !items[0].name) throw new Error("No se detecto ningun texto en la imagen");
+  
+         const bestLine = items[0].name;
+         
+         if (target === 'player') setNewPlayerName(bestLine);
+         else setNewStaffName(bestLine);
+  
+         toast({
          title: "ESCANEO EXITOSO",
          description: `Texto detectado: ${formatName(bestLine)}`,
        });
