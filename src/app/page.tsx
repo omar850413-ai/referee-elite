@@ -73,14 +73,26 @@ export default function Home() {
   const [addPlayerType, setAddPlayerType] = useState<'starter' | 'substitute'>('starter');
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [tempFullName, setTempFullName] = useState('');
-    const [scanTarget, setScanTarget] = useState<'starter' | 'substitute' | 'staff'>('starter');
+  const [scanTarget, setScanTarget] = useState<'starter' | 'substitute' | 'staff'>('starter');
+
+  const formatName = (rawName: string) => {
+    const words = rawName.trim().replace(/\s+/g, ' ').split(' ');
+    if (words.length === 2) {
+       return words[1] + ' ' + words[0];
+    } else if (words.length === 3) {
+       return words[1] + ' ' + words[2] + ' ' + words[0];
+    } else if (words.length === 4) {
+       return words[2] + ' ' + words[3] + ' ' + words[0] + ' ' + words[1];
+    }
+    return rawName;
+  };
 
   const handleScanBatch = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsScanning(true);
     try {
-       const { data: { text } } = await Tesseract.recognize(file, 'spa');
+       const { data: { text } } = await Tesseract.recognize(file, 'spa', { tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZÑÁÉÍÓÚabcdefghijklmnopqrstuvwxyzñáéíóú0123456789 .-' } as any);
        const lines = text.split('\n').map((l: string) => l.trim().toUpperCase()).filter((l: string) => l.length > 3);
        const filteredLines = lines.filter((l: string) => !l.match(/LIGA|PRESIDENTE|TEMPORADA|VIGENCIA|FEDERACION|ASOCIACION|CREDENCIAL|FIRMA|EDAD|FECHA|CURP|FOLIO|JUGADOR|CATEGORIA|AFILIACION/));
        
@@ -89,7 +101,8 @@ export default function Home() {
        if (scanTarget === 'staff') {
           const newStaff: StaffMember[] = [];
           for (const line of filteredLines) {
-              const name = line.replace(/[^A-ZÑÁÉÍÓÚ\s]/g, '').trim();
+              const raw = line.replace(/[^A-ZÑÁÉÍÓÚ\s]/g, '').trim();
+              const name = formatName(raw);
               if (name.length > 5) {
                  newStaff.push({
                     id: Date.now().toString() + Math.random().toString(),
@@ -121,7 +134,8 @@ export default function Home() {
               const match = line.match(/^[^A-Z0-9]*?(\d{1,3})[^A-Z]*?([A-ZÑÁÉÍÓÚ\s]{4,})/);
               if (match) {
                  let num = match[1];
-                 let name = match[2].trim().replace(/[^A-ZÑÁÉÍÓÚ\s]/g, '').trim();
+                 let raw = match[2].trim().replace(/[^A-ZÑÁÉÍÓÚ\s]/g, '').trim();
+                 let name = formatName(raw);
                  newPlayers.push({
                     id: Date.now().toString() + Math.random().toString(),
                     number: num,
@@ -129,7 +143,8 @@ export default function Home() {
                     type: scanTarget
                  });
               } else if (/^[A-ZÑÁÉÍÓÚ\s]{5,}$/.test(line.replace(/[^A-ZÑÁÉÍÓÚ\s]/g, ''))) {
-                 let name = line.replace(/[^A-Z0-9ÑÁÉÍÓÚ\s]/g, '').trim();
+                 let raw = line.replace(/[^A-Z0-9ÑÁÉÍÓÚ\s]/g, '').replace(/[0-9]/g, '').trim();
+                 let name = formatName(raw);
                  newPlayers.push({
                     id: Date.now().toString() + Math.random().toString(),
                     number: '0',
@@ -206,18 +221,18 @@ export default function Home() {
     if (!file) return;
     setIsScanning(true);
     try {
-       const { data: { text } } = await Tesseract.recognize(file, 'spa');
+       const { data: { text } } = await Tesseract.recognize(file, 'spa', { tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZÑÁÉÍÓÚabcdefghijklmnopqrstuvwxyzñáéíóú0123456789 .-' } as any);
        const lines = text.split('\n').map((l: string) => l.trim().toUpperCase()).filter((l: string) => l.length > 3);
        const filteredLines = lines.filter((l: string) => !l.match(/LIGA|PRESIDENTE|TEMPORADA|VIGENCIA|FEDERACION|ASOCIACION|CREDENCIAL|FIRMA|EDAD|FECHA|CURP|FOLIO|JUGADOR|CATEGORIA|AFILIACION/));
        // Try to find the first line that looks like a full name (mostly letters and spaces)
        const bestLine = filteredLines.find((l: string) => /^[A-ZÑÁÉÍÓÚ\s]{5,}$/.test(l.replace(/[^A-ZÑÁÉÍÓÚ\s]/g, ''))) || filteredLines[0] || text.substring(0, 30).trim().toUpperCase();
        
-       if (target === 'player') setNewPlayerName(bestLine);
-       else setNewStaffName(bestLine);
+       if (target === 'player') setNewPlayerName(formatName(bestLine));
+       else setNewStaffName(formatName(bestLine));
 
        toast({
          title: "ESCANEO EXITOSO",
-         description: `Texto detectado: ${bestLine}`,
+         description: `Texto detectado: ${formatName(bestLine)}`,
        });
     } catch (error) {
        console.error(error);
@@ -227,6 +242,7 @@ export default function Home() {
          description: "NO SE PUDO RECONOCER EL TEXTO. INTÉNTALO DE NUEVO.",
        });
     }
+    e.target.value = '';
     setIsScanning(false);
   };
 
