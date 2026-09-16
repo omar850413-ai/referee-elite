@@ -46,6 +46,15 @@ import { causalesAmarilla, causalesRoja, causalesStaff } from '@/lib/causales';
 import Link from 'next/link';
 import Tesseract from 'tesseract.js';
 
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
+
 export default function Home() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
@@ -92,7 +101,12 @@ export default function Home() {
     if (!file) return;
     setIsScanning(true);
     try {
-       const { data: { text } } = await Tesseract.recognize(file, 'spa', {});
+       const base64 = await fileToBase64(file);
+       const res = await fetch('/api/vision', { method: 'POST', body: JSON.stringify({ imageBase64: base64 }) });
+       const { text } = await res.json();
+       
+       if (!text) throw new Error("No text detected");
+
        const lines = text.split('\n').map((l: string) => l.trim().toUpperCase()).filter((l: string) => l.length > 3);
        const filteredLines = lines.filter((l: string) => !l.match(/LIGA|PRESIDENTE|TEMPORADA|VIGENCIA|FEDERACION|ASOCIACION|CREDENCIAL|FIRMA|EDAD|FECHA|CURP|FOLIO|JUGADOR|CATEGORIA|AFILIACION/));
        
@@ -222,7 +236,12 @@ export default function Home() {
     if (!file) return;
     setIsScanning(true);
     try {
-       const { data: { text } } = await Tesseract.recognize(file, 'spa', {});
+       const base64 = await fileToBase64(file);
+       const res = await fetch('/api/vision', { method: 'POST', body: JSON.stringify({ imageBase64: base64 }) });
+       const { text } = await res.json();
+       
+       if (!text) throw new Error("No text detected");
+
        const lines = text.split('\n').map((l: string) => l.trim().toUpperCase()).filter((l: string) => l.length > 3);
        const filteredLines = lines.filter((l: string) => !l.match(/LIGA|PRESIDENTE|TEMPORADA|VIGENCIA|FEDERACION|ASOCIACION|CREDENCIAL|FIRMA|EDAD|FECHA|CURP|FOLIO|JUGADOR|CATEGORIA|AFILIACION/));
        // Try to find the first line that looks like a full name (mostly letters and spaces)
