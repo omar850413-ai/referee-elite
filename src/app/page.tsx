@@ -134,58 +134,75 @@ export default function Home() {
        
        if (!text) throw new Error("No text detected");
 
-       const lines = text.split('\n').map((l: string) => l.trim().toUpperCase()).filter((l: string) => l.length > 3);
-       const filteredLines = lines.filter((l: string) => !l.match(/LIGA|PRESIDENTE|TEMPORADA|VIGENCIA|FEDERACION|ASOCIACION|CREDENCIAL|FIRMA|EDAD|FECHA|CURP|FOLIO|JUGADOR|CATEGORIA|AFILIACION/));
+       const cleanText = text.toUpperCase();
+       const forbidden = /LIGA|PRESIDENTE|TEMPORADA|VIGENCIA|FEDERACION|ASOCIACION|CREDENCIAL|FIRMA|EDAD|FECHA|CURP|FOLIO|JUGADOR|CATEGORIA|AFILIACION/;
        
        let parsedCount = 0;
        
        if (scanTarget === 'staff') {
           const newStaff: StaffMember[] = [];
-          for (const line of filteredLines) {
-              const raw = line.replace(/[^A-ZÑÁÉÍÓÚ\s]/g, '').trim();
+          const names = cleanText.match(/(?:^|\s)([A-ZÑÁÉÍÓÚ]{3,}(?:\s+[A-ZÑÁÉÍÓÚ]{3,})+)(?=\s|$)/g)?.map((n: string) => n.trim()).filter((n: string) => !n.match(forbidden)) || [];
+          for (const raw of names) {
               const name = formatName(raw);
-              if (name.length > 5 && name.split(' ').filter(w => w.length > 1).length >= 2) {
-                 newStaff.push({
-                    id: Date.now().toString() + Math.random().toString(),
-                    name,
-                    role: 'AUXILIAR'
-                 });
-              }
+              newStaff.push({
+                id: Date.now().toString() + Math.random().toString(),
+                name,
+                role: 'AUXILIAR'
+              });
           }
           if (newStaff.length > 0) {
-             const currentStaff = matchState?.staff?.[currentSide] || [];
-             const uniqueNewStaff: StaffMember[] = [];
-             const existingNames = new Set(currentStaff.map(s => s.name.toUpperCase().replace(/\s+/g, ' ')));
-             
-             for (const s of newStaff) {
-                const normalizedName = s.name.toUpperCase().replace(/\s+/g, ' ');
-                if (existingNames.has(normalizedName)) continue;
-                existingNames.add(normalizedName);
-                uniqueNewStaff.push(s);
-             }
-             
-             if (uniqueNewStaff.length > 0) {
-                 updateMatch({ staff: { ...(matchState?.staff || {home:[], away:[]}), [currentSide]: [...currentStaff, ...uniqueNewStaff] } as any });
-                 parsedCount = uniqueNewStaff.length;
-             }
-          }
-       } else {
-          const newPlayers: Player[] = [];
-          for (const line of filteredLines) {
-              const match = line.match(/(?:^|\s)(\d{1,3})\s*[-.]?\s*([A-ZÑÁÉÍÓÚ]{2,}(?:\s+[A-ZÑÁÉÍÓÚ]{2,})+)/);
-              if (match) {
-                 let num = match[1];
-                 let raw = match[2].trim().replace(/[^A-ZÑÁÉÍÓÚ\s]/g, '').trim();
-                 let name = formatName(raw);
-                 newPlayers.push({
-                    id: Date.now().toString() + Math.random().toString(),
-                    number: num,
-                    name,
-                    type: scanTarget
-                 });
-              }
-          }
-          if (newPlayers.length > 0) {
+               const currentStaff = matchState?.staff?.[currentSide] || [];
+               const uniqueNewStaff: StaffMember[] = [];
+               const existingNames = new Set(currentStaff.map(s => s.name.toUpperCase().replace(/\s+/g, ' ')));
+               
+               for (const s of newStaff) {
+                  const normalizedName = s.name.toUpperCase().replace(/\s+/g, ' ');
+                  if (existingNames.has(normalizedName)) continue;
+                  existingNames.add(normalizedName);
+                  uniqueNewStaff.push(s);
+               }
+               
+               if (uniqueNewStaff.length > 0) {
+                   updateMatch({ staff: { ...(matchState?.staff || {home:[], away:[]}), [currentSide]: [...currentStaff, ...uniqueNewStaff] } as any });
+                   parsedCount = uniqueNewStaff.length;
+               }
+            }
+         } else {
+            let newPlayers: Player[] = [];
+            const regex = /(?:^|\s)(\d{1,3})\s*[-.)|]?\s*([A-ZÑÁÉÍÓÚ]{2,}(?:\s+[A-ZÑÁÉÍÓÚ]{2,})+)/g;
+            const matches = Array.from(cleanText.matchAll(regex));
+            
+            for (const match of matches as RegExpMatchArray[]) {
+                let num = match[1];
+                let raw = match[2].trim().replace(/[^A-ZÑÁÉÍÓÚ\s]/g, '').trim();
+                if (raw.match(forbidden)) continue;
+                newPlayers.push({
+                  id: Date.now().toString() + Math.random().toString(),
+                  number: num,
+                  name: formatName(raw),
+                  type: scanTarget as 'starter' | 'substitute'
+                });
+            }
+
+            if (newPlayers.length < 3) {
+                const numbers = cleanText.match(/(?:^|\s)(\d{1,3})(?=\s|$)/g)?.map((n: string) => n.trim()) || [];
+                const names = cleanText.match(/(?:^|\s)([A-ZÑÁÉÍÓÚ]{3,}(?:\s+[A-ZÑÁÉÍÓÚ]{3,})+)(?=\s|$)/g)?.map((n: string) => n.trim().replace(/[^A-ZÑÁÉÍÓÚ\s]/g, '')).filter((n: string) => !n.match(forbidden)) || [];
+                
+                if (names.length > 0 && numbers.length > 0) {
+                   newPlayers = [];
+                   const limit = Math.min(numbers.length, names.length);
+                   for (let i = 0; i < limit; i++) {
+                      newPlayers.push({
+                        id: Date.now().toString() + Math.random().toString(),
+                        number: numbers[i],
+                        name: formatName(names[i]),
+                        type: scanTarget as 'starter' | 'substitute'
+                      });
+                   }
+                }
+            }
+
+            if (newPlayers.length > 0) {
              const currentLineups = matchState?.lineups?.[currentSide] || [];
              const uniqueNewPlayers: Player[] = [];
              let hasDuplicateNumber = false;
