@@ -161,6 +161,7 @@ export default function Home() {
              // Nombres y numeros actualmente registrados
              const existingNames = new Set(currentLineups.map(p => p.name.toUpperCase().replace(/\s+/g, ' ')));
              const existingNumbers = new Set(currentLineups.filter(p => p.number).map(p => p.number));
+             let currentStartersCount = currentLineups.filter(p => p.type === 'starter').length;
 
              for (const p of newPlayers) {
                 const normalizedName = p.name.toUpperCase().replace(/\s+/g, ' ');
@@ -175,6 +176,15 @@ export default function Home() {
                     existingNumbers.add(p.number);
                 }
                 
+                // 3. Limitar titulares a 11
+                if (p.type === 'starter') {
+                    if (currentStartersCount < 11) {
+                        currentStartersCount++;
+                    } else {
+                        p.type = 'substitute';
+                    }
+                }
+
                 existingNames.add(normalizedName);
                 uniqueNewPlayers.push(p);
              }
