@@ -56,7 +56,7 @@ const fileToBase64 = (file: File): Promise<string> => {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        const MAX_SIZE = 1000;
+        const MAX_SIZE = 2000;
         
         if (width > height && width > MAX_SIZE) {
           height *= MAX_SIZE / width;
@@ -71,7 +71,7 @@ const fileToBase64 = (file: File): Promise<string> => {
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
         
-        resolve(canvas.toDataURL('image/jpeg', 0.6));
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
       };
       img.onerror = reject;
       img.src = event.target?.result as string;
