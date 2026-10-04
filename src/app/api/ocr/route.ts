@@ -68,6 +68,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ items });
   } catch (error: any) {
     console.error('OCR API Route Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message + ' [V3.6]' }, { status: 500 });
   }
 }
