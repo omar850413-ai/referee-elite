@@ -54,8 +54,8 @@ export async function POST(request: Request) {
     let items = [];
     try {
       let cleanText = textResult.trim();
-      if (cleanText.startsWith('\')) {
-        cleanText = cleanText.replace(/^\(json)?/, '').replace(/\$/, '').trim();
+      if (cleanText.startsWith('```')) {
+        cleanText = cleanText.replace(/^```(json)?/, '').replace(/```$/, '').trim();
       }
       items = JSON.parse(cleanText);
       if (!Array.isArray(items)) {
