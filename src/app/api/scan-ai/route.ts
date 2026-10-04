@@ -12,40 +12,57 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'La API Key de Gemini no está configurada.' }, { status: 500 });
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
+    
 
     const promptText = isStaff 
       ? "Analiza la imagen de esta lista o credenciales. Extrae todos los nombres del cuerpo técnico. Formatea la salida ESTRICTAMENTE como un arreglo JSON de objetos: [{\"name\": \"APELLIDO NOMBRE\"}]. Devuelve ÚNICAMENTE el JSON."
       : "Analiza la imagen de esta lista de jugadores o credenciales. Extrae todos los jugadores. Formatea la salida ESTRICTAMENTE como un arreglo JSON de objetos con el siguiente formato: [{\"number\": \"10\", \"name\": \"APELLIDO NOMBRE\"}]. Asegúrate de ordenar el nombre poniendo primero los apellidos y luego el nombre. Si no encuentras el número, pon \"\". Devuelve ÚNICAMENTE el JSON válido sin markdown.";
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: promptText },
-              {
-                inlineData: {
-                  mimeType: "image/jpeg",
-                  data: image.includes(',') ? image.split(',')[1] : image
+    
+    // THE REAL FALLBACK LOOP
+    const modelsToTry = ['gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-3.6-flash'];
+    let response;
+    let lastErrorText = '';
+    
+    for (const model of modelsToTry) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: promptText },
+                {
+                  inlineData: {
+                    mimeType: "image/jpeg",
+                    data: image.includes(',') ? image.split(',')[1] : image
+                  }
                 }
-              }
-            ]
+              ]
+            }
+          ],
+          generationConfig: {
+            responseMimeType: "application/json"
           }
-        ],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      })
-    });
+        })
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Error de la API de Gemini: ${response.statusText} - ${errorText}`);
+      if (response.ok) {
+        break; // Success! Exit the loop.
+      } else {
+        lastErrorText = await response.text();
+        console.warn(`Model ${model} failed:`, response.statusText, lastErrorText);
+        // Do NOT break, keep trying other models.
+      }
+    }
+
+    if (!response || !response.ok) {
+      throw new Error(`Error de la API de Gemini: ${response ? response.statusText : 'Unknown'} - ${lastErrorText}`);
     }
 
     const result = await response.json();
@@ -68,6 +85,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ items });
   } catch (error: any) {
     console.error('OCR API Route Error:', error);
-    return NextResponse.json({ error: error.message + ' [V3.6.2]' }, { status: 500 });
+    return NextResponse.json({ error: error.message + ' [V3.6.3]' }, { status: 500 });
   }
 }
