@@ -127,7 +127,7 @@ export default function Home() {
     setIsScanning(true);
     try {
        const base64 = await fileToBase64(file);
-       const res = await fetch('/api/ocr', { method: 'POST', body: JSON.stringify({ image: base64, isStaff: scanTarget === 'staff' }) });
+       const res = await fetch('/api/scan-ai', { method: 'POST', body: JSON.stringify({ image: base64, isStaff: scanTarget === 'staff' }) });
          const data = await res.json().catch(() => ({ error: 'Respuesta invalida del servidor' }));
          if (!res.ok) throw new Error(data.error || 'Error de conexion con OCR API');
          
@@ -254,7 +254,7 @@ export default function Home() {
     setIsScanning(true);
     try {
        const base64 = await fileToBase64(file);
-       const res = await fetch('/api/ocr', { method: 'POST', body: JSON.stringify({ image: base64, isStaff: target === 'staff' }) });
+       const res = await fetch('/api/scan-ai', { method: 'POST', body: JSON.stringify({ image: base64, isStaff: target === 'staff' }) });
          const data = await res.json().catch(() => ({ error: 'Respuesta invalida del servidor' }));
          if (!res.ok) throw new Error(data.error || 'Error de conexion con OCR API');
          
