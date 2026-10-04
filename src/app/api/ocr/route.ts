@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'La API Key de Gemini no está configurada.' }, { status: 500 });
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
 
     const promptText = isStaff 
       ? "Analiza la imagen de esta lista o credenciales. Extrae todos los nombres del cuerpo técnico. Formatea la salida ESTRICTAMENTE como un arreglo JSON de objetos: [{\"name\": \"APELLIDO NOMBRE\"}]. Devuelve ÚNICAMENTE el JSON."
@@ -53,7 +53,11 @@ export async function POST(request: Request) {
     
     let items = [];
     try {
-      items = JSON.parse(textResult.trim());
+      let cleanText = textResult.trim();
+      if (cleanText.startsWith('\')) {
+        cleanText = cleanText.replace(/^\(json)?/, '').replace(/\$/, '').trim();
+      }
+      items = JSON.parse(cleanText);
       if (!Array.isArray(items)) {
         items = [];
       }
